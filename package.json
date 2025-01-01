@@ -2,14 +2,14 @@
   "name": "",
   "version": "1.0.0",
   "description": "",
-  "main": "main/main.js",
+  "main": "app/main/main.js",
   "type": "module",
   "scripts": {
     "start": "electron .",
     "build": "vite build",
     "test": "vitest",
     "dev:vite": "vite",
-    "dev:electron": "wait-on http://localhost:5173/window/index.html && electron .",
+    "dev:electron": "wait-on http://localhost:5173/app/window/index.html && electron .",
     "dev": "concurrently \"npm:dev:vite\" \"npm:dev:electron\""
   },
   "author": "",

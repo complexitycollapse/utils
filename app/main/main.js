@@ -28,7 +28,7 @@ const createWindow = () => {
 
   // win.maximize();
   // win.show();
-  win.loadFile("window/index.html");
+  win.loadFile("app/window/index.html");
 
   // Listen for console events and open DevTools on error
   win.webContents.on("console-message", (event, level, message, line, sourceId) => {
