@@ -10,7 +10,9 @@
     "test": "vitest",
     "dev:vite": "vite",
     "dev:electron": "wait-on http://localhost:5173/app/window/index.html && electron .",
-    "dev": "concurrently \"npm:dev:vite\" \"npm:dev:electron\""
+    "dev": "concurrently \"npm:dev:vite\" \"npm:dev:electron\"",
+    "dev:electron-game": "wait-on http://localhost:5173/game/game.html && electron . --file=game/game.html",
+    "game": "concurrently \"npm:dev:vite\" \"npm:dev:electron-game\""
   },
   "author": "",
   "license": "ISC",

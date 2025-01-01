@@ -13,6 +13,13 @@ if (env === "development") {
   fileWatcher.watch(path.join(__dirname, ".."));
 }
 
+console.log(process.argv);
+let startFile = process.argv.find(arg => arg.startsWith("--file="));
+if (startFile) {
+  startFile = startFile.replace("--file=", "");
+} else {
+  startFile = "app/window/index.html";
+}
 
 const createWindow = () => {
   const win = new BrowserWindow({
@@ -28,7 +35,8 @@ const createWindow = () => {
 
   // win.maximize();
   // win.show();
-  win.loadFile("app/window/index.html");
+  console.log("Loading file", startFile);
+  win.loadFile(startFile);
 
   // Listen for console events and open DevTools on error
   win.webContents.on("console-message", (event, level, message, line, sourceId) => {
