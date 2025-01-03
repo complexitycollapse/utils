@@ -36,7 +36,7 @@ export function LexerComponent() {
   );
 }
 
-class Lexer {
+export class Lexer {
   constructor(code) {
     this.lines = code.split("\n");
     this.index = 0;
