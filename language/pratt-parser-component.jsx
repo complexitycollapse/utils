@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Lexer } from "./lexer-component";
+import { Lexer } from "./lexer";
+import { TestLexer } from "./test-lexer";
 
 export function PrattParserComponent() {
   const [code, setCode] = useState("");
@@ -9,7 +10,7 @@ export function PrattParserComponent() {
 
   useEffect(() => {
     try {
-      const lexer = new Lexer(code);
+      const lexer = new Lexer(TestLexer, code);
       const tokens = lexer.tokenize();
       setTokens(tokens);
 
