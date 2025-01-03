@@ -13,13 +13,17 @@ if (env === "development") {
   fileWatcher.watch(path.join(__dirname, ".."));
 }
 
-console.log(process.argv);
-let startFile = process.argv.find(arg => arg.startsWith("--file="));
-if (startFile) {
-  startFile = startFile.replace("--file=", "");
-} else {
-  startFile = "app/window/index.html";
+console.log("args", process.argv);
+
+function getNamedArg(name, defaultValue) {
+  const prefix = "--" + name + "=";
+
+  const value = process.argv.find(arg => arg.startsWith(prefix));
+  return value ? value.replace(prefix, "") : defaultValue;
 }
+
+const startFile = getNamedArg("file", "app/window/index.html");
+const startComponent = process.env.COMPONENT ?? "parameterTest";
 
 const createWindow = () => {
   const win = new BrowserWindow({
@@ -35,8 +39,15 @@ const createWindow = () => {
 
   // win.maximize();
   // win.show();
+
+  const queryParameters = new URLSearchParams({component: startComponent}).toString();
+
   console.log("Loading file", startFile);
-  win.loadFile(startFile);
+  if (env === "development") {
+    win.loadURL(`http://localhost:5173/${startFile}?${queryParameters}`);
+  } else {
+    win.loadFile(path.join(__dirname, "dist/" + startFile));
+  }
 
   // Listen for console events and open DevTools on error
   win.webContents.on("console-message", (event, level, message, line, sourceId) => {
