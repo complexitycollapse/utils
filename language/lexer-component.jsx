@@ -98,35 +98,72 @@ class LineLexer {
   constructor(line) {
     this.line = line;
     this.index = 0;
+    this.nextToken = undefined;
+    this.lastError = undefined;
+    this.atStart = true;
   }
 
   tokenize() {
     const tokens = [];
 
-    if (this.isWhitespace) {
-      this.consumeWhitespace();
-    }
-
-    this.indent = this.index;
-
-    while (this.index < this.line.length) {
-      if (this.isWhitespace()) {
-        this.consumeWhitespace();
-      } else if (this.isNumber()) {
-        tokens.push(this.consumeNumber());
-      } else if (this.isOperator()) {
-        tokens.push(this.consumeOperator());
-      } else {
-        if (tokens[tokens.length - 1]?.isError) {
-          tokens[tokens.length - 1].pushChar(this.line[this.index]);
-        } else {
-          tokens.push(new Token("error", this.line[this.index], true));
-        }
-        this.index++;
-      }
+    for(let t = this.next(); t; t = this.next()) {
+      tokens.push(t);
     }
 
     return tokens;
+  }
+
+  peek() {
+    if (this.nextToken === undefined) {
+      this.lexOneToken();
+    }
+
+    return this.lastError ?? this.nextToken;
+  }
+
+  next() {
+    this.peek();
+
+    if (this.lastError) {
+      const last = this.lastError;
+      this.lastError = undefined;
+      return last;
+    }
+
+    if (this.nextToken) {
+      const last = this.nextToken;
+      this.nextToken = undefined;
+      return last;
+    }
+  }
+
+  lexOneToken() {
+    if (this.index >= this.line.length) {
+      return;
+    }
+
+    if (this.atStart) {
+      this.atStart = false;
+      this.consumeWhitespace();
+      this.indent = this.index; 
+    }
+
+    if (this.isWhitespace()) {
+      this.consumeWhitespace();
+      this.lexOneToken();
+    } else if (this.isNumber()) {
+      this.nextToken = this.consumeNumber();
+    } else if (this.isOperator()) {
+      this.nextToken = this.consumeOperator();
+    } else {
+      if (this.lastError) {
+        this.lastError.pushChar(this.line[this.index]);
+      } else {
+        this.lastError = new Token("error", this.line[this.index], true);
+      }
+      this.index++;
+      this.lexOneToken();
+    }
   }
 
   isWhitespace() {
