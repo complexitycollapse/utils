@@ -67,16 +67,21 @@ class Lexer {
       }
 
       while (lineLexer.indent < currentIndent) {
-        indentStack.pop();
+        const lastIndent = indentStack.pop();
         currentIndent = indentStack[indentStack.length - 1];
         if (lineLexer.indent > currentIndent) {
           tokens.push(new Token("Invalid indentation", lineLexer.indent, true));
         } else {
-          tokens.push(new Token("dedent", currentIndent));
+          tokens.push(new Token("dedent", lastIndent));
         }
       }
+
       tokens.push(...lineTokens);
       this.index++;
+    }
+
+    while (indentStack.length > 0 && indentStack[indentStack.length - 1] > 0) {
+      tokens.push(new Token("dedent", indentStack.pop()));
     }
 
     return tokens;
