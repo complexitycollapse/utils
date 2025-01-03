@@ -1,4 +1,4 @@
-import { Alternatives, OneOrMore, Optional, SingleChar, Then, Token, Transform } from "./lexer.js";
+import { Alternatives, InverseLexer, OneOrMore, Optional, SingleChar, StringLexer, Then, Token, Transform } from "./lexer.js";
 
 const Digit = SingleChar("digit", /[0-9]/);
 const SymbolChar = SingleChar("symbol char", /[0-9a-zA-Z]/);
@@ -9,8 +9,12 @@ const NonNegativeDecimalLexer = Then("decimal", [
   SingleChar("dot", /\./),
   NonNegativeIntegerLexer
 ], tokens => tokens[0].value + "." + tokens[2].value);
-const NonNegativeNumberLexer = Transform(Alternatives("number", [NonNegativeDecimalLexer, NonNegativeIntegerLexer]), token => new Token("number", token.value));
+const NonNegativeNumberLexer = Transform(Alternatives([NonNegativeDecimalLexer, NonNegativeIntegerLexer]), token => new Token("number", token.value));
 const NumberLexer = Then("number", [Optional(SingleChar("sign", /[-]/)), NonNegativeNumberLexer], tokens => tokens[0].value + tokens[1].value);
 const SymbolPart = OneOrMore("symbol", SymbolChar);
+const Keywords = Then("keyword", 
+  [Alternatives([StringLexer("", "if"), StringLexer("", "else"), StringLexer("", "def")]), 
+  InverseLexer(SymbolChar)],
+tokens => tokens[0].value);
 
-export const TestLexer = [NumberLexer, OperatorLexer, SymbolPart];
+export const TestLexer = [NumberLexer, OperatorLexer, Keywords, SymbolPart];

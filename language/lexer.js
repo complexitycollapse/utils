@@ -193,6 +193,29 @@ class LineLexer {
   }
 }
 
+export function InverseLexer(lexer) {
+  return new InverseLexerClass(lexer);
+}
+
+class InverseLexerClass {
+  constructor(lexer) {
+    this.lexer = lexer;
+  }
+
+  lex(str, index) {
+    const result = this.lexer.lex(str, index);
+    if (result.pass) {
+      return {};
+    }
+
+    return {
+      pass: true,
+      token: new Token("inverse", ""),
+      nextIndex: index
+    };
+  }
+}
+
 export function SingleChar(type, pattern) {
   return new SingleCharClass(type, pattern);
 }
@@ -239,13 +262,12 @@ class OptionalClass {
   }
 }
 
-export function Alternatives(type, lexers) {
-  return new AlternativesClass(type, lexers);
+export function Alternatives(lexers) {
+  return new AlternativesClass(lexers);
 }
 
 class AlternativesClass {
-  constructor(type, lexers) {
-    this.type = type;
+  constructor(lexers) {
     this.lexers = lexers;
   }
 
@@ -345,6 +367,29 @@ class ThenClass {
 }
 
 export const OneOrMore = (type, lexer) => Then(type, [lexer, ZeroOrMore(type, lexer)], tokens => tokens[0].value + tokens[1].value);
+
+export function StringLexer(type, string) {
+  return new StringLexerClass(type, string);
+}
+
+class StringLexerClass {
+  constructor(type, string) {
+    this.type = type;
+    this.string = string;
+  }
+
+  lex(str, index) {
+    if (str.startsWith(this.string, index)) {
+      return {
+        pass: true,
+        token: new Token(this.type, this.string),
+        nextIndex: index + this.string.length
+      };
+    }
+
+    return {};
+  }
+}
 
 export class Token {
   constructor(type, value, isError) {
