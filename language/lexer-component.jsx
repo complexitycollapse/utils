@@ -38,14 +38,73 @@ export function LexerComponent() {
 
 class Lexer {
   constructor(code) {
-    this.code = code;
+    this.lines = code.split("\n");
+    this.index = 0;
+  }
+
+  tokenize() {
+    const tokens = [];
+    const indentStack = [0];
+
+    while (this.index < this.lines.length) {
+      const line = this.lines[this.index];
+      let currentIndent = indentStack[indentStack.length - 1];
+
+      if (this.isBlank(line)) {
+        this.index++;
+        continue;
+      }
+      const lineLexer = new LineLexer(line);
+      const lineTokens = lineLexer.tokenize();
+
+      if (lineLexer.indent % 2 !== 0) {
+        tokens.push(new Token("Invalid indentation", lineLexer.indent, true));
+      }
+
+      if (lineLexer.indent > currentIndent) {
+        indentStack.push(lineLexer.indent);
+        tokens.push(new Token("indent", lineLexer.indent));
+      }
+
+      while (lineLexer.indent < currentIndent) {
+        indentStack.pop();
+        currentIndent = indentStack[indentStack.length - 1];
+        if (lineLexer.indent > currentIndent) {
+          tokens.push(new Token("Invalid indentation", lineLexer.indent, true));
+        } else {
+          tokens.push(new Token("dedent", currentIndent));
+        }
+      }
+      tokens.push(...lineTokens);
+      this.index++;
+    }
+
+    return tokens;
+  }
+
+  isBlank(line) {
+    return /^\s*$/.test(line);
+  }
+}
+
+class LineLexer {
+  indent = 0;
+
+  constructor(line) {
+    this.line = line;
     this.index = 0;
   }
 
   tokenize() {
     const tokens = [];
 
-    while (this.index < this.code.length) {
+    if (this.isWhitespace) {
+      this.consumeWhitespace();
+    }
+
+    this.indent = this.index;
+
+    while (this.index < this.line.length) {
       if (this.isWhitespace()) {
         this.consumeWhitespace();
       } else if (this.isNumber()) {
@@ -54,9 +113,9 @@ class Lexer {
         tokens.push(this.consumeOperator());
       } else {
         if (tokens[tokens.length - 1]?.isError) {
-          tokens[tokens.length - 1].pushChar(this.code[this.index]);
+          tokens[tokens.length - 1].pushChar(this.line[this.index]);
         } else {
-          tokens.push(new Token("error", this.code[this.index], true));
+          tokens.push(new Token("error", this.line[this.index], true));
         }
         this.index++;
       }
@@ -66,7 +125,7 @@ class Lexer {
   }
 
   isWhitespace() {
-    return /\s/.test(this.code[this.index]);
+    return /\s/.test(this.line[this.index]);
   }
 
   consumeWhitespace() {
@@ -76,14 +135,14 @@ class Lexer {
   }
 
   isNumber() {
-    return /[0-9]/.test(this.code[this.index]);
+    return /[0-9]/.test(this.line[this.index]);
   }
 
   consumeNumber() {
     let value = "";
 
     while (this.isNumber()) {
-      value += this.code[this.index];
+      value += this.line[this.index];
       this.index++;
     }
 
@@ -91,11 +150,11 @@ class Lexer {
   }
 
   isOperator() {
-    return /[+\-*\/]/.test(this.code[this.index]);
+    return /[+\-*\/]/.test(this.line[this.index]);
   }
 
   consumeOperator() {
-    const value = this.code[this.index];
+    const value = this.line[this.index];
     this.index++;
     return new Token("operator", value);
   }
