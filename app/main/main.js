@@ -29,7 +29,7 @@ const createWindow = () => {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
-    // show: false,
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
       nodeIntegration: true,
@@ -37,8 +37,8 @@ const createWindow = () => {
     }
   });
 
-  // win.maximize();
-  // win.show();
+  win.maximize();
+  win.show();
 
   const queryParameters = new URLSearchParams({component: startComponent}).toString();
 
