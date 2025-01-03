@@ -5,4 +5,33 @@
 html {
   background-color: #282c34;
   color: #9da5b4;
+  font-family: system-ui;
+}
+
+/* Lexer */
+.token {
+  background-color: #9da5b4;
+  color: #282c34;
+  width: fit-content;
+  padding: 5px;
+}
+
+.token-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.token.error {
+  background-color: #ff5555;
+  color: #fff;
+}
+
+.lexer-input {
+  width: 100%;
+  padding: 10px;
+  font-size: 1.2rem;
+  background-color: #282c34;
+  color: #9da5b4;
+  border: 1px solid #9da5b4;
 }
