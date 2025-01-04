@@ -51,8 +51,11 @@ export class PrattParser {
     if (lhs.isError) {
       throw new Error(`Error found: ${lhs.toString()}`);
     }
+    
     if (!this.isAtom(lhs)) {
-      throw new Error(`Expected atom, got: ${lhs.toString()}`);
+      const prefixPower = this.prefixBindingPower(lhs);
+      const rhs = this.parse(prefixPower);
+      lhs = new Node(lhs, undefined, rhs);
     }
     
     while (true) {
@@ -67,7 +70,7 @@ export class PrattParser {
         throw new Error(`Expected operator, got: ${operator.toString()}`);
       }
 
-      const [leftBindingPower, rightBindingPower] = this.bindingPower(operator);
+      const [leftBindingPower, rightBindingPower] = this.infixBindingPower(operator);
 
       if (leftBindingPower < minBindingPower) {
         break;
@@ -86,7 +89,19 @@ export class PrattParser {
     return lhs;
   }
 
-  bindingPower(token) {
+  prefixBindingPower(token) {
+    if (token.type === "operator") {
+      switch (token.value) {
+        case "+":
+        case "-":
+          return 5;
+        default:
+          throw new Error(`Unknown prefix type: ${token.type}`);
+      }
+    }
+  }
+
+  infixBindingPower(token) {
     if (token.type === "operator") {
       switch (token.value) {
         case "+":
@@ -114,6 +129,6 @@ class Node {
   }
 
   toString() {
-    return "(" + this.type.value + " " + this.left.toString() + " " + this.right.toString() + ")";
+    return "(" + this.type.value + " " + this.left?.toString() + " " + this.right?.toString() + ")";
   }
 }
