@@ -4,17 +4,12 @@ import { TestLexer } from "./test-lexer";
 
 export function PrattParserComponent() {
   const [code, setCode] = useState("");
-  const [tokens, setTokens] = useState([]);
   const [tree, setTree] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     try {
-      const lexer = new Lexer(TestLexer, code);
-      const tokens = lexer.tokenize();
-      setTokens(tokens);
-
-      const parser = new PrattParser(tokens);
+      const parser = new PrattParser(new Lexer(TestLexer, code));
       const tree = parser.parse();
       setTree(tree);
 
@@ -26,7 +21,7 @@ export function PrattParserComponent() {
 
   return (
     <div>
-      <h1>Lexer component</h1>
+      <h1>Pratt Parser</h1>
       <textarea
         className="lexer-input"
         value={code}
@@ -41,15 +36,18 @@ export function PrattParserComponent() {
 }
 
 export class PrattParser {
-  constructor(tokens) {
-    this.tokens = tokens;
-    this.index = 0;
+  constructor(lexer) {
+    this.lexer = lexer;
   }
 
   parse(minBindingPower = 0) {
     let lhs;
 
-    lhs = this.tokens[this.index];
+    lhs = this.lexer.next();
+    if (lhs === undefined) {
+      return undefined;
+    }
+
     if (lhs.isError) {
       throw new Error(`Error found: ${lhs.toString()}`);
     }
@@ -57,10 +55,11 @@ export class PrattParser {
       throw new Error(`Expected atom, got: ${lhs.toString()}`);
     }
     
-    this.index++;
-
-    while (this.index < this.tokens.length) {
-      const operator = this.tokens[this.index];
+    while (true) {
+      const operator = this.lexer.peek();
+      if (operator === undefined) {
+        break;
+      }
       if (operator.isError) {
         throw new Error(`Error found: ${operator.toString()}`);
       }
@@ -74,7 +73,7 @@ export class PrattParser {
         break;
       }
 
-      this.index++;
+      this.lexer.next();
 
       const rhs = this.parse(rightBindingPower);
       if (rhs.isError) {
