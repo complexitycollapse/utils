@@ -2,14 +2,32 @@ import { useState, useEffect } from "react";
 import { Lexer } from "./lexer";
 import { TestLexerNoSigns } from "./test-lexer";
 
+function TokenComponent({ token }) {
+  if (token.errorMessage) {
+    return <div className="token error">{token.errorMessage}</div>;
+  }
+
+  if (token.id === "(end)") {
+    return null;
+  }
+
+  return (
+    <div className="token">
+      {token.arity === "literal" ? token.value
+      : (token.arity === "unary" ? <>{token.value}&nbsp;<TokenComponent token={token.first}/></> :
+      <>({token.id}&nbsp; <TokenComponent token={token.first}/>&nbsp;<TokenComponent token={token.second}/>)</>)}
+    </div>
+  );
+}
+
 export function PrattParserComponent() {
   const [code, setCode] = useState("");
-  const [tree, setTree] = useState([]);
+  const [tree, setTree] = useState(undefined);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     try {
-      const tree = new Parser(code);
+      const tree = Parser(code);
       setTree(tree);
 
       setError(null);
@@ -27,10 +45,7 @@ export function PrattParserComponent() {
         onChange={e => setCode(e.target.value)}
       />
       {error && <div style={{ color: "red" }}>{error}</div>}
-      <div className="token-list">
-      {tree.errorMessage ? <div className="token error">{tree?.toString()}</div> :
-          <div className="token">{tree?.toString()}</div>}
-      </div>
+      {tree ? <TokenComponent token={tree}/> : null}
     </div>
   );
 }
@@ -174,24 +189,14 @@ export function Parser(text) {
 
 const prototypeSymbol = {
   nud: function () {
-      this.error("Undefined.");
+      return this.error("Undefined.");
   },
   led: function (left) {
-      this.error("Missing operator.");
+      return this.error("Missing operator.");
   },
   error: function (message) {
     this.errorMessage = message;
-  },
-  toString: function () {
-    if (this.arity === "literal") {
-      return this.value;
-    }
-    if (this.arity === "binary") {
-      return "(" + this.id + " " + this.first?.toString() + " " + this.second?.toString() + ")";
-    }
-    if (this.arity === "unary") {
-      return this.id + this.first.toString();
-    }
+    return this;
   }
 };
 

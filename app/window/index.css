@@ -14,6 +14,7 @@ html {
   color: #282c34;
   width: fit-content;
   padding: 5px;
+  display: inline-block;
 }
 
 .token-list {
