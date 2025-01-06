@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Lexer } from "./lexer";
-import { TestLexer } from "./test-lexer";
+import { TestLexerNoSigns } from "./test-lexer";
 
 export function PrattParserComponent() {
   const [code, setCode] = useState("");
@@ -9,8 +9,7 @@ export function PrattParserComponent() {
 
   useEffect(() => {
     try {
-      const parser = new PrattParser(new Lexer(TestLexer, code));
-      const tree = parser.parse();
+      const tree = new Parser(code);
       setTree(tree);
 
       setError(null);
@@ -29,106 +28,215 @@ export function PrattParserComponent() {
       />
       {error && <div style={{ color: "red" }}>{error}</div>}
       <div className="token-list">
-          <div className="token">{tree?.toString()}</div>
+      {tree.errorMessage ? <div className="token error">{tree?.toString()}</div> :
+          <div className="token">{tree?.toString()}</div>}
       </div>
     </div>
   );
 }
 
-export class PrattParser {
-  constructor(lexer) {
-    this.lexer = lexer;
+export function Parser(text) {
+  const lexer = new Lexer(TestLexerNoSigns, text);
+  const symbolTable = {};
+  let token, scope;
+
+  function pushScope() {
+    scope = Scope(scope);
   }
 
-  parse(minBindingPower = 0) {
-    let lhs;
-
-    lhs = this.lexer.next();
-    if (lhs === undefined) {
-      return undefined;
-    }
-
-    if (lhs.isError) {
-      throw new Error(`Error found: ${lhs.toString()}`);
-    }
-    
-    if (!this.isAtom(lhs)) {
-      const prefixPower = this.prefixBindingPower(lhs);
-      const rhs = this.parse(prefixPower);
-      lhs = new Node(lhs, undefined, rhs);
-    }
-    
-    while (true) {
-      const operator = this.lexer.peek();
-      if (operator === undefined) {
-        break;
-      }
-      if (operator.isError) {
-        throw new Error(`Error found: ${operator.toString()}`);
-      }
-      if (this.isAtom(operator)) {
-        throw new Error(`Expected operator, got: ${operator.toString()}`);
-      }
-
-      const [leftBindingPower, rightBindingPower] = this.infixBindingPower(operator);
-
-      if (leftBindingPower < minBindingPower) {
-        break;
-      }
-
-      this.lexer.next();
-
-      const rhs = this.parse(rightBindingPower);
-      if (rhs.isError) {
-        throw new Error(`Error found: ${rhs.toString()}`);
-      }
-      
-      lhs = new Node(operator, lhs, rhs);
-    }
-
-    return lhs;
+  function popScope() {
+    scope = scope.parent;
   }
 
-  prefixBindingPower(token) {
-    if (token.type === "operator") {
-      switch (token.value) {
-        case "+":
-        case "-":
-          return 5;
-        default:
-          throw new Error(`Unknown prefix type: ${token.type}`);
-      }
+  function symbol (id, bp) {
+    var symbol = symbolTable[id];
+    bp = bp || 0;
+    if (symbol) {
+        if (bp >= symbol.lbp) {
+            symbol.lbp = bp;
+        }
+    } else {
+        symbol = Object.create(prototypeSymbol);
+        symbol.id = symbol.value = id;
+        symbol.lbp = bp;
+        symbolTable[id] = symbol;
     }
+    return symbol;
+  };
+
+  symbol("(end)");
+  symbol("(name)");
+  const lit = symbol("(literal)");
+  var itself = function () {
+    return this;
+  };
+  lit.nud = itself;
+
+  function advance (id) {
+    let arity, prototype, lexeme, value;
+    if (id && token.id !== id) {
+        token.error("Expected '" + id + "'.");
+    }
+
+    lexeme = lexer.next();
+    if (lexeme === undefined) {
+        token = symbolTable["(end)"];
+        return;
+    }
+
+    value = lexeme.value;
+    arity = lexeme.type;
+
+    if (arity === "name") {
+        prototype = scope.find(value);
+    } else if (arity === "operator") {
+        prototype = symbolTable[value];
+        if (!prototype) {
+            lexeme.error("Unknown operator.");
+        }
+    } else if (arity === "string" || arity ===  "number") {
+        arity = "literal";
+        prototype = symbolTable["(literal)"];
+    } else {
+        lexeme.error("Unexpected token.");
+    }
+    token = Object.create(prototype);
+    token.value = value;
+    token.arity = arity;
+    return token;
+  };
+
+  var expression = function (rbp) {
+    var left;
+    var t = token;
+    advance();
+    left = t.nud();
+    while (rbp < token.lbp) {
+      t = token;
+      advance();
+      left = t.led(left);
+    }
+    return left;
   }
 
-  infixBindingPower(token) {
-    if (token.type === "operator") {
-      switch (token.value) {
-        case "+":
-        case "-":
-          return [10, 11];
-        case "*":
-        case "/":
-          return [20, 21];
-        default:
-          throw new Error(`Unknown infix type: ${token.type}`);
-      }
-    }
+  var infix = function (id, bp, led) {
+    var s = symbol(id, bp);
+    s.led = led || function (left) {
+      this.first = left;
+      this.second = expression(bp);
+      this.arity = "binary";
+      return this;
+    };
+    return s;
   }
 
-  isAtom(token) {
-    return token.type === "number";
+  var infixr = function (id, bp, led) {
+    var s = symbol(id, bp);
+    s.led = led || function (left) {
+      this.first = left;
+      this.second = expression(bp - 1);
+      this.arity = "binary";
+      return this;
+    };
+    return s;
   }
+
+  var prefix = function (id, nud) {
+    var s = symbol(id);
+    s.nud = nud || function () {
+      this.first = expression(70);
+      this.arity = "unary";
+      return this;
+    };
+    return s;
+  }
+
+  prefix("-");
+
+  infix("+", 50);
+  infix("-", 50);
+  infix("*", 60);
+  infix("/", 60);
+
+  prefix("indent", function () {
+    var e = expression(0);
+    advance("dedent");
+    return e;
+  });
+
+  pushScope();
+  advance();
+  const result = expression(0);
+  advance("(end)");
+  popScope();
+  return result;
 }
 
-class Node {
-  constructor(type, left, right) {
-    this.type = type;
-    this.left = left;
-    this.right = right;
+const prototypeSymbol = {
+  nud: function () {
+      this.error("Undefined.");
+  },
+  led: function (left) {
+      this.error("Missing operator.");
+  },
+  error: function (message) {
+    this.errorMessage = message;
+  },
+  toString: function () {
+    if (this.arity === "literal") {
+      return this.value;
+    }
+    if (this.arity === "binary") {
+      return "(" + this.id + " " + this.first?.toString() + " " + this.second?.toString() + ")";
+    }
+    if (this.arity === "unary") {
+      return this.id + this.first.toString();
+    }
   }
+};
 
-  toString() {
-    return "(" + this.type.value + " " + this.left?.toString() + " " + this.right?.toString() + ")";
-  }
-}
+function Scope (parent) {
+  let scope = {
+    def: {},
+    parent,
+    define: function (n) {
+      var t = scope.def[n.value];
+      if (typeof t === "object") {
+        n.error(
+          t.reserved
+          ? "Already reserved."
+          : "Already defined."
+        );
+      }
+      scope.def[n.value] = n;
+      n.reserved = false;
+      n.nud = itself;
+      n.led = null;
+      n.std = null;
+      n.lbp = 0;
+      n.scope = scope;
+      return n;
+    },
+    find: function (n) {
+        var e = scope;
+        var o;
+        while (true) {
+            o = e.def[n];
+            if (o && typeof o !== "function") {
+                return e.def[n];
+            }
+            e = e.parent;
+            if (!e) {
+                o = symbol_table[n];
+                return (
+                    (o && typeof o !== "function")
+                    ? o
+                    : symbol_table["(name)"]
+                );
+            }
+        }
+    }
+  };
+
+  return scope;
+};

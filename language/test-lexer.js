@@ -18,3 +18,4 @@ const Keywords = Then("keyword",
 tokens => tokens[0].value);
 
 export const TestLexer = [NumberLexer, OperatorLexer, Keywords, SymbolPart];
+export const TestLexerNoSigns = [NonNegativeNumberLexer, OperatorLexer, Keywords, SymbolPart];
