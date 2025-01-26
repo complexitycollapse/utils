@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { Lexer } from "./lexer";
-import { TestLexerNoSigns } from "./test-lexer";
+import { Alternatives, OneOrMore, Optional, SingleChar, Then, Token, Transform, Lexer, StringLexer } from "./lexer.js";
 
 function TokenComponent({ token }) {
   if (token.errorMessage) {
@@ -13,9 +12,10 @@ function TokenComponent({ token }) {
 
   return (
     <div className="token">
-      {token.arity === "literal" ? token.value
-      : (token.arity === "unary" ? <>{token.value}&nbsp;<TokenComponent token={token.first}/></> :
-      <>({token.id}&nbsp; <TokenComponent token={token.first}/>&nbsp;<TokenComponent token={token.second}/>)</>)}
+      {token.arity === "literal" ? token.name
+      : (token.arity === "unary" ? <>{token.name}&nbsp;<TokenComponent token={token.first}/></>
+        : (token.arity === "binary" ? <>({token.name}&nbsp; <TokenComponent token={token.first}/>&nbsp;<TokenComponent token={token.second}/>)</> :
+        <>({token.name}&nbsp; <TokenComponent token={token.first}/>&nbsp;<TokenComponent token={token.second}/>&nbsp;<TokenComponent token={token.third}/>)</>))}
     </div>
   );
 }
@@ -50,198 +50,202 @@ export function PrattParserComponent() {
   );
 }
 
-export function Parser(text) {
-  const lexer = new Lexer(TestLexerNoSigns, text);
+const Digit = SingleChar("digit", /[0-9]/);
+const SymbolChar = SingleChar("symbol char", /[0-9a-zA-Z]/);
+const OperatorLexer = SingleChar("operator", /[+\-*\/\?:!]/);
+const PostIncrement = StringLexer("++", "++");
+const PostDecrement = StringLexer("--", "--");
+const NonNegativeIntegerLexer = OneOrMore("integer", Digit);
+const NonNegativeDecimalLexer = Then("decimal", [
+  NonNegativeIntegerLexer,
+  SingleChar("dot", /\./),
+  NonNegativeIntegerLexer
+], tokens => tokens[0].value + "." + tokens[2].value);
+const NonNegativeNumberLexer = Transform(Alternatives([NonNegativeDecimalLexer, NonNegativeIntegerLexer]), token => new Token("number", token.value));
+const SymbolPart = OneOrMore("symbol", SymbolChar);
+
+const basicLexer = [NonNegativeNumberLexer, PostIncrement, PostDecrement, OperatorLexer, SymbolPart];
+
+export function Parser(code) {
+  const lexer = new Lexer(basicLexer, code);
+  let token;
   const symbolTable = {};
-  let token, scope;
 
-  function pushScope() {
-    scope = Scope(scope);
-  }
-
-  function popScope() {
-    scope = scope.parent;
-  }
-
-  function symbol (id, bp) {
-    var symbol = symbolTable[id];
-    bp = bp || 0;
-    if (symbol) {
-        if (bp >= symbol.lbp) {
-            symbol.lbp = bp;
-        }
-    } else {
-        symbol = Object.create(prototypeSymbol);
-        symbol.id = symbol.value = id;
-        symbol.lbp = bp;
-        symbolTable[id] = symbol;
-    }
-    return symbol;
-  };
-
-  symbol("(end)");
-  symbol("(name)");
-  const lit = symbol("(literal)");
-  var itself = function () {
-    return this;
-  };
-  lit.nud = itself;
-
-  function advance (id) {
-    let arity, prototype, lexeme, value;
-    if (id && token.id !== id) {
-        token.error("Expected '" + id + "'.");
-    }
-
-    lexeme = lexer.next();
-    if (lexeme === undefined) {
-        token = symbolTable["(end)"];
-        return;
-    }
-
-    value = lexeme.value;
-    arity = lexeme.type;
-
-    if (arity === "name") {
-        prototype = scope.find(value);
-    } else if (arity === "operator") {
-        prototype = symbolTable[value];
-        if (!prototype) {
-            lexeme.error("Unknown operator.");
-        }
-    } else if (arity === "string" || arity ===  "number") {
-        arity = "literal";
-        prototype = symbolTable["(literal)"];
-    } else {
-        lexeme.error("Unexpected token.");
-    }
-    token = Object.create(prototype);
-    token.value = value;
-    token.arity = arity;
-    return token;
-  };
-
-  var expression = function (rbp) {
-    var left;
-    var t = token;
+  function swallow(char) {
+    const current = token;
     advance();
-    left = t.nud();
-    while (rbp < token.lbp) {
-      t = token;
-      advance();
-      left = t.led(left);
+    if (char && current?.name !== char) {
+      return {
+        name: "error",
+        errorMessage: "Expected " + char
+      };
     }
+  }
+
+  function advance() {
+    const lexeme = lexer.next();
+
+    if (!lexeme) {
+      token = undefined;
+    }
+
+    else if (lexeme.type === "number") {
+      const name = parseFloat(lexeme.value);
+      token = {
+        name: "number",
+        nud() {
+          return {
+            name,
+            arity: "literal"
+          };
+        },
+        led(left) {
+          return {
+            name: "error",
+            errorMessage: "TODO",
+            first: left
+          };
+        },
+        lbp: 0
+      }
+
+    } else {
+      token = symbolTable[lexeme.value];
+
+      if (!token) {
+        token = {
+          name: lexeme.value,
+          nud: () => errorMessage,
+          led: () => errorMessage,
+          lbp: 0
+        };
+      }
+    }
+
+    return token;
+  }
+
+  function expression(rbp) {
+    if (!token) return undefined;
+    
+    let left, current = token;
+
+    advance();
+    left = current.nud();
+
+    while (token && rbp < token.lbp) {
+      current = token;
+      advance();
+      left = current.led(left);
+    }
+
     return left;
   }
 
-  var infix = function (id, bp, led) {
-    var s = symbol(id, bp);
-    s.led = led || function (left) {
-      this.first = left;
-      this.second = expression(bp);
-      this.arity = "binary";
-      return this;
-    };
-    return s;
-  }
-
-  var infixr = function (id, bp, led) {
-    var s = symbol(id, bp);
-    s.led = led || function (left) {
-      this.first = left;
-      this.second = expression(bp - 1);
-      this.arity = "binary";
-      return this;
-    };
-    return s;
-  }
-
-  var prefix = function (id, nud) {
-    var s = symbol(id);
-    s.nud = nud || function () {
-      this.first = expression(70);
-      this.arity = "unary";
-      return this;
-    };
-    return s;
-  }
-
-  prefix("-");
-
-  infix("+", 50);
-  infix("-", 50);
-  infix("*", 60);
-  infix("/", 60);
-
-  prefix("indent", function () {
-    var e = expression(0);
-    advance("dedent");
-    return e;
-  });
-
-  pushScope();
-  advance();
-  const result = expression(0);
-  advance("(end)");
-  popScope();
-  return result;
-}
-
-const prototypeSymbol = {
-  nud: function () {
-      return this.error("Undefined.");
-  },
-  led: function (left) {
-      return this.error("Missing operator.");
-  },
-  error: function (message) {
-    this.errorMessage = message;
-    return this;
-  }
-};
-
-function Scope (parent) {
-  let scope = {
-    def: {},
-    parent,
-    define: function (n) {
-      var t = scope.def[n.value];
-      if (typeof t === "object") {
-        n.error(
-          t.reserved
-          ? "Already reserved."
-          : "Already defined."
-        );
+  function symbol(name, lbp = 0) {
+    let symbol = symbolTable[name];
+    if (symbol) {
+      if (lbp >= symbol.lbp) {
+        symbol.lbp = lbp;
       }
-      scope.def[n.value] = n;
-      n.reserved = false;
-      n.nud = itself;
-      n.led = null;
-      n.std = null;
-      n.lbp = 0;
-      n.scope = scope;
-      return n;
-    },
-    find: function (n) {
-        var e = scope;
-        var o;
-        while (true) {
-            o = e.def[n];
-            if (o && typeof o !== "function") {
-                return e.def[n];
-            }
-            e = e.parent;
-            if (!e) {
-                o = symbol_table[n];
-                return (
-                    (o && typeof o !== "function")
-                    ? o
-                    : symbol_table["(name)"]
-                );
-            }
-        }
+      return symbol;
     }
+
+    symbol = {
+      name,
+      lbp,
+      nud() { return { errorMessage: "nud undefined" }},
+      led(left) { return { errorMessage: "led undefined" }}
+    };
+    symbolTable[name] = symbol;
+    return symbol;
+  }
+
+  function prefix(name, lbp) {
+    const sym = symbol(name, lbp);
+    sym.nud = () => {
+      let first = expression(lbp);
+      if (!first) {
+        return {
+          errorMessage: "Missing argument",
+          arity: "unary"
+        };
+      }
+      return {
+        name,
+        first,
+        arity: "unary"
+      };
+    };
+
+    return sym;
+  }
+
+  function postfix(name, lbp) {
+    const sym = symbol(name, lbp);
+    sym.led = left => {
+      if (!left) {
+        return {
+          errorMessage: "Missing argument",
+          arity: "unary",
+          lbp
+        }
+      } else {
+        return {
+          name,
+          first: left,
+          arity: "unary",
+          lbp
+        };
+      }
+    };
+
+    return sym;
+  }
+
+  function infix(name, bp) {
+    const sym = symbol(name, bp);
+    sym.led = left => {
+      return {
+        name,
+        arity: "binary",
+        first: left,
+        second: expression(bp) ?? { errorMessage: "Missing argument to " + name }
+      };
+    };
+
+    return sym;
+  }
+
+  postfix("++", 100);
+  postfix("--", 100);
+  prefix("!", 90);
+  prefix("-", 90);
+  infix("*", 80);
+  infix("/", 80);
+  infix("+", 70);
+  infix("-", 70);
+
+  symbol("?", 60).led = left => {
+    const conseq = expression(60) ?? { errorMessage: "Missing argument to ?" };
+    const error = swallow(":");
+    let subseq;
+    if (!error) {
+      subseq = expression(60) ?? { errorMessage: "Missing argument to ?" };
+    }
+    return {
+      name: "?",
+      arity: "ternary",
+      first: left,
+      second: conseq,
+      third: subseq ?? error
+    };
   };
 
-  return scope;
-};
+  advance();
+  const result = expression(0);
+  if (token !== undefined) {
+    return { errorMessage: "Unexpected token " + token.name };
+  }
+  return result;
+}
