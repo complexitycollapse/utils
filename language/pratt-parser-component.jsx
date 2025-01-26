@@ -27,7 +27,7 @@ export function PrattParserComponent() {
 
   useEffect(() => {
     try {
-      const tree = Parser(code);
+      const tree = Parser(code).tree;
       setTree(tree);
 
       setError(null);
@@ -68,17 +68,29 @@ const basicLexer = [NonNegativeNumberLexer, PostIncrement, PostDecrement, Operat
 
 export function Parser(code) {
   const lexer = new Lexer(basicLexer, code);
+  const tokenStream = [];
   let token;
+
   const symbolTable = {};
+
+  function push(token) {
+    tokenStream.push(token);
+    return token;
+  }
 
   function swallow(char) {
     const current = token;
     advance();
     if (char && current?.name !== char) {
-      return {
+      return push({
         name: "error",
         errorMessage: "Expected " + char
-      };
+      });
+    } else {
+      return push({
+        name: "char",
+        arity: "delimiter"
+      });
     }
   }
 
@@ -154,8 +166,8 @@ export function Parser(code) {
     symbol = {
       name,
       lbp,
-      nud() { return { errorMessage: "nud undefined" }},
-      led(left) { return { errorMessage: "led undefined" }}
+      nud() { return push({ errorMessage: "nud undefined" }); },
+      led(left) { return push({ errorMessage: "led undefined" }); }
     };
     symbolTable[name] = symbol;
     return symbol;
@@ -166,16 +178,16 @@ export function Parser(code) {
     sym.nud = () => {
       let first = expression(lbp);
       if (!first) {
-        return {
+        return push({
           errorMessage: "Missing argument",
           arity: "unary"
-        };
+        });
       }
-      return {
+      return push({
         name,
         first,
         arity: "unary"
-      };
+      });
     };
 
     return sym;
@@ -185,18 +197,18 @@ export function Parser(code) {
     const sym = symbol(name, lbp);
     sym.led = left => {
       if (!left) {
-        return {
+        return push({
           errorMessage: "Missing argument",
           arity: "unary",
           lbp
-        }
+        });
       } else {
-        return {
+        return push({
           name,
           first: left,
           arity: "unary",
           lbp
-        };
+        });
       }
     };
 
@@ -206,12 +218,12 @@ export function Parser(code) {
   function infix(name, bp) {
     const sym = symbol(name, bp);
     sym.led = left => {
-      return {
+      return push({
         name,
         arity: "binary",
         first: left,
         second: expression(bp) ?? { errorMessage: "Missing argument to " + name }
-      };
+      });
     };
 
     return sym;
@@ -228,24 +240,24 @@ export function Parser(code) {
 
   symbol("?", 60).led = left => {
     const conseq = expression(60) ?? { errorMessage: "Missing argument to ?" };
-    const error = swallow(":");
+    const colon = swallow(":");
     let subseq;
-    if (!error) {
+    if (!colon.errorMessage) {
       subseq = expression(60) ?? { errorMessage: "Missing argument to ?" };
     }
-    return {
+    return push({
       name: "?",
       arity: "ternary",
       first: left,
       second: conseq,
-      third: subseq ?? error
-    };
+      third: subseq ?? colon
+    });
   };
 
   advance();
-  const result = expression(0);
+  const tree = expression(0);
   if (token !== undefined) {
-    return { errorMessage: "Unexpected token " + token.name };
+    return push({ errorMessage: "Unexpected token " + token.name });
   }
-  return result;
+  return { tree, tokenStream };
 }
