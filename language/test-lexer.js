@@ -2,7 +2,9 @@ import { Alternatives, InverseLexer, OneOrMore, Optional, SingleChar, StringLexe
 
 const Digit = SingleChar("digit", /[0-9]/);
 const SymbolChar = SingleChar("symbol char", /[0-9a-zA-Z]/);
-const OperatorLexer = SingleChar("operator", /[+\-*\/]/);
+const OperatorLexer = SingleChar("operator", /[+\-*\/\?:!]/);
+const PostIncrement = StringLexer("++", "++");
+const PostDecrement = StringLexer("--", "--");
 const NonNegativeIntegerLexer = OneOrMore("integer", Digit);
 const NonNegativeDecimalLexer = Then("decimal", [
   NonNegativeIntegerLexer,
@@ -10,12 +12,10 @@ const NonNegativeDecimalLexer = Then("decimal", [
   NonNegativeIntegerLexer
 ], tokens => tokens[0].value + "." + tokens[2].value);
 const NonNegativeNumberLexer = Transform(Alternatives([NonNegativeDecimalLexer, NonNegativeIntegerLexer]), token => new Token("number", token.value));
-const NumberLexer = Then("number", [Optional(SingleChar("sign", /[-]/)), NonNegativeNumberLexer], tokens => tokens[0].value + tokens[1].value);
 const SymbolPart = OneOrMore("symbol", SymbolChar);
 const Keywords = Then("keyword", 
   [Alternatives([StringLexer("", "if"), StringLexer("", "else"), StringLexer("", "def")]), 
   InverseLexer(SymbolChar)],
 tokens => tokens[0].value);
 
-export const TestLexer = [NumberLexer, OperatorLexer, Keywords, SymbolPart];
-export const TestLexerNoSigns = [NonNegativeNumberLexer, OperatorLexer, Keywords, SymbolPart];
+export const TestLexer = [NonNegativeNumberLexer, PostIncrement, PostDecrement, OperatorLexer, SymbolPart];
