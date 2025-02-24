@@ -11,6 +11,10 @@ export function Command(descriptor) {
 
 // Interprets a string as a command and executes it.
 export function executeCommand(commandText, commands) {
+  commandText = commandText.trim();
+  if (commandText === "") {
+    return;
+  }
   const commandName = commandText.split(" ")[0];
   const command = commands.get(commandName);
 
@@ -62,6 +66,10 @@ export function CommandSyntax(parameterDescriptors) {
   };
 
   return obj;
+}
+
+export function executeScript(scriptText, commands) {
+  scriptText.split("\n").forEach(line => executeCommand(line, commands));
 }
 
 function CommandParameterBinder(syntax) {

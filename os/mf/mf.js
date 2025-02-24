@@ -1,7 +1,8 @@
 // An experimental operating system.
 
 import * as readline from "readline";
-import { executeCommand, Command } from "./command-processor.js";
+import * as fs from "fs";
+import { executeCommand, Command, executeScript } from "./command-processor.js";
 import { DataBus, dataBusCommand } from "./data-bus.js";
 
 console.log("MF/OS System Console");
@@ -43,6 +44,10 @@ const commands = new Map([
   })]
 ]);
 
-console.log("READY");
 console.log("");
+console.log("Loading init.mf");
+executeScript(fs.readFileSync("data/init.mf", "utf8"), commands);
+console.log("");
+
+console.log("READY");
 rl.prompt();
