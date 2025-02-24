@@ -9,22 +9,8 @@ export function Command(descriptor) {
   }
 }
 
-export function exited() {
-  return exit;
-}
-
-const commands = new Map([
-  ["exit", Command({ name: "exit", syntax: [], fn: () => exit = true })],
-  ["testcom", Command({ name: "testcom", syntax: [
-    { name: "arg1", required: true, positional: true }, 
-    { name: "arg2", required: false, positional: false }], 
-    fn: ({arg1, arg2}) => console.log("arg1: " + arg1 + ", arg2: " + arg2) })]
-]);
-
-let exit = false;
-
 // Interprets a string as a command and executes it.
-export function executeCommand(commandText) {
+export function executeCommand(commandText, commands) {
   const commandName = commandText.split(" ")[0];
   const command = commands.get(commandName);
 
