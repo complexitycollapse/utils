@@ -41,8 +41,13 @@ const commands = new Map([
       { name: "name", required: false, positional: false }
     ],
     fn: (args) => dataBusCommand(args, dataBus)
-  })]
+  })],
+  ["status", Command({ name: "status", syntax: [], fn: statusCommand })]
 ]);
+
+function statusCommand() {
+  console.log("DATA BUS: " + dataBus.state.toUpperCase());
+}
 
 console.log("");
 console.log("Loading init.mf");
