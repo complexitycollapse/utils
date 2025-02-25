@@ -1,4 +1,4 @@
-import { Alternatives, Lexer, SingleChar, StringLexer, Then, Transform, OneOrMore, Token } from "../../language/lexer.js";
+import { Alternatives, Lexer, SingleChar, StringLexer, Then, Transform, OneOrMore, Token } from "../../../language/lexer.js";
 
 // Use this to create a command
 export function Command(descriptor) {

@@ -3,7 +3,7 @@
 import * as readline from "readline";
 import * as fs from "fs";
 import { executeCommand, Command, executeScript } from "./command-processor.js";
-import { DataBus, dataBusCommand } from "./data-bus.js";
+import { DataBus, dataBusCommand } from "../data-bus.js";
 
 console.log("MF/OS System Console");
 
