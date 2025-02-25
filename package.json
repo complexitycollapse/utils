@@ -4,6 +4,7 @@
   "description": "",
   "main": "app/main/main.js",
   "type": "module",
+  "workspaces": ["./os/*"],
   "scripts": {
     "start": "electron .",
     "build": "vite build",
