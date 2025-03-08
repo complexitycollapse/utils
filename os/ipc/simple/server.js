@@ -30,7 +30,7 @@ server.listen(PIPE_NAME, () => {
   console.log(`Named pipe server listening on ${PIPE_NAME}`);
 
   // Launch Electron client
-  const clientProcess = spawn('..\\..\\node_modules\\.bin\\electron.cmd', [path.join(__dirname, 'client.js')], {
+  const clientProcess = spawn('..\\..\\..\\node_modules\\.bin\\electron.cmd', [path.join(__dirname, 'client.js')], {
     stdio: 'inherit',
   });
 
