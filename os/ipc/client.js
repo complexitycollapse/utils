@@ -1,5 +1,6 @@
 import { app } from 'electron';
 import net from 'net';
+import { listenOnDelimitedStream } from './common.js';
 
 const PIPE_NAME = '\\\\.\\pipe\\mypipe';
 
@@ -12,27 +13,14 @@ app.whenReady().then(() => {
     client.write(message + "\n");
   });
 
-  let buffer = '';
-
-  client.on('data', (data) => {
-    buffer += data.toString();
-
-    let boundary;
-    while ((boundary = buffer.indexOf('\n')) !== -1) {
-      const message = buffer.slice(0, boundary);
-      buffer = buffer.slice(boundary + 1);
-
-      try {
-        const response = JSON.parse(message);
-        console.log('Received from server:', response);
+  listenOnDelimitedStream(client, response => {
+    console.log('Received from server:', response);
         
-        // Close the connection after receiving the response
-        client.end();
-        app.quit();
-      } catch (err) {
-        console.error('Error parsing response:', err);
-      }
-    }
+    // Close the connection after receiving the response
+    client.end();
+    app.quit();
+  }, response => {
+    console.error('Error parsing response:', response);
   });
 
   client.on('end', () => {

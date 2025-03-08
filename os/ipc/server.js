@@ -2,6 +2,7 @@ import { spawn } from 'child_process';
 import net from 'net';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { listenOnDelimitedStream } from './common.js';
 
 const PIPE_NAME = '\\\\.\\pipe\\mypipe';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -9,32 +10,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Create the named pipe server
 const server = net.createServer((stream) => {
   console.log('Client connected.');
-  let buffer = '';
 
-  stream.on('data', (data) => {
-    buffer += data.toString();  // Append received data
+  listenOnDelimitedStream(stream, message => {
+    console.log('Received from client:', message);
 
-    let boundary;
-    while ((boundary = buffer.indexOf('\n')) !== -1) {
-      const message = buffer.slice(0, boundary);
-      buffer = buffer.slice(boundary + 1);
-
-      try {
-        const parsedMessage = JSON.parse(message);
-        console.log('Received from client:', parsedMessage);
-
-        // Send response
-        const response = JSON.stringify({ type: 'response', message: 'Hello from server!' }) + '\n';
-        stream.write(response);
-      } catch (err) {
-        console.error('Error parsing message:', err);
-      }
-    }
+    // Send response
+    const response = JSON.stringify({ type: 'response', message: 'Hello from server!' }) + '\n';
+    stream.write(response);
+  }, message => {
+    console.error('Error parsing message:', message);
   });
 
   stream.on('end', () => {
     console.log('Client disconnected.');
-    buffer = '';
   });
 });
 
