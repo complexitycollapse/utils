@@ -1,4 +1,4 @@
-import { Alternatives, Lexer, SingleChar, StringLexer, Then, Transform, OneOrMore, Token } from "../../../language/lexer.js";
+import { Alternatives, Lexer, SingleChar, StringLexer, Then, Transform, OneOrMore, Token } from "../../language/lexer.js";
 
 // Use this to create a command
 export function Command(descriptor) {
@@ -9,29 +9,39 @@ export function Command(descriptor) {
   }
 }
 
-// Interprets a string as a command and executes it.
-export function executeCommand(commandText, commands) {
-  commandText = commandText.trim();
-  if (commandText === "") {
-    return;
-  }
-  const commandName = commandText.split(" ")[0];
-  const command = commands.get(commandName);
+export function CommandInterpreter(commands, write) {
+  let obj = {
+    // Interprets a string as a command and executes it.
+    executeCommand(commandText) {
+      commandText = commandText.trim();
+      if (commandText === "") {
+        return;
+      }
+      const commandName = commandText.split(" ")[0];
+      const command = commands.get(commandName);
 
-  if (!command) {
-    console.log("Unknown command: " + commandName);
-    return;
-  }
+      if (!command) {
+        write("Unknown command: " + commandName);
+        return;
+      }
 
-  const args = parseArgs(commandText.substring(commandName.length).trim());
-  const bindingResult = bindParameters(command.syntax, args);
+      const args = parseArgs(commandText.substring(commandName.length).trim());
+      const bindingResult = bindParameters(command.syntax, args);
 
-  if (bindingResult.errors.length > 0) {
-    console.log(bindingResult.errors[0]);
-    return;
-  }
+      if (bindingResult.errors.length > 0) {
+        write(bindingResult.errors[0]);
+        return;
+      }
 
-  command.fn(Object.fromEntries(bindingResult.bindings));
+      command.fn(Object.fromEntries(bindingResult.bindings));
+    },
+
+    executeScript(scriptText) {
+      scriptText.split("\n").forEach(line => obj.executeCommand(line, commands));
+    }
+  };
+
+  return obj;
 }
 
 // Describes the syntax (i.e. parameters) of a command
@@ -66,10 +76,6 @@ export function CommandSyntax(parameterDescriptors) {
   };
 
   return obj;
-}
-
-export function executeScript(scriptText, commands) {
-  scriptText.split("\n").forEach(line => executeCommand(line, commands));
 }
 
 function CommandParameterBinder(syntax) {
