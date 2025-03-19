@@ -13,7 +13,7 @@ console.log("");
 
 const dataBus = DataBus();
 const commandInterpreter = CommandInterpreter(getCommands(), console.log);
-let vhStream, vhProcess;
+let vhStream, vhProcess, vhServer;
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -56,7 +56,9 @@ function getCommands() {
       ],
       fn: (args) => dataBusCommand(args, dataBus)
     })],
-    ["power-on", Command({ name: "power-on", syntax: [], fn: powerOnCommand })],
+    ["start", Command({ name: "start", syntax: [], fn: startCommand })],
+    ["stop", Command({ name: "stop", syntax: [], fn: stopCommand })],
+    ["hard-stop", Command({ name: "stop", syntax: [], fn: hardStopCommand })],
     ["status", Command({ name: "status", syntax: [], fn: statusCommand })],
     ["w", Command({ name: "w", syntax: [{ name: "command", required: true, positional: true }], fn: wrt })]
   ]);
@@ -64,16 +66,20 @@ function getCommands() {
 
 function statusCommand() {
   console.log("DATA BUS: " + dataBus.state.toUpperCase());
-  console.log("VIRTUAL HARDWARE: " + (vhStream ? "ON" : "OFF"));
+  console.log("VIRTUAL HARDWARE: " + (vhServer ? "ON" : "OFF"));
 }
 
 function wrt(args) {
   socket.write(JSON.stringify(args), "utf8");
 }
 
-function powerOnCommand() {
+function startCommand() {
   
-  const server = net.createServer(stream => {
+  if (vhProcess || vhServer || vhStream) {
+    console.log("Virtual hardware is not shut down");
+  }
+
+  vhServer = net.createServer(stream => {
     console.log('Created channel');
 
     vhStream = messageStream(stream);
@@ -94,7 +100,11 @@ function powerOnCommand() {
     });
   });
 
-  server.listen("\\\\.\\pipe\\hmc", () => {
+  vhServer.on("close", () => {
+    vhServer = undefined;
+  });
+
+  vhServer.listen("\\\\.\\pipe\\hmc", () => {
   
     // Launch Electron client
     vhProcess = spawn('..\\..\\node_modules\\.bin\\electron.cmd', ['vh.js'], {
@@ -104,31 +114,60 @@ function powerOnCommand() {
     console.log("Starting virtual hardware");
   
     vhProcess.on('exit', (code) => {
-      console.log(`CP exited with code ${code}`);
-      vhProcess = undefined;
-      if (vhStream) {
-        vhStream.end();
-        vhStream = undefined;
-      }
+      console.log(`VH exited with code ${code}`);
+      removeVhReferences();
     });
   });  
 }
 
-function shutdownCommand() {
-  console.log("BEGIN SYSTEM SHUTDOWN");
-
+function removeVhReferences() {
+  vhProcess = undefined;
   if (vhStream) {
-    vhStream.send({ type: "shutdown" }, message => {
-      if (message.payload.type === "result") {
-        console.log(message.payload.result);
-        console.log("SYSTEM SHUTDOWN COMPLETE");
-        process.exit();
-      }
-    });
+    vhStream.end();
+    vhStream = undefined;
+  }
+  if (vhServer) {
+    vhServer.close();
+  }
+}
+
+function stopCommand() {
+  if (vhStream) {
+    stopVh();
   } else {
+    console.log("Virtual hardware not started");
+  }
+}
+
+function hardStopCommand() {
+  const result = vhProcess.kill("SIGKILL");
+  removeVhReferences();
+  console.log(result ? "Virtual hardware hard stop complete" : "Failed to hard stop virtual hardware");
+}
+
+function shutdownCommand() {
+  function shutdownHmc() {
     console.log("SYSTEM SHUTDOWN COMPLETE");
     process.exit();
   }
+
+  console.log("BEGIN SYSTEM SHUTDOWN");
+
+  if (vhStream) {
+    stopVh(shutdownHmc);
+  } else {
+    shutdownHmc();
+  }
+}
+
+function stopVh(onStopped) {
+  vhStream.send({ type: "shutdown" }, message => {
+    if (message.payload.type === "result") {
+      console.log(message.payload.result);
+      removeVhReferences();
+      if (onStopped) { onStopped(); }
+    }
+  });
 }
 
 console.log("Loading init.mf");
