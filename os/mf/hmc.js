@@ -161,7 +161,7 @@ function shutdownCommand() {
 }
 
 function stopVh(onStopped) {
-  vhStream.send({ type: "shutdown" }, message => {
+  vhStream.send({ type: "hardware", command: "shutdown" }, message => {
     if (message.payload.type === "result") {
       console.log(message.payload.result);
       closeVhChannel();

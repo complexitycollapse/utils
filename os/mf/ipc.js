@@ -85,3 +85,37 @@ export function listenOnDelimitedStream(stream, callback, badMessageCallback) {
     buffer = '';
   });
 }
+
+export function makeStreamPair() {
+  const near = InternalStream(), far = InternalStream();
+  near.other = far;
+  far.other = near;
+  return [near, far];
+}
+
+function InternalStream() {
+  let stream = {
+    onDataCallback,
+    onEndCallback,
+    write(messageString) {
+      setImmediate(stream.other.onDataCallback?.(messageString));
+    },
+    end() {
+      setImmediate(stream.other.onEndCallback?.());
+    },
+    on(event, callback) {
+      switch (event) {
+        case "data":
+          stream.onDataCallback = callback;
+          break;
+        case "end":
+          stream.onEndCallback = callback;
+          break;
+        default:
+          throw new Error("InternalStream does not support event " + event);
+      }
+    }
+  };
+
+  return stream;
+}
