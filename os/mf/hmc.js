@@ -115,12 +115,12 @@ function startCommand() {
   
     vhProcess.on('exit', (code) => {
       console.log(`VH exited with code ${code}`);
-      removeVhReferences();
+      closeVhChannel();
     });
   });  
 }
 
-function removeVhReferences() {
+function closeVhChannel() {
   vhProcess = undefined;
   if (vhStream) {
     vhStream.end();
@@ -141,7 +141,7 @@ function stopCommand() {
 
 function hardStopCommand() {
   const result = vhProcess.kill("SIGKILL");
-  removeVhReferences();
+  closeVhChannel();
   console.log(result ? "Virtual hardware hard stop complete" : "Failed to hard stop virtual hardware");
 }
 
@@ -164,7 +164,7 @@ function stopVh(onStopped) {
   vhStream.send({ type: "shutdown" }, message => {
     if (message.payload.type === "result") {
       console.log(message.payload.result);
-      removeVhReferences();
+      closeVhChannel();
       if (onStopped) { onStopped(); }
     }
   });
