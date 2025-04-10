@@ -48,20 +48,24 @@ window.addEventListener("DOMContentLoaded", () => {
   updateViewportSize();
   const width = 80;
   const win = addWindow();
-  win.addPanel({
-    col: 1,
-    line: 1,
-    cols:   viewportCols / 2 - 1,
-    lines: viewportLines - 2,
-    text: "Hello, world!",
-  });
-  win.addPanel({
-    col: (viewportCols / 2) + 1,
-    line: 1,
-    cols: viewportCols / 2 - 1,
-    lines: viewportLines - 2,
-    text: "Hello, world!",
-  });
+  buildWindowFromLayout([
+    {
+      col: 1,
+      line: 1,
+      cols:   viewportCols / 2 - 1,
+      lines: (viewportLines - 2) / 2
+    }, {
+      col: (viewportCols / 2) + 1,
+      line: 1,
+      cols: viewportCols / 2 - 1,
+      lines: viewportLines - 2
+    }, {
+      col: 1,
+      line: (viewportLines - 2) / 2 + 1,
+      cols:   viewportCols / 2 - 1,
+      lines: (viewportLines - 2) / 2
+    }
+  ]);
 });
 
 function sizePanel(panel, cols, lines) {
@@ -76,4 +80,12 @@ function positionPanel(panel, col, line) {
   panel.line = line;
   panel.element.style.left = `${col * charWidth}px`;
   panel.element.style.top = `${line * lineHeight}px`;
+}
+
+function buildWindowFromLayout(layout) {
+  const win = addWindow();
+  for (const panel of layout) {
+    const newPanel = win.addPanel(panel);
+  }
+  return win;
 }
