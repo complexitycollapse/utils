@@ -11,14 +11,12 @@ function addWindow() {
       panel.z = props.z || zBasic;
       panel.element = document.createElement("div");
       panel.element.className = "gpanel";
-      panel.element.style.top = "50px";
-      panel.element.style.left = "50px";
       panel.element.style.zIndex = panel.z;
       gmuxContainer.appendChild(panel.element);
       if (panel.cols && panel.lines) {
         sizePanel(panel, panel.cols, panel.lines);
       }
-      if (panel.col && panel.line) {
+      if (panel.col !== undefined && panel.line !== undefined) {
         positionPanel(panel, panel.col, panel.line);
       }
       window.panels.push(panel);
@@ -49,10 +47,18 @@ window.addEventListener("DOMContentLoaded", () => {
   measureCharSize();
   updateViewportSize();
   const width = 80;
-  addWindow().addPanel({
-    col: (viewportCols / 2) - (width / 2),
+  const win = addWindow();
+  win.addPanel({
+    col: 1,
     line: 1,
-    cols: width,
+    cols:   viewportCols / 2 - 1,
+    lines: viewportLines - 2,
+    text: "Hello, world!",
+  });
+  win.addPanel({
+    col: (viewportCols / 2) + 1,
+    line: 1,
+    cols: viewportCols / 2 - 1,
     lines: viewportLines - 2,
     text: "Hello, world!",
   });
