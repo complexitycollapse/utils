@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<!-- A glass themed -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Text Editor Concept</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: linear-gradient(25deg, #000, #303030);
+      height: 100vh;
+    }
+
+    #outer-container {
+      height: calc(100% - 4rem);
+      position: relative;
+      display: flex;  
+      justify-content: center;
+      align-items: center;
+      margin-top: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .main-panel {
+      width: 80em;
+      height: 100%;
+      max-width: 1000px;
+      padding: 1.5rem 1.5rem;
+    }
+
+    .left-panel {
+      position: absolute;
+      left: 0;
+      width: 10em;
+      height: 100%;
+      padding: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .glass {
+      border-radius: 20px;
+      background: rgba(127, 127, 127, 0.01);
+      box-shadow: 12px 12px 48px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      overflow: hidden; /* for the gloss overlay */
+      font-family: Consolas, monospace;
+      overflow-x: auto;
+      font-size: 1rem;
+      line-height: 1.5;
+      margin: 0;
+      backdrop-filter: blur(10px);
+    }
+
+    .keyword { color: #8ecdfd; font-weight: bold; }
+    .func { color: #ffd580; }
+    .comment { color: lightgreen; font-style: italic; }
+    .value { color: #b0f5a8; }
+    .identifier { color: #e7cfff; }
+  </style>
+</head>
+<body>
+  <div id="outer-container">
+    <div class="left-panel glass">
+      <pre>
+<span class="keyword">keyword</span>
+    </pre>
+  </div>
+  <div class="glass main-panel">
+    <pre>
+<span class="comment">// Initialize system</span>
+<span class="keyword">function</span> <span class="func">start</span>() {
+    <span class="keyword">let</span> <span class="identifier">ready</span> = <span class="value">true</span>;
+    <span class="keyword">if</span> (<span class="identifier">ready</span>) {
+        <span class="func">loadModules</span>();
+        <span class="func">initializeUI</span>();
+    }
+    <span class="keyword">else</span> {
+        <span class="func">throwError</span>(<span class="value">"System not ready"</span>);
+    }
+}
+<span class="comment">// Initialize system</span>
+<span class="keyword">function</span> <span class="func">start</span>() {
+    <span class="keyword">let</span> <span class="identifier">ready</span> = <span class="value">true</span>;
+    <span class="keyword">if</span> (<span class="identifier">ready</span>) {
+        <span class="func">loadModules</span>();
+        <span class="func">initializeUI</span>();
+    }
+    <span class="keyword">else</span> {
+        <span class="func">throwError</span>(<span class="value">"System not ready"</span>);
+    }
+}
+<span class="comment">// Initialize system</span>
+<span class="keyword">function</span> <span class="func">start</span>() {
+    <span class="keyword">let</span> <span class="identifier">ready</span> = <span class="value">true</span>;
+    <span class="keyword">if</span> (<span class="identifier">ready</span>) {
+        <span class="func">loadModules</span>();
+        <span class="func">initializeUI</span>();
+    }
+    <span class="keyword">else</span> {
+        <span class="func">throwError</span>(<span class="value">"System not ready"</span>);
+    }
+}
+<span class="comment">// Initialize system</span>
+<span class="keyword">function</span> <span class="func">start</span>() {
+    <span class="keyword">let</span> <span class="identifier">ready</span> = <span class="value">true</span>;
+    <span class="keyword">if</span> (<span class="identifier">ready</span>) {
+        <span class="func">loadModules</span>();
+        <span class="func">initializeUI</span>();
+    }
+    <span class="keyword">else</span> {
+        <span class="func">throwError</span>(<span class="value">"System not ready"</span>);
+    }
+}
+<span class="comment">// Initialize system</span>
+<span class="keyword">function</span> <span class="func">start</span>() {
+    <span class="keyword">let</span> <span class="identifier">ready</span> = <span class="value">true</span>;
+    <span class="keyword">if</span> (<span class="identifier">ready</span>) {
+        <span class="func">loadModules</span>();
+        <span class="func">initializeUI</span>();
+    }
+    <span class="keyword">else</span> {
+        <span class="func">throwError</span>(<span class="value">"System not ready"</span>);
+    }
+}
+      </pre>
+    </div>
+  </div>
+ 
+</body>
+</html>
