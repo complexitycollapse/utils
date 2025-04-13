@@ -1,8 +1,7 @@
-export function Group(name, direction, members, sizing, props = {}) {
+export function Group(name, direction, members, sizing = {}, props = {}) {
   const group = {
     ...props,
     sizing,
-    type: "group",
     name,
     direction,
     members,
@@ -23,6 +22,10 @@ export function Group(name, direction, members, sizing, props = {}) {
       group.members.push(newGroup);
       return newGroup;
     },
+    setSize(sizing) {
+      group.sizing = sizing;
+      group.doLayout();
+    },
     setPanel(panel) {
       group.panel = panel;
       group.doLayout();
@@ -42,8 +45,8 @@ export function Group(name, direction, members, sizing, props = {}) {
         panel.setDimensions(group);
       } else {
         recalculateLayout(group);
+        group.members.forEach(m => m.doLayout());
       }
-      group.members.forEach(m => m.doLayout());
     },
     getDimensions(direction, sizing) {
       const obj = sizing ? group.sizing : group;
@@ -77,6 +80,32 @@ export function Group(name, direction, members, sizing, props = {}) {
   }
 
   return group;
+}
+
+export function Stack(name, members, sizing = {}, props = {}) {
+  const stack = Group(name, "z", members, sizing, props);
+  stack.doLayout = function () {
+    const panel = stack.panel;
+    if (panel) {
+      panel.line = stack.line;
+      panel.col = stack.col;
+      panel.lines = stack.lines;
+      panel.cols = stack.cols;
+      panel.z = stack.z;
+      panel.setDimensions(stack);
+    } else {
+      stack.members.forEach(m => {
+        m.line = stack.line;
+        m.col = stack.col;
+        m.lines = stack.lines;
+        m.cols = stack.cols;
+        m.z = stack.z;
+      });
+      stack.members.forEach(m => m.doLayout());
+    }
+  };
+
+  return stack;
 }
 
 function recalculateLayout(group) {

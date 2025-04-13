@@ -1,4 +1,4 @@
-import { Group } from "./groups.js";
+import { Group, Stack } from "./groups.js";
 
 let gmuxContainer = document.getElementById("gmux");
 const sessions = [];
@@ -41,9 +41,12 @@ function addSession() {
 function addWindow(session, group) {
   const window = {
     group,
-    addGroup(parentName, name, members, props) {
-      window.group.get(parentName).add(name, members, props);
+    addGroup(parentName, name, members, sizing = {}) {
+      window.group.get(parentName).add(name, members, sizing);
       window.group.doLayout();
+    },
+    getGroup(name) {
+      return group.get(name);
     },
     addPanel(groupName, panel) {
       const group = window.group.get(groupName);
@@ -136,12 +139,27 @@ window.addEventListener("DOMContentLoaded", () => {
     Group("window", "vertical", [], windowSizing, windowSizing));
 
   currentWindow.addGroup("window", "top-margin", [], { lines: 1 });
-  currentWindow.addGroup("window", "main-area", [], {});
-  currentWindow.addGroup("main-area", "left-margin", [], { });
+  currentWindow.addGroup("window", "centre-bar", [ Stack("focus-plane", [
+    Group("main-area", "horizontal", [], {}, { z: "basic" }),
+    Group("alerts", "horizontal", [
+      Group("alert-top-margin", "vertical", []),
+      Group("alert-vertical", "vertical", [
+        Group("alert-left-margin", "horizontal", []),
+        Group("alert", "horizontal", []),
+        Group("alert-right-margin", "horizontal", []),
+      ]),
+      Group("alert-bottom-margin", "vertical", []),
+    ], {}, { z: "top" })
+  ])]);
+  currentWindow.addGroup("main-area", "left-margin", []);
   currentWindow.addGroup("main-area", "focus", [], { cols: width });
   currentWindow.addGroup("main-area", "focus2", [], { cols: width });
-  currentWindow.addGroup("main-area", "right-margin", [], { });
+  currentWindow.addGroup("main-area", "right-margin", []);
   currentWindow.addGroup("window", "bottom-margin", [], { lines: 1 });
   currentWindow.addPanel("focus", Panel());
   currentWindow.addPanel("focus2", Panel());
+  currentWindow.getGroup("alert-vertical").setSize({lines: 5});
+  currentWindow.getGroup("alert-top-margin").setSize({lines: 10});
+  currentWindow.getGroup("alert").setSize({cols: 5});
+  currentWindow.addPanel("alert", Panel());
 });
