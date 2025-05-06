@@ -1,4 +1,4 @@
-import { Group, Stack } from "./groups.js";
+import { Group } from "./groups.js";
 
 let gmuxContainer = document.getElementById("gmux");
 const sessions = [];
@@ -7,23 +7,25 @@ let viewportCols, viewportLines, charWidth, lineHeight;
 
 // There are sessions, which contain windows, which contain groups.
 // A group can contain a panel or other groups. Groups lay out their
-// contents either horizontally or vertically. A group can specify
-// its dimensions or max/min dimensions, or nothing at all. The parent
-// group will distribute space within the group among its children
-// subject to these constraints.
-
-// TODO: stacks of groups, each with a different z-order, that allow
-// panels to be overlaid on other panels without disturbing their
-// layout.
+// contents either horizontally, vertically or stacked. A group can
+// specify its dimensions or max/min dimensions, or nothing at all.
+// The parent group will distribute space within the group among its
+// children subject to these constraints.
 
 // TODO: keyboard input. This will provide commands to create new
 // windows and add content to them.
 
-function addSession() {
+export function addSession() {
   const session = {
     windows: [],
-    addWindow(group) {
-      const win = addWindow(session, group);
+    addWindow() {
+      const windowSizing = {
+        col: 0,
+        line: 0,
+        cols: viewportCols,
+        lines: viewportLines
+      };
+      const win = addWindow(session, Group("window", "vertical", [], windowSizing, windowSizing));
       return win;
     },
     removeWindow(win) {
@@ -36,6 +38,13 @@ function addSession() {
   };
   sessions.push(session);
   return session;
+}
+
+export function showWindow(window) {
+  currentWindow = window;
+  currentWindow.group.cols = viewportCols;
+  currentWindow.group.lines = viewportLines;
+  currentWindow.group.doLayout();
 }
 
 function addWindow(session, group) {
@@ -67,7 +76,7 @@ function addWindow(session, group) {
   return window;
 }
 
-function Panel() {
+export function Panel() {
   const panel = {};
   panel.element = document.createElement("div");
   panel.element.className = "gpanel gtext";
@@ -119,47 +128,21 @@ function updateViewportSize() {
   viewportLines = Math.floor(window.innerHeight / lineHeight);
 }
 
+let onLoadedCallbacks = [];
+export function onLoaded(callback) {
+  onLoadedCallbacks.push(callback);
+}
+
 window.addEventListener("resize", () => {
   updateViewportSize();
-  currentWindow.group.cols = viewportCols;
-  currentWindow.group.lines = viewportLines;
-  currentWindow.group.doLayout();
+  if (currentWindow) {
+    showWindow(currentWindow);
+  }
 });
+
 window.addEventListener("DOMContentLoaded", () => {
   measureCharSize();
   updateViewportSize();
-  const width = 80;
-  const windowSizing = {
-    col: 0,
-    line: 0,
-    cols: viewportCols,
-    lines: viewportLines
-  };
-  currentWindow = addSession().addWindow(
-    Group("window", "vertical", [], windowSizing, windowSizing));
-
-  currentWindow.addGroup("window", "top-margin", [], { lines: 1 });
-  currentWindow.addGroup("window", "centre-bar", [ Stack("focus-plane", [
-    Group("main-area", "horizontal", [], {}, { z: "basic" }),
-    Group("alerts", "horizontal", [
-      Group("alert-top-margin", "vertical", []),
-      Group("alert-vertical", "vertical", [
-        Group("alert-left-margin", "horizontal", []),
-        Group("alert", "horizontal", []),
-        Group("alert-right-margin", "horizontal", []),
-      ]),
-      Group("alert-bottom-margin", "vertical", []),
-    ], {}, { z: "top" })
-  ])]);
-  currentWindow.addGroup("main-area", "left-margin", []);
-  currentWindow.addGroup("main-area", "focus", [], { cols: width });
-  currentWindow.addGroup("main-area", "focus2", [], { cols: width });
-  currentWindow.addGroup("main-area", "right-margin", []);
-  currentWindow.addGroup("window", "bottom-margin", [], { lines: 1 });
-  currentWindow.addPanel("focus", Panel());
-  currentWindow.addPanel("focus2", Panel());
-  currentWindow.getGroup("alert-vertical").setSize({lines: 5});
-  currentWindow.getGroup("alert-top-margin").setSize({lines: 10});
-  currentWindow.getGroup("alert").setSize({cols: 5});
-  currentWindow.addPanel("alert", Panel());
+  onLoadedCallbacks.forEach(callback => callback());
+  onLoadedCallbacks = undefined;
 });

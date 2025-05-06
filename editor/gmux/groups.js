@@ -1,4 +1,4 @@
-export function Group(name, direction, members, sizing = {}, props = {}) {
+export function Group(name, direction, members = [], sizing = {}, props = {}) {
   const group = {
     ...props,
     sizing,
