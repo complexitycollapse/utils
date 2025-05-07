@@ -130,7 +130,7 @@ function recalculateLayout(group) {
 function calculateSizes(dimensions, groupSize) {
   // Find out the total minimum size of all the members and the remaining free space.
   const usedSpace = sum(dimensions.map(m => m.size ?? m.min));
-  const freeSpace = groupSize - usedSpace;
+  let freeSpace = groupSize - usedSpace;
 
   // If there is no free space left, everything gets the minimum size.
   if (freeSpace <= 0) {
@@ -138,17 +138,28 @@ function calculateSizes(dimensions, groupSize) {
     return;
   }
 
-  // Members that don't hae a size set will need to have one calculated.
+  // Members that don't have a size set will need to have one calculated.
   const requireResize = dimensions.filter(m => !m.size);
 
   // Attempt to distribute the remaining space evenly, respecting the maximum
   // size of each member.
   while (freeSpace > 0 && requireResize.length > 0) {
-    const padding = freeSpace / requireResize.length;
-    const undersized = requireResize.filter(m => m.max && m.max < padding);
+    const paddingQuotient = Math.floor(freeSpace / requireResize.length);
+    const paddingRemainder = freeSpace % requireResize.length;
+
+    // It may not be possible to distribute the space evenly, as the free
+    // space may not divide exactly into the number of panels. So instead
+    // create an array of paddings split as evenly as possible but summing
+    // to the total free space.
+    const paddings = new Array(requireResize.length).fill(paddingQuotient);
+    for (let i = paddings.length - 1, j = 0; j < paddingRemainder; i--, j++) {
+      paddings[i]++;
+    }
+
+    const undersized = requireResize.filter((m, i) => m.max && m.max < paddings[i]);
     if (undersized.length === 0) {
-      requireResize.forEach(m => {
-        m.size = padding;
+      requireResize.forEach((m, i) => {
+        m.size = paddings[i];
       });
       break;
     }
