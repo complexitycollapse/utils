@@ -76,6 +76,11 @@ export function Group(name, direction, members = [], sizing = {}, props = {}) {
         group.line = pos;
         group.lines = size;
       }
+    },
+    stringify(indent = 0) {
+      const sizing = group.sizing;
+      const spaces = " ".repeat(indent * 2);
+      return `${spaces}${group.name}(${group.direction}), {${group.col}, ${group.line}, ${group.cols}, ${group.lines}}:{${sizing.col}, ${sizing.line}, ${sizing.cols}, ${sizing.lines}} [\n${group.members.map(m => m.stringify(indent+1)).join(",\n")}\n${spaces}]`;
     }
   }
 
