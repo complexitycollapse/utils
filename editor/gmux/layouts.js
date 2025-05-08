@@ -3,14 +3,14 @@ import { Stack, Group } from "./groups.js";
 
 function addAlertLayer(window, stack) {
   stack.add("alert-layer", [
-    Group("alerts", "horizontal", [
-      Group("alert-top-margin", "vertical", []),
-      Group("alert-vertical", "vertical", [
-        Group("alert-left-margin", "horizontal", []),
-        Group("alert", "horizontal", []),
-        Group("alert-right-margin", "horizontal", []),
+    Group("alerts", "vertical", [
+      Group("alert-top-margin", "horizontal", []),
+      Group("alert-vertical", "horizontal", [
+        Group("alert-left-margin", "vertical", []),
+        Group("alert", "vertical", []),
+        Group("alert-right-margin", "vertical", []),
       ]),
-      Group("alert-bottom-margin", "vertical", []),
+      Group("alert-bottom-margin", "horizontal", []),
     ])
   ], {}, { z: "top" });
   
@@ -18,6 +18,7 @@ function addAlertLayer(window, stack) {
 
   return {
     panel,
+    // Note: you can pass undefined for col and line to centre the alert in the window.
     show(col, line, cols, lines) {
       window.getGroup("alert-top-margin").setSize({ lines: line});
       window.getGroup("alert-vertical").setSize({ lines });
@@ -42,6 +43,6 @@ onLoaded(() => {
   window.addGroup("window", "bottom-margin", [], { lines: 1 });
 
   const alert = addAlertLayer(window, stack);
-  alert.show(5, 5, 10, 10);
+  alert.show(undefined, undefined, 30, 10);
   showWindow(window);
 });
