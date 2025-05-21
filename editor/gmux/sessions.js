@@ -86,12 +86,18 @@ export function Panel() {
     panel.cols = group.cols;
     panel.lines = group.lines;
     panel.z = group.z;
+    panel.visible = group.visible;
     positionPanelElement(panel);
   };
   return panel;
 }
 
 function positionPanelElement(panel) {
+  if (!panel.visible) {
+    panel.element.style.display = "none";
+    return;
+  }
+  panel.element.style.display = "block";
   panel.element.style.width = `${panel.cols * charWidth}px`;
   panel.element.style.height = `${panel.lines * lineHeight}px`;
   panel.element.style.left = `${panel.col * charWidth}px`;

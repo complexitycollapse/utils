@@ -4,6 +4,7 @@ export function Group(name, direction, members = [], sizing = {}, props = {}) {
     sizing,
     name,
     direction,
+    visible: true,
     members,
     get(name) {
       if (name === group.name) {
@@ -116,19 +117,21 @@ export function Stack(name, members, sizing = {}, props = {}) {
 function recalculateLayout(group) {
   const groupDimensions = group.getDimensions(group.direction);
   const otherDimensions = group.getDimensions(flip(group.direction));
-  const memberDimensions = group.members.map(m => m.getDimensions(group.direction, true));
+  const memberDimensions = group.members.filter(m => m.visible).map(m => m.getDimensions(group.direction, true));
   calculateSizes(memberDimensions, groupDimensions.size);
 
   let pos = groupDimensions.pos;
   memberDimensions.forEach(d => {
+    const size = d.original.visible ? d.size : 0;
+
     // Dimensions along the group axis are set according to the calculation.
-    d.original.setDimensions(group.direction, pos, d.size);
+    d.original.setDimensions(group.direction, pos, size);
     // Dimensions along the other axis are equal to the group's.
     d.original.setDimensions(
       flip(group.direction),
       otherDimensions.pos,
       otherDimensions.size);
-    pos += d.size;
+    pos += size;
   });
 }
 
@@ -138,10 +141,18 @@ function calculateSizes(dimensions, groupSize) {
   let freeSpace = groupSize - usedSpace;
 
   // If there is no free space left, everything gets the minimum size.
-  if (freeSpace <= 0) {
+  if (freeSpace === 0) {
     dimensions.forEach(m => m.size = m.size ?? m.min ?? 1);
     return;
   }
+
+  // If the members are too large, even at minimum size, we need to shrink them.
+  if (freeSpace < 0) {
+    shrinkToFit(dimensions, -freeSpace);
+    return;
+  }
+
+  // Otherwise, we need to stretch the members to fill the space.
 
   // Members that don't have a size set will need to have one calculated.
   const requireResize = dimensions.filter(m => !m.size);
@@ -149,18 +160,7 @@ function calculateSizes(dimensions, groupSize) {
   // Attempt to distribute the remaining space evenly, respecting the maximum
   // size of each member.
   while (freeSpace > 0 && requireResize.length > 0) {
-    const paddingQuotient = Math.floor(freeSpace / requireResize.length);
-    const paddingRemainder = freeSpace % requireResize.length;
-
-    // It may not be possible to distribute the space evenly, as the free
-    // space may not divide exactly into the number of panels. So instead
-    // create an array of paddings split as evenly as possible but summing
-    // to the total free space.
-    const paddings = new Array(requireResize.length).fill(paddingQuotient);
-    for (let i = paddings.length - 1, j = 0; j < paddingRemainder; i--, j++) {
-      paddings[i]++;
-    }
-
+    const paddings = splitInteger(freeSpace, requireResize.length);
     const undersized = requireResize.filter((m, i) => m.max && m.max < paddings[i]);
     if (undersized.length === 0) {
       requireResize.forEach((m, i) => {
@@ -176,6 +176,23 @@ function calculateSizes(dimensions, groupSize) {
   }
 }
 
+function shrinkToFit(dimensions, excess) {
+  const empty = dimensions.filter(d => d.original.panel === undefined);
+  const emptySize = sum(empty.map(d => d.size));
+  
+  if (emptySize >= excess) {
+    // We can shrink the empty members to fit.
+    const reductions = splitInteger(excess, empty.length);
+    empty.forEach((d, i) => d.size -= reductions[i]);
+  }
+
+  // Otherwise, we need to shrink the members that are not empty.
+  empty.forEach(d => d.size = 0);
+  const nonEmpty = dimensions.filter(d => d.original.panel);
+  const reductions = splitInteger(excess - emptySize, nonEmpty.length);
+  nonEmpty.forEach((d, i) => d.size -= reductions[i]);
+}
+
 function flip(direction) {
   return direction === "horizontal" ? "vertical" : "horizontal";
 }
@@ -189,4 +206,17 @@ function removeItem(arr, item) {
 
 function sum(arr) {
   return arr.reduce((acc, val) => acc + (val ?? 0), 0);
+}
+
+// Split an integer into an array of integers that sum to the original
+function splitInteger(integer, divisor) {
+  const quotient = Math.floor(integer / divisor);
+  const remainder = integer % divisor;
+
+  const parts = new Array(divisor).fill(quotient);
+  for (let i = parts.length - 1, j = 0; j < remainder; i--, j++) {
+    parts[i]++;
+  }
+
+  return parts;
 }
