@@ -62,21 +62,26 @@ function addAlertLayer(window, stack) {
   ], {}, { z: "top" });
   
   const panel = Panel();
+  window.addPanel("alert", panel);
 
-  return {
+  const obj = {
     panel,
     // Note: you can pass undefined for col and line to centre the alert in the window.
     show(col, line, cols, lines) {
+      window.getGroup("alert").visible = true;
       window.getGroup("alert-top-margin").setSize({ lines: line});
       window.getGroup("alert-vertical").setSize({ lines });
       window.getGroup("alert-left-margin").setSize({ cols: col });
       window.getGroup("alert").setSize({ cols });
-      window.addPanel("alert", panel);
     },
     hide() {
-      window.removePanel("alert");
+      window.getGroup("alert").visible = false;
+      window.getGroup("alert").doLayout();
     }
   };
+
+  obj.hide();
+  return obj;
 }
 
 onLoaded(() => {
@@ -90,5 +95,6 @@ onLoaded(() => {
   const main = addMainWindowLayer(window, stack);
   const alert = addAlertLayer(window, stack);
   alert.show(undefined, undefined, 30, 10);
+  alert.hide();
   showWindow(window);
 });
