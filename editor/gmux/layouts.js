@@ -27,9 +27,6 @@ function addMainWindowLayer(window, stack) {
     requestedWidth: defaultWidth,
     setWidth(width) {
       obj.requestedWidth = width;
-      // if (aux.visible && window.group.cols < width * 2) {
-      //   width = Math.floor(window.group.cols / 2);
-      // }
       obj.width = width;
       window.getGroup("main-window").setSize({ cols: width });
       window.getGroup("aux-window").setSize({ cols: width });
@@ -97,4 +94,8 @@ onLoaded(() => {
   alert.show(undefined, undefined, 30, 10);
   alert.hide();
   showWindow(window);
+
+  // Test some text
+  const line = main.mainPanel.addLine(0);
+  line.textContent = "Hello, world!";
 });

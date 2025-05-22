@@ -77,12 +77,31 @@ function addWindow(session, group) {
 }
 
 export function Panel() {
-  const panel = {};
-  panel.element = document.createElement("div");
-  panel.element.className = "gpanel gtext";
-  panel.doLayout = function () {
-    positionPanelElement(panel);
+  const panel = {
+    element: document.createElement("div"),
+    doLayout() {
+      positionPanelElement(panel);
+    },
+    addLine(position) {
+      const line = document.createElement("div");
+      line.className = "gline";
+      const prev = panel.element.childNodes[position];
+      if (prev) {
+        prev.insertAdjacentElement("afterend", line);
+      } else {
+        panel.element.appendChild(line);
+      }
+        return line;
+    },
+    deleteLine(position) {
+      const line = panel.element.childNodes[position];
+      if (line) {
+        panel.element.removeChild(line);
+      }
+    }
   };
+
+  panel.element.className = "gpanel gtext";
   return panel;
 }
 
