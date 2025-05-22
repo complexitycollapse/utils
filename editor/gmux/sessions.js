@@ -147,11 +147,6 @@ function updateViewportSize() {
   viewportLines = Math.floor(window.innerHeight / lineHeight);
 }
 
-let onLoadedCallbacks = [];
-export function onLoaded(callback) {
-  onLoadedCallbacks.push(callback);
-}
-
 window.addEventListener("resize", () => {
   updateViewportSize();
   if (currentWindow) {
@@ -159,9 +154,7 @@ window.addEventListener("resize", () => {
   }
 });
 
-window.addEventListener("DOMContentLoaded", () => {
+export function init() {
   measureCharSize();
   updateViewportSize();
-  onLoadedCallbacks.forEach(callback => callback());
-  onLoadedCallbacks = undefined;
-});
+}

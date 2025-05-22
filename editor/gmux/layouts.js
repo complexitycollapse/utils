@@ -1,4 +1,4 @@
-import { addSession, showWindow, Panel, onLoaded } from "./sessions.js";
+import { addSession, showWindow, Panel } from "./sessions.js";
 import { Stack, Group } from "./groups.js";
 
 function addMainWindowLayer(window, stack) {
@@ -81,8 +81,7 @@ function addAlertLayer(window, stack) {
   return obj;
 }
 
-onLoaded(() => {
-  const window = addSession().addWindow();
+export function createLayout(window) {
   const stack = Stack("layers", []);
 
   window.addGroup("window", "top-margin", [], { lines: 1 });
@@ -95,7 +94,8 @@ onLoaded(() => {
   alert.hide();
   showWindow(window);
 
-  // Test some text
-  const line = main.mainPanel.addLine(0);
-  line.textContent = "Hello, world!";
-});
+  return {
+    main,
+    alert
+  }
+};
