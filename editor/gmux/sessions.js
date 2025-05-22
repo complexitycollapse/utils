@@ -80,13 +80,7 @@ export function Panel() {
   const panel = {};
   panel.element = document.createElement("div");
   panel.element.className = "gpanel gtext";
-  panel.setDimensions = function (group) {
-    panel.col = group.col;
-    panel.line = group.line;
-    panel.cols = group.cols;
-    panel.lines = group.lines;
-    panel.z = group.z;
-    panel.visible = group.visible;
+  panel.doLayout = function () {
     positionPanelElement(panel);
   };
   return panel;

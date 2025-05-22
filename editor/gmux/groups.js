@@ -43,7 +43,8 @@ export function Group(name, direction, members = [], sizing = {}, props = {}) {
         panel.lines = group.lines;
         panel.cols = group.cols;
         panel.z = group.z;
-        panel.setDimensions(group);
+        panel.visible = group.visible;
+        panel.doLayout(group);
       } else {
         recalculateLayout(group);
         group.members.forEach(m => m.doLayout());
