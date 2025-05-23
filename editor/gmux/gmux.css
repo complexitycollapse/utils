@@ -12,6 +12,9 @@ body {
 .gtext {
   font-family: Consolas, monospace;
   font-size: 1rem;
+}
+
+.gline {
   line-height: 1.5;
 }
 

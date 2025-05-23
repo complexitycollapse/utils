@@ -98,6 +98,9 @@ export function Panel() {
       if (line) {
         panel.element.removeChild(line);
       }
+    },
+    getLine(position) {
+      return panel.element.childNodes[position];
     }
   };
 

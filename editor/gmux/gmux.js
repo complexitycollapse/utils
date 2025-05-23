@@ -1,5 +1,6 @@
 import * as sessions from "./sessions.js";
 import { createLayout } from "./layouts.js";
+import { symbolPanel } from "./symbol-panel.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   sessions.init();
@@ -14,6 +15,14 @@ window.addEventListener("DOMContentLoaded", () => {
     main: layouts.main
   };
 
-  const line = gmux.main.mainPanel.addLine(0);
-  line.textContent = "Hello, world!";
+  const panel = symbolPanel(gmux.main.mainPanel);
+
+  const l = panel.addLine(0);
+  panel.pushSymbol(panel.createSymbol("Hello,", "green"), l);
+  panel.pushSymbol(panel.createSymbol("World!", "orange"), l);
+
+  const l2 = panel.addLine(0);
+  panel.pushSymbol(panel.createSymbol("function", "pink"), l2);
+  panel.pushSymbol(panel.createSymbol("foo", "yellow"), l2);
+  panel.pushSymbol(panel.createSymbol("{", "lightblue"), l2);
 });
