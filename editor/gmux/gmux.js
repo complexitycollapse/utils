@@ -21,7 +21,9 @@ window.addEventListener("DOMContentLoaded", () => {
   panel.pushSymbol(panel.createSymbol("Hello,", "green"), l);
   panel.pushSymbol(panel.createSymbol("World!", "orange"), l);
 
-  const l2 = panel.addLine(0);
+  //panel.addLine(0);
+
+  const l2 = panel.addLine(1);
   panel.pushSymbol(panel.createSymbol("function", "pink"), l2);
   panel.pushSymbol(panel.createSymbol("foo", "yellow"), l2);
   panel.pushSymbol(panel.createSymbol("{", "lightblue"), l2);

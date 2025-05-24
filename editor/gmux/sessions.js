@@ -79,32 +79,52 @@ function addWindow(session, group) {
 export function Panel() {
   const panel = {
     element: document.createElement("div"),
+    linesElement: document.createElement("div"),
+    cursorOverlay: document.createElement("div"),
+    textEntry: document.createElement("textarea"),
+    onFocus: undefined,
     doLayout() {
       positionPanelElement(panel);
     },
     addLine(position) {
       const line = document.createElement("div");
       line.className = "gline";
-      const prev = panel.element.childNodes[position];
+      const prev = panel.linesElement.childNodes[position];
       if (prev) {
         prev.insertAdjacentElement("afterend", line);
       } else {
-        panel.element.appendChild(line);
+        panel.linesElement.appendChild(line);
       }
         return line;
     },
     deleteLine(position) {
-      const line = panel.element.childNodes[position];
+      const line = panel.linesElement.childNodes[position];
       if (line) {
-        panel.element.removeChild(line);
+        panel.linesElement.removeChild(line);
       }
     },
     getLine(position) {
-      return panel.element.childNodes[position];
+      return panel.linesElement.childNodes[position];
     }
   };
 
-  panel.element.className = "gpanel gtext";
+  const contents = document.createElement("div");
+  contents.className = "gpanelContents";
+  panel.element.className = "gpanel";
+  panel.linesElement.className = "glines";
+  panel.cursorOverlay.className = "gcursorOverlay";
+  panel.textEntry.className = "gtextEntry";
+  contents.append(panel.linesElement);
+  contents.append(panel.cursorOverlay);
+  panel.element.append(panel.textEntry);
+  panel.element.append(contents);
+
+  panel.element.addEventListener("mousedown", (e) => {
+    if (panel.onFocus) {
+      panel.onFocus(e);
+    }
+  });
+
   return panel;
 }
 

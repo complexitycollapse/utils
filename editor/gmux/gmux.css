@@ -15,7 +15,10 @@ body {
 }
 
 .gline {
-  line-height: 1.5;
+  height: 1.8em;
+  width: 100%;
+  font-family: Consolas, monospace;
+  font-size: 1rem;
 }
 
 .gpanel {
@@ -32,10 +35,70 @@ body {
   padding: 1rem 2rem;
 }
 
+.gpanelContents {
+  position: relative;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
 .gmeasure {
   position: fixed;
   top: 0;
   left: 0;
   visibility: hidden;
   white-space: pre;
+}
+
+.gtextEntry {
+  height: 1px;
+  width: 1px;
+  color: transparent;
+  background-color: transparent;
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  resize: none;
+  white-space-collapse: preserve;
+  text-wrap-mode: none;
+  overflow: hidden;
+  overflow-wrap: normal;
+  cursor: text;
+}
+
+.gcursor {
+  position: absolute;
+  background-color: #fff;
+  width: 2px;
+  border-radius: 2px;
+  pointer-events: none;
+  display: block;
+  visibility: hidden;
+  border-color: #aeafad;
+  background-color: #aeafad;
+  overflow: hidden;
+  cursor: text;
+}
+
+.gcursorOverlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  top: 0;
+}
+
+.glines {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
 }
