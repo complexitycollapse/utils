@@ -82,7 +82,6 @@ export function Panel() {
     linesElement: document.createElement("div"),
     cursorOverlay: document.createElement("div"),
     textEntry: document.createElement("textarea"),
-    onFocus: undefined,
     doLayout() {
       positionPanelElement(panel);
     },
@@ -118,12 +117,6 @@ export function Panel() {
   contents.append(panel.cursorOverlay);
   panel.element.append(panel.textEntry);
   panel.element.append(contents);
-
-  panel.element.addEventListener("mousedown", (e) => {
-    if (panel.onFocus) {
-      panel.onFocus(e);
-    }
-  });
 
   return panel;
 }

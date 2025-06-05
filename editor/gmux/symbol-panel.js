@@ -1,3 +1,5 @@
+import * as focusManager from "./focus-manager.js";
+
 /**
  * Decorator for a panel that adds symbol support
  * @param {*} panel The panel to wrap
@@ -47,10 +49,12 @@ export function symbolPanel(panel) {
   obj.cursor.style.visibility = "visible";
   panel.cursorOverlay.appendChild(obj.cursor);
 
-  panel.onFocus = (e) => {
-    let symbolElement, lineElement, symbol, line;
-
+  panel.element.addEventListener("mousedown", (e) => {
     e.preventDefault();
+    e.stopPropagation();
+    focusManager.changeFocus(obj);
+
+    let symbolElement, lineElement, symbol, line;
 
     if (e.target.classList.contains("gsymbol")) {
       // User clicked on a symbol
@@ -104,7 +108,7 @@ export function symbolPanel(panel) {
     }
 
     panel.textEntry.focus();
-  }
+  });
 
   return obj;
 }
