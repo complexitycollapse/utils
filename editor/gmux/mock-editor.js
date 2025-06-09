@@ -21,6 +21,8 @@ export function MockEditor() {
         obj.symbolPanel.crawlDownward();
       } else if (keystring == " ") {
         obj.symbolPanel.endEdit();
+      } else if (keystring == "Backspace") {
+        obj.symbolPanel.deleteAtCursor();
       } else if (keystring.length == 1) {
         obj.symbolPanel.insertAtCursor(keystring);
       }

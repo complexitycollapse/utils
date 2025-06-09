@@ -57,6 +57,18 @@ export function SymbolPanel(panel, editor) {
       obj.cursorSymbolIndex++;
       obj.lineAtCursor.symbols.splice(obj.cursorSymbolIndex, 0, symbol);
     },
+    removeSymbol(lineIndex, symbolIndex) {
+      const lineSymbols = obj.lines[lineIndex].symbols;
+      const symbol = lineSymbols[symbolIndex];
+      const prev = symbol.element.previousSibling;
+      if (prev.classList.contains("gspace")) {
+        prev.remove();
+      } else if (prev.classList.contains("gindent")) {
+        symbol.element.nextSibling?.remove();
+      }
+      symbol.element.remove();
+      lineSymbols.splice(symbolIndex, 1);
+    },
     createSymbol(text, colour) {
       const element = document.createElement("span");
       element.className = "gsymbol gtext";
@@ -178,6 +190,26 @@ export function SymbolPanel(panel, editor) {
     endEdit() {
       commitEdit(obj);
       positionCursor(obj);
+    },
+    deleteAtCursor() {
+      if (obj.symbolBeingEdited) {
+        obj.removeSymbol(obj.cursorLineIndex, obj.cursorSymbolIndex);
+        obj.cursorSymbolIndex--;
+        obj.symbolBeingEdited = undefined;
+      } else if (obj.cursorSymbolIndex >= 0) {
+        obj.removeSymbol(obj.cursorLineIndex, obj.cursorSymbolIndex);
+        obj.cursorSymbolIndex--;
+      } else if (obj.cursorLineIndex > 0) {
+        const symbolsToMove = [...obj.lineAtCursor.symbols];
+        symbolsToMove.forEach(() => obj.removeSymbol(obj.cursorLineIndex, 0));
+        obj.cursorLineIndex--;  
+        const originalLineLength = obj.lines[obj.cursorLineIndex].symbols.length - 1;
+        symbolsToMove.forEach(s => obj.pushSymbol(s, obj.lines[obj.cursorLineIndex]));
+        obj.cursorSymbolIndex = originalLineLength;
+        obj.lines.splice(obj.cursorLineIndex + 1, 1);
+      }
+
+      positionCursor(obj);
     }
   };
 
@@ -261,7 +293,7 @@ function positionCursor(obj) {
 
 function createSpace() {
   const space = document.createElement("span");
-  space.className = "gtext";
+  space.className = "gtext gspace";
   space.textContent = " ";
   return space;
 }
