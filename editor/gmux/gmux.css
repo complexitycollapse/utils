@@ -12,6 +12,7 @@ body {
 .gtext {
   font-family: Consolas, monospace;
   font-size: 1rem;
+  white-space: pre;
 }
 
 .gline {

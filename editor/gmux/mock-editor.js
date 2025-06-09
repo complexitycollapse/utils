@@ -25,13 +25,13 @@ export function MockEditor() {
 
   obj.symbolPanel = SymbolPanel(obj.panel, obj);
 
-  const l = obj.symbolPanel.addLine(0);
+  const l = obj.symbolPanel.addLine(0, 2);
   obj.symbolPanel.pushSymbol(obj.symbolPanel.createSymbol("Hello,", "green"), l);
   obj.symbolPanel.pushSymbol(obj.symbolPanel.createSymbol("World!", "orange"), l);
 
   //obj.symbolPanel.addLine(0);
 
-  const l2 = obj.symbolPanel.addLine(1);
+  const l2 = obj.symbolPanel.addLine(1, 4);
   obj.symbolPanel.pushSymbol(obj.symbolPanel.createSymbol("function", "pink"), l2);
   obj.symbolPanel.pushSymbol(obj.symbolPanel.createSymbol("foo", "yellow"), l2);
   obj.symbolPanel.pushSymbol(obj.symbolPanel.createSymbol("{", "lightblue"), l2);

@@ -11,17 +11,23 @@ export function SymbolPanel(panel, editor) {
     cursorLineIndex: 0,
     cursorSymbolIndex: -1,
     shadowIndex: 0,
-    addLine(position) {
+    addLine(position, indent = 0) {
       const panelLine = panel.addLine(position);
+      const indentElement = document.createElement("span");
+      indentElement.className = "gindent gtext";
+      indentElement.textContent = " ".repeat(indent);
+      panelLine.appendChild(indentElement);
       const line = {
+        indent,
         panelLine,
+        indentElement,
         symbols: []
       };
       obj.lines.push(line);
       return line;
     },
     pushSymbol(symbol, line) {
-      if (line.panelLine.childNodes.length > 0) {
+      if (line.panelLine.childNodes.length > 1) {
         const space = document.createElement("span");
         space.className = "gtext";
         space.textContent = " ";
@@ -72,7 +78,7 @@ export function SymbolPanel(panel, editor) {
       positionCursor(obj);
     },
     getCharacterPos() {
-      let pos = 0;
+      let pos = obj.lines[obj.cursorLineIndex].indent;
 
       if (obj.cursorSymbolIndex < 0) {
         return pos;
@@ -85,11 +91,11 @@ export function SymbolPanel(panel, editor) {
       return pos;
     },
     getSymbolIndexAtPos(pos) {
+      pos -= obj.lines[obj.cursorLineIndex].indent
       if (pos <= 0) {
         return -1;
       }
 
-      const line = obj.lines[obj.cursorLineIndex];
       for (let index = 0; index < line.symbols.length; index++) {
         pos -= line.symbols[index].text.length + 1; // +1 for the space
         if (pos <= 0) {
@@ -102,7 +108,7 @@ export function SymbolPanel(panel, editor) {
     crawlUpward() {
       if (obj.cursorLineIndex == 0) {
         obj.cursorSymbolIndex = -1;
-        obj.shadowIndex = 0;
+        obj.shadowIndex = obj.lines[obj.cursorLineIndex].indent;
       } else {
         obj.cursorLineIndex--;
         const newPos = obj.getSymbolIndexAtPos(obj.shadowIndex)
@@ -190,6 +196,11 @@ function positionCursor(obj) {
   if (!line) return;
 
   obj.cursor.style.top = `${line.panelLine.offsetTop}px`;
+
+  if (obj.cursorSymbolIndex < 0) {
+    obj.cursor.style.left = `${line.indentElement.offsetLeft + line.indentElement.getBoundingClientRect().width}px`;
+    return;
+  }
 
   const symbol = line.symbols[obj.cursorSymbolIndex];
   if (symbol) {
