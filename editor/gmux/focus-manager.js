@@ -1,8 +1,5 @@
 /**
-  Used to manage which editor currently has focus. Note that currently no editors have
-  been defined so I'm using SymbolPanel as a placeholder. In the final system, SymbolPanel
-  will be a component of something like FileEditor, which will be the top level editor
-  that has a panel and handles focus. (SymbolPanel is a bit like a ViewModel).
+  Used to manage which editor currently has focus.
  */
 
 let focused;

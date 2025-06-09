@@ -4,7 +4,7 @@ import * as focusManager from "./focus-manager.js";
  * Decorator for a panel that adds symbol support
  * @param {*} panel The panel to wrap
  */
-export function symbolPanel(panel) {
+export function SymbolPanel(panel, editor) {
   const obj = {
     lines: [],
     cursor: document.createElement("div"),
@@ -52,27 +52,29 @@ export function symbolPanel(panel) {
   panel.element.addEventListener("mousedown", (e) => {
     e.preventDefault();
     e.stopPropagation();
-    focusManager.changeFocus(obj);
+    const target = e.target;
+
+    focusManager.changeFocus(editor);
 
     let symbolElement, lineElement, symbol, line;
 
-    if (e.target.classList.contains("gsymbol")) {
+    if (target.classList.contains("gsymbol")) {
       // User clicked on a symbol
-      symbolElement = e.target;
+      symbolElement = target;
       lineElement = symbolElement.closest(".gline");
-    } else if (e.target.classList.contains("gline")) {
+    } else if (target.classList.contains("gline")) {
       // User clicked on the blank part of a line
-      lineElement = e.target;
-    } else if (e.target.classList.contains("gtext")) {
-      const prev = e.target.previousElementSibling;
+      lineElement = target;
+    } else if (target.classList.contains("gtext")) {
+      const prev = target.previousElementSibling;
       if (prev && prev.classList.contains("gsymbol")) {
         // User clicked on the space between symbols
-        symbolElement = e.target.previousElementSibling;
+        symbolElement = target.previousElementSibling;
         lineElement = symbolElement.closest(".gline");
       } else {
         // User clicked on the indent
         symbolElement = "indent"; // a pseudo-element representing the indent
-        lineElement = e.target.closest(".gline");
+        lineElement = target.closest(".gline");
       }
     } else {
       // User clicked outside of any line, so ignore

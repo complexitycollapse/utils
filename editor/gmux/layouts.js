@@ -1,5 +1,6 @@
-import { addSession, showWindow, Panel } from "./sessions.js";
+import { showWindow } from "./sessions.js";
 import { Stack, Group } from "./groups.js";
+import { Panel } from "./panel.js";
 
 function addMainWindowLayer(window, stack) {
   const defaultWidth = 120;
@@ -7,29 +8,26 @@ function addMainWindowLayer(window, stack) {
   stack.add("main-window-layer", [
     Group("main-area", "horizontal", [
       Group("left-margin", "vertical", []),
-      Group("main-window", "vertical", [], { cols: defaultWidth }),
-      Group("aux-window", "vertical", [], { cols: defaultWidth }),
+      Group("main-panel-container", "vertical", [], { cols: defaultWidth }),
+      Group("aux-panel-container", "vertical", [], { cols: defaultWidth }),
       Group("right-margin", "vertical", [])
     ])
   ], {}, { z: "basic" });
 
-  const aux = window.getGroup("aux-window");
+  const main = window.getGroup("main-panel-container");
+  const aux = window.getGroup("aux-panel-container");
   aux.visible = false;
   
-  const mainPanel = Panel(), auxPanel = Panel();
-  window.addPanel("main-window", mainPanel);
-  window.addPanel("aux-window", auxPanel);
-  
   const obj = {
-    mainPanel,
-    auxPanel,
+    main,
+    aux,
     width: defaultWidth,
     requestedWidth: defaultWidth,
     setWidth(width) {
       obj.requestedWidth = width;
       obj.width = width;
-      window.getGroup("main-window").setSize({ cols: width });
-      window.getGroup("aux-window").setSize({ cols: width });
+      main.setSize({ cols: width });
+      aux.setSize({ cols: width });
     },
     showAux() {
       aux.visible = true;
@@ -37,6 +35,14 @@ function addMainWindowLayer(window, stack) {
     },
     hideAux() {
       aux.visible = false;
+      window.getGroup("main-area").doLayout();
+    },
+    setMain(panel) {
+      window.addPanel("main-panel-container", panel);
+      window.getGroup("main-area").doLayout();
+    },
+    setAux(panel) {
+      window.addPanel("aux-panel-container", panel);
       window.getGroup("main-area").doLayout();
     }
   };
@@ -88,14 +94,14 @@ export function createLayout(window) {
   window.addGroup("window", "centre-bar", [stack]);
   window.addGroup("window", "bottom-margin", [], { lines: 1 });
 
-  const main = addMainWindowLayer(window, stack);
+  const editors = addMainWindowLayer(window, stack);
   const alert = addAlertLayer(window, stack);
   alert.show(undefined, undefined, 30, 10);
   alert.hide();
   showWindow(window);
 
   return {
-    main,
+    editors,
     alert
   }
 };
