@@ -8,7 +8,10 @@ import { Panel } from "./panel.js";
 export function MockEditor() {
   const obj = {
     panel: Panel(),
-    symbolPanel: undefined
+    symbolPanel: undefined,
+    handleKeydown(keystring) {
+      console.log(keystring);
+    }
   };
 
   obj.symbolPanel = SymbolPanel(obj.panel, obj);

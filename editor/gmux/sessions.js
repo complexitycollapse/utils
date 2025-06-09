@@ -1,4 +1,5 @@
 import { Group } from "./groups.js";
+import * as keyBindings from "./key-bindings.js";
 
 let gmuxContainer = document.getElementById("gmux");
 const sessions = [], editors = [];
@@ -108,4 +109,6 @@ window.addEventListener("resize", () => {
 export function init() {
   measureCharSize();
   updateViewportSize();
+  document.getElementsByTagName("body")[0]
+    .addEventListener("keydown", keyBindings.handleKeydown);
 }
