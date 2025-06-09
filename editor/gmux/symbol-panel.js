@@ -8,6 +8,8 @@ export function SymbolPanel(panel, editor) {
   const obj = {
     lines: [],
     cursor: document.createElement("div"),
+    cursorLineIndex: 0,
+    cursorSymbolIndex: -1,
     addLine(position) {
       const panelLine = panel.addLine(position);
       const line = {
@@ -41,6 +43,82 @@ export function SymbolPanel(panel, editor) {
       }
   
       return symbol;
+    },
+    crawlForward() {
+      if (obj.cursorSymbolIndex < obj.lines[obj.cursorLineIndex].symbols.length - 1) {
+        obj.cursorSymbolIndex++;
+      } else {
+        if (obj.cursorLineIndex < obj.lines.length - 1) {
+          obj.cursorLineIndex++;
+          obj.cursorSymbolIndex = -1;
+        }
+      }
+
+      positionCursor(obj);
+    },
+    crawlBackward() {
+      if (obj.cursorSymbolIndex > -1) {
+        obj.cursorSymbolIndex--;
+      } else {
+        if (obj.cursorLineIndex > 0) {
+          obj.cursorLineIndex--;
+          obj.cursorSymbolIndex = obj.lines[obj.cursorLineIndex].symbols.length - 1;
+        }
+      }
+
+      positionCursor(obj);
+    },
+    getCharacterPos() {
+      let pos = 0;
+
+      if (obj.cursorSymbolIndex < 0) {
+        return pos;
+      }
+
+      for (let i = 0; i <= obj.cursorSymbolIndex; i++) {
+        pos += obj.lines[obj.cursorLineIndex].symbols[i].text.length + 1; // +1 for the space
+      }
+
+      return pos;
+    },
+    getSymbolIndexAtPos(pos) {
+      if (pos <= 0) {
+        return -1;
+      }
+
+      const line = obj.lines[obj.cursorLineIndex];
+      for (let index = 0; index < line.symbols.length; index++) {
+        pos -= line.symbols[index].text.length + 1; // +1 for the space
+        if (pos < 0) {
+          return index;
+        }
+      }
+
+      return obj.lines.length - 1;
+    },
+    crawlUpward() {
+      if (obj.cursorLineIndex == 0) {
+        obj.cursorSymbolIndex = -1;
+      } else {
+        const pos = obj.getCharacterPos();
+        obj.cursorLineIndex--;
+        const newPos = obj.getSymbolIndexAtPos(pos)
+        if (newPos != undefined) { obj.cursorSymbolIndex = newPos; }
+      }
+
+      positionCursor(obj);
+    },
+    crawlDownward() {
+      if (obj.cursorLineIndex >= obj.lines.length - 1) {
+        obj.cursorSymbolIndex = obj.lines[obj.cursorLineIndex].symbols.length - 1;
+      } else {
+        const pos = obj.getCharacterPos();
+        obj.cursorLineIndex++;
+        const newPos = obj.getSymbolIndexAtPos(pos);
+        if (newPos != undefined) { obj.cursorSymbolIndex = newPos; }
+      }
+
+      positionCursor(obj);
     }
   };
 
@@ -56,7 +134,7 @@ export function SymbolPanel(panel, editor) {
 
     focusManager.changeFocus(editor);
 
-    let symbolElement, lineElement, symbol, line;
+    let symbolElement, lineElement;
 
     if (target.classList.contains("gsymbol")) {
       // User clicked on a symbol
@@ -82,35 +160,37 @@ export function SymbolPanel(panel, editor) {
     }
 
     if (lineElement) {
-      const index = Array.from(panel.linesElement.childNodes).indexOf(lineElement);
-      if (index >= 0) {
-        line = obj.lines[index];
+      obj.cursorLineIndex = Array.from(panel.linesElement.childNodes).indexOf(lineElement);
+      if (obj.cursorLineIndex < 0) {
+        Math.max(0, obj.cursorLineIndex = obj.lines.length - 1);
       }
-    }
-
-    if (!line) {
-      line = obj.lines[obj.lines.length - 1];
-    }
-
-    if (symbolElement) {
-      symbol = line.symbols.find(s => s.element === symbolElement);
-    } else if (line.symbols.length > 0) {
-      symbol = line.symbols[line.symbols.length - 1];
-    }
-
-    if (symbol) {
-      obj.cursor.style.left = `${symbol.element.offsetLeft + symbol.element.getBoundingClientRect().width}px`;
     } else {
-      obj.cursor.style.left = "0px";
+      Math.max(0, obj.cursorLineIndex = obj.lines.length - 1);
     }
 
-    if (line) {
-      obj.cursor.style.top = `${line.panelLine.offsetTop}px`;
-      obj.cursor.style.height = `19px`;
-    }
+    let line = obj.lines[obj.cursorLineIndex];
 
+    // Note that cursorSymbolIndex could be set to -1 here, which represents the indent.
+    obj.cursorSymbolIndex = symbolElement ? line.symbols.map(s => s.element).indexOf(symbolElement)
+      : Math.max(0, line.symbols.length - 1);
+    
+    positionCursor(obj);
     panel.textEntry.focus();
   });
 
   return obj;
+}
+
+function positionCursor(obj) {
+  const line = obj.lines[obj.cursorLineIndex];
+  if (!line) return;
+
+  obj.cursor.style.top = `${line.panelLine.offsetTop}px`;
+
+  const symbol = line.symbols[obj.cursorSymbolIndex];
+  if (symbol) {
+    obj.cursor.style.left = `${symbol.element.offsetLeft + symbol.element.getBoundingClientRect().width}px`;
+  } else {
+    obj.cursor.style.left = "0px";
+  }
 }

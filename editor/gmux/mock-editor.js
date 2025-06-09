@@ -11,6 +11,15 @@ export function MockEditor() {
     symbolPanel: undefined,
     handleKeydown(keystring) {
       console.log(keystring);
+      if (keystring == "ArrowRight") {
+        obj.symbolPanel.crawlForward();
+      } else if (keystring == "ArrowLeft") {
+        obj.symbolPanel.crawlBackward();
+      } else if (keystring == "ArrowUp") {
+        obj.symbolPanel.crawlUpward();
+      } else if (keystring == "ArrowDown") {
+        obj.symbolPanel.crawlDownward();
+      }
     }
   };
 
