@@ -37,6 +37,9 @@ export function addSession() {
       if (index !== -1) {
         this.windows.splice(index, 1);
       }
+    },
+    addEditor(editor) {
+      editors.push(editor);
     }
   };
   sessions.push(session);

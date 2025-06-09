@@ -9,5 +9,6 @@ window.addEventListener("DOMContentLoaded", () => {
   const layouts = createLayout(window);
   const editor = MockEditor();
 
+  session.addEditor(editor);
   layouts.editors.setMain(editor.panel);
 });
