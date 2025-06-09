@@ -19,6 +19,10 @@ export function MockEditor() {
         obj.symbolPanel.crawlUpward();
       } else if (keystring == "ArrowDown") {
         obj.symbolPanel.crawlDownward();
+      } else if (keystring == " ") {
+        obj.symbolPanel.endEdit();
+      } else if (keystring.length == 1) {
+        obj.symbolPanel.insertAtCursor(keystring);
       }
     }
   };

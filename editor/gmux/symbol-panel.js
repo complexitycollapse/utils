@@ -10,7 +10,14 @@ export function SymbolPanel(panel, editor) {
     cursor: document.createElement("div"),
     cursorLineIndex: 0,
     cursorSymbolIndex: -1,
+    get lineAtCursor() {
+      return obj.lines[obj.cursorLineIndex];
+    },
+    get symbolAtCursor() {
+      return obj.lineAtCursor.symbols[obj.cursorSymbolIndex];
+    },
     shadowIndex: 0,
+    symbolBeingEdited: undefined,
     addLine(position, indent = 0) {
       const panelLine = panel.addLine(position);
       const indentElement = document.createElement("span");
@@ -28,14 +35,27 @@ export function SymbolPanel(panel, editor) {
     },
     pushSymbol(symbol, line) {
       if (line.panelLine.childNodes.length > 1) {
-        const space = document.createElement("span");
-        space.className = "gtext";
-        space.textContent = " ";
-        line.panelLine.appendChild(space);
+        line.panelLine.appendChild(createSpace());
       }
   
       line.panelLine.appendChild(symbol.element);
       line.symbols.push(symbol);
+    },
+    insertSymbolAtCursor(symbol) {
+      if (obj.lineAtCursor.symbols.length > 0) {
+        const space = createSpace();
+        if (obj.symbolAtCursor) {
+          obj.symbolAtCursor.element.after(space);
+          space.after(symbol.element);
+        } else {
+          obj.lineAtCursor.indentElement.after(symbol.element);
+          symbol.element.after(space);
+        }
+      } else {
+        this.lineAtCursor.element.appendChild(symbol.element);
+      }
+      obj.cursorSymbolIndex++;
+      obj.lineAtCursor.symbols.splice(obj.cursorSymbolIndex, 0, symbol);
     },
     createSymbol(text, colour) {
       const element = document.createElement("span");
@@ -46,12 +66,18 @@ export function SymbolPanel(panel, editor) {
       const symbol = {
         text,
         element,
-        colour
+        colour,
+        append(text) {
+          this.text += text;
+          this.element.textContent += text;
+        }
       }
   
       return symbol;
     },
     crawlForward() {
+      commitEdit(obj);
+
       if (obj.cursorSymbolIndex < obj.lines[obj.cursorLineIndex].symbols.length - 1) {
         obj.cursorSymbolIndex++;
       } else {
@@ -65,6 +91,8 @@ export function SymbolPanel(panel, editor) {
       positionCursor(obj);
     },
     crawlBackward() {
+      commitEdit(obj);
+
       if (obj.cursorSymbolIndex > -1) {
         obj.cursorSymbolIndex--;
       } else {
@@ -92,7 +120,7 @@ export function SymbolPanel(panel, editor) {
     },
     getSymbolIndexAtPos(pos) {
       const line = obj.lines[obj.cursorLineIndex];
-      
+
       pos -= line.indent
       if (pos <= 0) {
         return -1;
@@ -108,6 +136,8 @@ export function SymbolPanel(panel, editor) {
       return obj.lines.length - 1;
     },
     crawlUpward() {
+      commitEdit(obj);
+      
       if (obj.cursorLineIndex == 0) {
         obj.cursorSymbolIndex = -1;
         obj.shadowIndex = obj.lines[obj.cursorLineIndex].indent;
@@ -120,6 +150,8 @@ export function SymbolPanel(panel, editor) {
       positionCursor(obj);
     },
     crawlDownward() {
+      commitEdit(obj);
+      
       if (obj.cursorLineIndex >= obj.lines.length - 1) {
         obj.cursorSymbolIndex = obj.lines[obj.cursorLineIndex].symbols.length - 1;
         obj.shadowIndex = obj.getCharacterPos();
@@ -129,6 +161,22 @@ export function SymbolPanel(panel, editor) {
         if (newPos != undefined) { obj.cursorSymbolIndex = newPos; }
       }
 
+      positionCursor(obj);
+    },
+    insertAtCursor(text) {
+      if (!obj.symbolBeingEdited) {
+        // Create a new symbol at the cursor position
+        const symbol = obj.createSymbol(text, "white");
+        obj.symbolBeingEdited = symbol;
+        obj.insertSymbolAtCursor(symbol);
+      } else {
+        obj.symbolBeingEdited.append(text);
+      }
+
+      positionCursor(obj);
+    },
+    endEdit() {
+      commitEdit(obj);
       positionCursor(obj);
     }
   };
@@ -144,6 +192,7 @@ export function SymbolPanel(panel, editor) {
     const target = e.target;
 
     focusManager.changeFocus(editor);
+    commitEdit(obj);
 
     let symbolElement, lineElement;
 
@@ -210,4 +259,15 @@ function positionCursor(obj) {
   } else {
     obj.cursor.style.left = "0px";
   }
+}
+
+function createSpace() {
+  const space = document.createElement("span");
+  space.className = "gtext";
+  space.textContent = " ";
+  return space;
+}
+
+function commitEdit(obj) {
+  obj.symbolBeingEdited = undefined;
 }
