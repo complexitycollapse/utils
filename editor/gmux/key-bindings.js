@@ -2,7 +2,7 @@ import { getFocusedEditor } from "./focus-manager.js";
 
 export function handleKeydown(event) {
   const keyString = getKeyString(event);
-  if (keyString === "Ctrl-R") {
+  if (keyString === "Ctrl-r" || keyString === "Ctrl-Shift-R") {
     return;
   } 
   event.stopPropagation();
