@@ -91,7 +91,9 @@ export function SymbolPanel(panel, editor) {
       return pos;
     },
     getSymbolIndexAtPos(pos) {
-      pos -= obj.lines[obj.cursorLineIndex].indent
+      const line = obj.lines[obj.cursorLineIndex];
+      
+      pos -= line.indent
       if (pos <= 0) {
         return -1;
       }
