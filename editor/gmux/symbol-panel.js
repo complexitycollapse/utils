@@ -10,6 +10,7 @@ export function SymbolPanel(panel, editor) {
     cursor: document.createElement("div"),
     cursorLineIndex: 0,
     cursorSymbolIndex: -1,
+    shadowIndex: 0,
     addLine(position) {
       const panelLine = panel.addLine(position);
       const line = {
@@ -54,6 +55,7 @@ export function SymbolPanel(panel, editor) {
         }
       }
 
+      obj.shadowIndex = obj.getCharacterPos();
       positionCursor(obj);
     },
     crawlBackward() {
@@ -66,6 +68,7 @@ export function SymbolPanel(panel, editor) {
         }
       }
 
+      obj.shadowIndex = obj.getCharacterPos();
       positionCursor(obj);
     },
     getCharacterPos() {
@@ -89,7 +92,7 @@ export function SymbolPanel(panel, editor) {
       const line = obj.lines[obj.cursorLineIndex];
       for (let index = 0; index < line.symbols.length; index++) {
         pos -= line.symbols[index].text.length + 1; // +1 for the space
-        if (pos < 0) {
+        if (pos <= 0) {
           return index;
         }
       }
@@ -99,10 +102,10 @@ export function SymbolPanel(panel, editor) {
     crawlUpward() {
       if (obj.cursorLineIndex == 0) {
         obj.cursorSymbolIndex = -1;
+        obj.shadowIndex = 0;
       } else {
-        const pos = obj.getCharacterPos();
         obj.cursorLineIndex--;
-        const newPos = obj.getSymbolIndexAtPos(pos)
+        const newPos = obj.getSymbolIndexAtPos(obj.shadowIndex)
         if (newPos != undefined) { obj.cursorSymbolIndex = newPos; }
       }
 
@@ -111,10 +114,10 @@ export function SymbolPanel(panel, editor) {
     crawlDownward() {
       if (obj.cursorLineIndex >= obj.lines.length - 1) {
         obj.cursorSymbolIndex = obj.lines[obj.cursorLineIndex].symbols.length - 1;
+        obj.shadowIndex = obj.getCharacterPos();
       } else {
-        const pos = obj.getCharacterPos();
         obj.cursorLineIndex++;
-        const newPos = obj.getSymbolIndexAtPos(pos);
+        const newPos = obj.getSymbolIndexAtPos(obj.shadowIndex);
         if (newPos != undefined) { obj.cursorSymbolIndex = newPos; }
       }
 
@@ -174,6 +177,7 @@ export function SymbolPanel(panel, editor) {
     obj.cursorSymbolIndex = symbolElement ? line.symbols.map(s => s.element).indexOf(symbolElement)
       : Math.max(0, line.symbols.length - 1);
     
+    obj.shadowIndex = obj.getCharacterPos(obj.cursorSymbolIndex);
     positionCursor(obj);
     panel.textEntry.focus();
   });
