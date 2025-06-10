@@ -30,8 +30,12 @@ export function SymbolPanel(panel, editor) {
         indentElement,
         symbols: []
       };
-      obj.lines.push(line);
+      obj.lines.splice(position, 0, line);
       return line;
+    },
+    deleteLine(position) {
+      panel.deleteLine(position);
+      obj.lines.splice(position, 0);
     },
     pushSymbol(symbol, line) {
       if (line.panelLine.childNodes.length > 1) {
@@ -52,7 +56,7 @@ export function SymbolPanel(panel, editor) {
           symbol.element.after(space);
         }
       } else {
-        this.lineAtCursor.element.appendChild(symbol.element);
+        this.lineAtCursor.panelLine.appendChild(symbol.element);
       }
       obj.cursorSymbolIndex++;
       obj.lineAtCursor.symbols.splice(obj.cursorSymbolIndex, 0, symbol);
@@ -68,6 +72,7 @@ export function SymbolPanel(panel, editor) {
       }
       symbol.element.remove();
       lineSymbols.splice(symbolIndex, 1);
+      return symbol;
     },
     createSymbol(text, colour) {
       const element = document.createElement("span");
@@ -206,8 +211,28 @@ export function SymbolPanel(panel, editor) {
         const originalLineLength = obj.lines[obj.cursorLineIndex].symbols.length - 1;
         symbolsToMove.forEach(s => obj.pushSymbol(s, obj.lines[obj.cursorLineIndex]));
         obj.cursorSymbolIndex = originalLineLength;
-        obj.lines.splice(obj.cursorLineIndex + 1, 1);
+        obj.deleteLine(obj.cursorLineIndex + 1);
       }
+
+      positionCursor(obj);
+    },
+    insertNewline() {
+      commitEdit(obj);
+
+      const symbolsAfterCursor = [], count = obj.lineAtCursor.symbols.length - obj.cursorSymbolIndex - 1;
+      if (count > 0) {
+        obj.crawlForward();
+        for (let i = 0; i < count; ++i) {
+          symbolsAfterCursor.push(obj.removeSymbol(obj.cursorLineIndex, obj.cursorSymbolIndex));
+        }
+      }
+
+      const newline = obj.addLine(obj.cursorLineIndex + 1, obj.lineAtCursor.indent);
+      symbolsAfterCursor.forEach(s => {
+        obj.pushSymbol(s, newline);
+      });
+
+      obj.crawlForward();
 
       positionCursor(obj);
     }

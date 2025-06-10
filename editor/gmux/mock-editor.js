@@ -11,7 +11,12 @@ export function MockEditor() {
     symbolPanel: undefined,
     handleKeydown(keystring) {
       console.log(keystring);
-      if (keystring == "ArrowRight") {
+
+      if (keystring.length == 1) {
+        obj.symbolPanel.insertAtCursor(keystring);
+      } else if (keystring.startsWith("Shift-") && keystring.length == 7) {
+        obj.symbolPanel.insertAtCursor(keystring[6]);
+      } else if (keystring == "ArrowRight") {
         obj.symbolPanel.crawlForward();
       } else if (keystring == "ArrowLeft") {
         obj.symbolPanel.crawlBackward();
@@ -23,8 +28,8 @@ export function MockEditor() {
         obj.symbolPanel.endEdit();
       } else if (keystring == "Backspace") {
         obj.symbolPanel.deleteAtCursor();
-      } else if (keystring.length == 1) {
-        obj.symbolPanel.insertAtCursor(keystring);
+      } else if (keystring == "Enter") {
+        obj.symbolPanel.insertNewline();
       }
     }
   };

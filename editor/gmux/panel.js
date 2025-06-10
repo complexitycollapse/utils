@@ -12,13 +12,7 @@ export function Panel() {
     addLine(position) {
       const line = document.createElement("div");
       line.className = "gline";
-      const prev = panel.linesElement.childNodes[position];
-      if (prev) {
-        prev.insertAdjacentElement("afterend", line);
-      } else {
-        panel.linesElement.appendChild(line);
-      }
-        return line;
+      return panel.linesElement.insertBefore(line, panel.linesElement.childNodes[position]);
     },
     deleteLine(position) {
       const line = panel.linesElement.childNodes[position];
