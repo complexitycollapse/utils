@@ -7,17 +7,9 @@ import * as focusManager from "./focus-manager.js";
 export function SymbolPanel(panel, editor) {
   const obj = {
     lines: [],
-    cursor: document.createElement("div"),
-    cursorLineIndex: 0,
-    cursorSymbolIndex: -1,
-    get lineAtCursor() {
-      return obj.lines[obj.cursorLineIndex];
+    addCursorElement(element) {
+      panel.cursorOverlay.appendChild(element);
     },
-    get symbolAtCursor() {
-      return obj.lineAtCursor.symbols[obj.cursorSymbolIndex];
-    },
-    shadowIndex: 0,
-    symbolBeingEdited: undefined,
     addLine(position, indent = 0) {
       const panelLine = panel.addLine(position);
       const indentElement = document.createElement("span");
@@ -35,7 +27,7 @@ export function SymbolPanel(panel, editor) {
     },
     deleteLine(position) {
       panel.deleteLine(position);
-      obj.lines.splice(position, 0);
+      obj.lines.splice(position, 1);
     },
     pushSymbol(symbol, line) {
       if (line.panelLine.childNodes.length > 1) {
@@ -45,34 +37,53 @@ export function SymbolPanel(panel, editor) {
       line.panelLine.appendChild(symbol.element);
       line.symbols.push(symbol);
     },
-    insertSymbolAtCursor(symbol) {
-      if (obj.lineAtCursor.symbols.length > 0) {
-        const space = createSpace();
-        if (obj.symbolAtCursor) {
-          obj.symbolAtCursor.element.after(space);
-          space.after(symbol.element);
-        } else {
-          obj.lineAtCursor.indentElement.after(symbol.element);
-          symbol.element.after(space);
-        }
-      } else {
-        this.lineAtCursor.panelLine.appendChild(symbol.element);
+    insertSymbolAfter(symbol, lineIndex, symbolIndex) {
+      const line = obj.lines[lineIndex];
+      if (!line) { return; }
+
+      // Handle corner cases where the symbol will always go at the end
+      if (line.symbols.length === 0 || symbolIndex >= line.symbols.length) {
+        obj.pushSymbol(symbol, line);
+        return;
       }
-      obj.cursorSymbolIndex++;
-      obj.lineAtCursor.symbols.splice(obj.cursorSymbolIndex, 0, symbol);
+
+      const space = createSpace();
+
+      // Inserting immediately after the indent
+      if (symbolIndex == -1) {
+        line.indentElement.after(symbol.element);
+        symbol.element.after(space);
+        line.symbols.unshift(symbol);
+        return;
+      }
+
+      // Inserting after an existing symbol
+      const replacedSymbol = line.symbols[symbolIndex];
+      replacedSymbol.element.after(space);
+      space.after(symbol.element);
+      line.symbols.splice(symbolIndex + 1, 0, symbol);
     },
     removeSymbol(lineIndex, symbolIndex) {
       const lineSymbols = obj.lines[lineIndex].symbols;
-      const symbol = lineSymbols[symbolIndex];
-      const prev = symbol.element.previousSibling;
-      if (prev.classList.contains("gspace")) {
-        prev.remove();
-      } else if (prev.classList.contains("gindent")) {
-        symbol.element.nextSibling?.remove();
+      const symbolToRemove = lineSymbols[symbolIndex];
+
+      if (!symbolToRemove) { return undefined; }
+
+      if (symbolIndex === 0) {
+        if (lineSymbols.length > 1) {
+          symbolToRemove.element.nextSibling.remove();
+        }
+        symbolToRemove.element.remove();
+        return lineSymbols.shift();
       }
-      symbol.element.remove();
-      lineSymbols.splice(symbolIndex, 1);
-      return symbol;
+
+      if (symbolToRemove.element.nextSibling) {
+        symbolToRemove.element.nextSibling.remove();
+      } else if (symbolIndex > 0) {
+        symbolToRemove.element.previousSibling.remove();
+      }
+      symbolToRemove.element.remove();
+      return lineSymbols.splice(symbolIndex, 1)[0];
     },
     createSymbol(text, colour) {
       const element = document.createElement("span");
@@ -91,229 +102,18 @@ export function SymbolPanel(panel, editor) {
       }
   
       return symbol;
-    },
-    crawlForward() {
-      commitEdit(obj);
-
-      if (obj.cursorSymbolIndex < obj.lineAtCursor.symbols.length - 1) {
-        obj.cursorSymbolIndex++;
-      } else {
-        if (obj.cursorLineIndex < obj.lines.length - 1) {
-          obj.cursorLineIndex++;
-          obj.cursorSymbolIndex = -1;
-        }
-      }
-
-      obj.shadowIndex = obj.getCharacterPos();
-      positionCursor(obj);
-    },
-    crawlBackward() {
-      commitEdit(obj);
-
-      if (obj.cursorSymbolIndex > -1) {
-        obj.cursorSymbolIndex--;
-      } else {
-        if (obj.cursorLineIndex > 0) {
-          obj.cursorLineIndex--;
-          obj.cursorSymbolIndex = obj.lineAtCursor.symbols.length - 1;
-        }
-      }
-
-      obj.shadowIndex = obj.getCharacterPos();
-      positionCursor(obj);
-    },
-    getCharacterPos() {
-      let pos = obj.lineAtCursor.indent;
-
-      if (obj.cursorSymbolIndex < 0) {
-        return pos;
-      }
-
-      for (let i = 0; i <= obj.cursorSymbolIndex; i++) {
-        pos += obj.lineAtCursor.symbols[i].text.length + 1; // +1 for the space
-      }
-
-      return pos;
-    },
-    getSymbolIndexAtPos(pos) {
-      const line = obj.lineAtCursor;
-
-      pos -= line.indent
-      if (pos <= 0) {
-        return -1;
-      }
-
-      for (let index = 0; index < line.symbols.length; index++) {
-        pos -= line.symbols[index].text.length + 1; // +1 for the space
-        if (pos <= 0) {
-          return index;
-        }
-      }
-
-      return obj.lines.length - 1;
-    },
-    crawlUpward() {
-      commitEdit(obj);
-      
-      if (obj.cursorLineIndex == 0) {
-        obj.cursorSymbolIndex = -1;
-        obj.shadowIndex = obj.lineAtCursor.indent;
-      } else {
-        obj.cursorLineIndex--;
-        const newPos = obj.getSymbolIndexAtPos(obj.shadowIndex)
-        if (newPos != undefined) { obj.cursorSymbolIndex = newPos; }
-      }
-
-      positionCursor(obj);
-    },
-    crawlDownward() {
-      commitEdit(obj);
-      
-      if (obj.cursorLineIndex >= obj.lines.length - 1) {
-        obj.cursorSymbolIndex = obj.lineAtCursor.symbols.length - 1;
-        obj.shadowIndex = obj.getCharacterPos();
-      } else {
-        obj.cursorLineIndex++;
-        const newPos = obj.getSymbolIndexAtPos(obj.shadowIndex);
-        if (newPos != undefined) { obj.cursorSymbolIndex = newPos; }
-      }
-
-      positionCursor(obj);
-    },
-    insertAtCursor(text) {
-      if (!obj.symbolBeingEdited) {
-        // Create a new symbol at the cursor position
-        const symbol = obj.createSymbol(text, "white");
-        obj.symbolBeingEdited = symbol;
-        obj.insertSymbolAtCursor(symbol);
-      } else {
-        obj.symbolBeingEdited.append(text);
-      }
-
-      positionCursor(obj);
-    },
-    endEdit() {
-      commitEdit(obj);
-      positionCursor(obj);
-    },
-    deleteAtCursor() {
-      if (obj.symbolBeingEdited) {
-        obj.removeSymbol(obj.cursorLineIndex, obj.cursorSymbolIndex);
-        obj.cursorSymbolIndex--;
-        obj.symbolBeingEdited = undefined;
-      } else if (obj.cursorSymbolIndex >= 0) {
-        obj.removeSymbol(obj.cursorLineIndex, obj.cursorSymbolIndex);
-        obj.cursorSymbolIndex--;
-      } else if (obj.cursorLineIndex > 0) {
-        const symbolsToMove = [...obj.lineAtCursor.symbols];
-        symbolsToMove.forEach(() => obj.removeSymbol(obj.cursorLineIndex, 0));
-        obj.cursorLineIndex--;  
-        const originalLineLength = obj.lines[obj.cursorLineIndex].symbols.length - 1;
-        symbolsToMove.forEach(s => obj.pushSymbol(s, obj.lines[obj.cursorLineIndex]));
-        obj.cursorSymbolIndex = originalLineLength;
-        obj.deleteLine(obj.cursorLineIndex + 1);
-      }
-
-      positionCursor(obj);
-    },
-    insertNewline() {
-      commitEdit(obj);
-
-      const symbolsAfterCursor = [], count = obj.lineAtCursor.symbols.length - obj.cursorSymbolIndex - 1;
-      if (count > 0) {
-        obj.crawlForward();
-        for (let i = 0; i < count; ++i) {
-          symbolsAfterCursor.push(obj.removeSymbol(obj.cursorLineIndex, obj.cursorSymbolIndex));
-        }
-      }
-
-      const newline = obj.addLine(obj.cursorLineIndex + 1, obj.lineAtCursor.indent);
-      symbolsAfterCursor.forEach(s => {
-        obj.pushSymbol(s, newline);
-      });
-
-      obj.crawlForward();
-
-      positionCursor(obj);
     }
   };
-
-  obj.cursor.className = "gcursor";
-  obj.cursor.style.height = `${20}px`;
-  obj.cursor.style.visibility = "visible";
-  panel.cursorOverlay.appendChild(obj.cursor);
 
   panel.element.addEventListener("mousedown", (e) => {
     e.preventDefault();
     e.stopPropagation();
-    const target = e.target;
-
     focusManager.changeFocus(editor);
-    commitEdit(obj);
-
-    let symbolElement, lineElement;
-
-    if (target.classList.contains("gsymbol")) {
-      // User clicked on a symbol
-      symbolElement = target;
-      lineElement = symbolElement.closest(".gline");
-    } else if (target.classList.contains("gline")) {
-      // User clicked on the blank part of a line
-      lineElement = target;
-    } else if (target.classList.contains("gtext")) {
-      const prev = target.previousElementSibling;
-      if (prev && prev.classList.contains("gsymbol")) {
-        // User clicked on the space between symbols
-        symbolElement = target.previousElementSibling;
-        lineElement = symbolElement.closest(".gline");
-      } else {
-        // User clicked on the indent
-        symbolElement = "indent"; // a pseudo-element representing the indent
-        lineElement = target.closest(".gline");
-      }
-    } else {
-      // User clicked outside of any line, so ignore
-      return;
-    }
-
-    if (lineElement) {
-      obj.cursorLineIndex = Array.from(panel.linesElement.childNodes).indexOf(lineElement);
-      if (obj.cursorLineIndex < 0) {
-        Math.max(0, obj.cursorLineIndex = obj.lines.length - 1);
-      }
-    } else {
-      Math.max(0, obj.cursorLineIndex = obj.lines.length - 1);
-    }
-
-    // Note that cursorSymbolIndex could be set to -1 here, which represents the indent.
-    obj.cursorSymbolIndex = symbolElement ? obj.lineAtCursor.symbols.map(s => s.element).indexOf(symbolElement)
-      : Math.max(0, obj.lineAtCursor.symbols.length - 1);
-    
-    obj.shadowIndex = obj.getCharacterPos(obj.cursorSymbolIndex);
-    positionCursor(obj);
+    editor.handleMousedown?.(e);
     panel.textEntry.focus();
   });
 
   return obj;
-}
-
-function positionCursor(obj) {
-  const line = obj.lineAtCursor;
-  if (!line) return;
-
-  obj.cursor.style.top = `${line.panelLine.offsetTop}px`;
-
-  if (obj.cursorSymbolIndex < 0) {
-    obj.cursor.style.left = `${line.indentElement.offsetLeft + line.indentElement.getBoundingClientRect().width}px`;
-    return;
-  }
-
-  const symbol = obj.symbolAtCursor;
-  if (symbol) {
-    obj.cursor.style.left = `${symbol.element.offsetLeft + symbol.element.getBoundingClientRect().width}px`;
-  } else {
-    obj.cursor.style.left = "0px";
-  }
 }
 
 function createSpace() {
@@ -321,8 +121,4 @@ function createSpace() {
   space.className = "gtext gspace";
   space.textContent = " ";
   return space;
-}
-
-function commitEdit(obj) {
-  obj.symbolBeingEdited = undefined;
 }
