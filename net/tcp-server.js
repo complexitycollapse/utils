@@ -11,7 +11,7 @@ function attachJsonLineReceiver(socket, handler) {
       const line = buf.slice(0, nl).trim();
       buf = buf.slice(nl + 1);
       if (!line) continue;
-      try { handler(JSON.parse(line), socket.localPort); }
+      try { handler(JSON.parse(line), socket); }
       catch (err) { console.error('⚠️ bad JSON:', err.message); }
     }
   });
@@ -23,14 +23,14 @@ export function send(port, obj) {
   socket?.write(str);
 }
 
-export function startServer(port, callback, onConnected) {
+export function startServer(port, { onMsg, onConnected, onListening } = {}) {
   const server = createServer(socket => {
     console.log(`🔌  ${socket.remoteAddress}:${socket.remotePort} connected`);
     clients.set(socket.localPort, socket);
   
     // incoming messages from this client
-    attachJsonLineReceiver(socket, callback);
-    onConnected?.(socket.localPort);
+    attachJsonLineReceiver(socket, onMsg);
+    onConnected?.(socket);
   
     socket.on('close', () => { 
       clients.delete(socket.localPort);
@@ -39,11 +39,12 @@ export function startServer(port, callback, onConnected) {
     socket.on('error', err => console.error('Socket error:', err));
   });
   
-  server.listen(port, () => console.log(`🚀  TCP server listening on ${port}`));
+  server.listen(port, () => onListening?.());
+  return server;
 }
 
 // Example
-// startServer(4000, (msg, port) => {
+// startServer(4000, { onMsg: (msg, socket) => {
 //   console.log("Received", msg);
 //   send(port, {msg: "the reply"});
-// });
+// } });
