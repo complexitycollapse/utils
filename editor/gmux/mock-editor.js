@@ -7,6 +7,8 @@ import { Cursor } from "./cursor.js";
 */
 
 export function MockEditor() {
+  let keyMappings;
+
   const obj = {
     panel: Panel(),
     symbolPanel: undefined,
@@ -14,30 +16,37 @@ export function MockEditor() {
     handleKeydown(keystring) {
       console.log(keystring);
 
-      if (keystring == " ") {
-        obj.cursor.endEdit();
-      } else if (keystring.length == 1) {
+      let handled = true;
+
+      if (keystring.length == 1) {
         obj.cursor.insert(keystring);
       } else if (keystring.startsWith("Shift-") && keystring.length == 7) {
-        obj.cursor.insert(keystring[6]);
-      } else if (keystring == "ArrowRight") {
-        obj.cursor.crawlForward();
-      } else if (keystring == "ArrowLeft") {
-        obj.cursor.crawlBackward();
-      } else if (keystring == "ArrowUp") {
-        obj.cursor.crawlUpward();
-      } else if (keystring == "ArrowDown") {
-        obj.cursor.crawlDownward();
-      } else if (keystring == "Backspace") {
-        obj.cursor.delete();
-      } else if (keystring == "Enter") {
-        obj.cursor.insertNewline();
+        bj.cursor.insert(keystring[6]);
+      } else {
+        const action = keyMappings.get(keystring);
+        if (action) {
+          action();
+        } else {
+          handled = false;
+        }
       }
+
+      return handled;
     },
     handleMousedown(e) {
       obj.cursor.handleMousedown(e);
     }
   };
+
+  keyMappings = new Map([
+    [" ", () => obj.cursor.endEdit()],
+    ["ArrowRight", () => obj.cursor.crawlForward()],
+    ["ArrowLeft", () => obj.cursor.crawlBackward()],
+    ["ArrowUp", () => obj.cursor.crawlUpward()],
+    ["ArrowDown", () => obj.cursor.crawlDownward()],
+    ["Backspace", () => obj.cursor.delete()],
+    ["Enter", () => obj.cursor.insertNewline()]
+  ]);
 
   obj.symbolPanel = SymbolPanel(obj.panel, obj);
   obj.cursor = Cursor(obj.symbolPanel);
