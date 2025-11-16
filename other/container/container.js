@@ -1,35 +1,46 @@
-export function Services(parent) {
+/*
+A simple IOC container. Two phases: defining the services and then using the services. Use
+createScope to make a child scope. Use createScopedServices to get a new Services object that
+inherits singletons from the parent container. This allows new services to be defined only on the
+children. You can also define new singletons at this level to create a child with local state that
+can be shared with grandchildren but not parents or siblings.
+*/
+
+export function Services(parentContainer) {
   const registry = new Map();
+  let frozen = false;
+
   let obj = {
     add(name, deps, factory, dispose) {
-      registry.set(name, {deps, factory, dispose, lifetime: "singleton"});
+      register(name, {deps, factory, dispose, lifetime: "singleton"});
     },
     addInstance(name, instance) {
-      registry.set(name, {instance, lifetime: "singleton"});
+      register(name, {instance, lifetime: "singleton"});
     },
     addTransient(name, deps, factory, dispose) {
-      registry.set(name, {deps, factory, dispose, lifetime: "transient"});
+      register(name, {deps, factory, dispose, lifetime: "transient"});
     },
     addScoped(name, deps, factory, dispose) {
-      registry.set(name, {deps, factory, dispose, lifetime: "scoped"});
-    },
-    createScope() {
-      return Services(obj);
+      register(name, {deps, factory, dispose, lifetime: "scoped"});
     },
     get(name) {
-      if (registry.has(name)) return registry.get(name);
-      if (parent) return parent.get(name);
+      return registry.get(name);
     },
     has(name) {
-      return registry.has(name) || (parent && parent.has(name));
-    },
-    hasLocally(name) {
       return registry.has(name);
     },
     build() {
-      return Container(obj);
+      frozen = true;
+      return Container(obj, parentContainer);
     }
   };
+
+  function register(name, registration) {
+    if (frozen) {
+      throw new Error("Can't add services once the container has been created.");
+    }
+    registry.set(name, registration);
+  }
 
   return obj;
 }
@@ -42,13 +53,15 @@ function Container(services, parent) {
     get services() {
       return services;
     },
+    get parent() {
+      return parent;
+    },
     get(name, resolveStack) {
       if (resolveStack && resolveStack.includes(name)) {
         throw new CircularDependencyError(name, resolveStack);
       }
 
-      if (!services.has(name)) throw new ResolveError(name, resolveStack);
-      const {deps, factory, lifetime, instance} = services.get(name);
+      const {deps, factory, lifetime, instance} = getRegistration(name, obj, resolveStack);
       
       if (lifetime == "transient") {
         return create(name, deps, factory, resolveStack);
@@ -64,23 +77,36 @@ function Container(services, parent) {
       if (lifetime == "singleton") {
         if (singletons.has(name)) return singletons.get(name);
 
-        if (parent == null || services.hasLocally(name)) {
+        // If the singleton is defined at this level then it should be created
+        // only at this level, not in the parent.
+        if (services.has(name)) {
           const result = instance ?? create(name, deps, factory, resolveStack);
           singletons.set(name, result);
           return result;
         }
-        
-        // We only get here if we have a parent AND the service was defined in the parent
-        // rather in the child (in which case the instance should be shared with the parent)
-        if (parent) {
-          return parent.get(name, resolveStack);
-        }
+
+        // If the singleton was not defined at this level then obviously it must have been defined
+        // at the parent level.
+        return parent.get(name, resolveStack);
       }
     },
-    createScoped() {
-      return Container(Services(services), obj);
+    createScope() {
+      return Container(this.createScopedServices(), obj);
+    },
+    createScopedServices() {
+      return Services(obj);
     }
   };
+
+  function getRegistration(name, container, resolveStack) {
+    if (container.services.has(name)) {
+      return container.services.get(name);
+    }
+    if (container.parent) {
+      return getRegistration(name, parent, resolveStack);
+    }
+    throw new ResolveError(name, resolveStack);
+  }
 
   function create(name, deps, factory, resolveStack) {
     resolveStack = resolveStack ?? [];
