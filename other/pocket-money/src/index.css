@@ -1,0 +1,140 @@
+/* ===== Base ===== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background: #f3f4f6; /* gray-100-ish */
+  color: #111827;      /* gray-900-ish */
+}
+
+table {
+  border-spacing: 0;
+}
+
+/* ===== Layout utilities (subset of Tailwind-like classes) ===== */
+
+.p-6 { padding: 1.5rem; }
+.p-4 { padding: 1rem; }
+.p-2 { padding: 0.5rem; }
+.p-1 { padding: 0.25rem; }
+
+.px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+.py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+
+.mx-auto { margin-left: auto; margin-right: auto; }
+
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+
+.max-w-5xl { max-width: 64rem; }
+
+/* vertical spacing between children */
+.space-y-8 > * + * { margin-top: 2rem; }
+.space-y-2 > * + * { margin-top: 0.5rem; }
+
+/* grid */
+.grid { display: grid; }
+.gap-4 { gap: 1rem; }
+
+/* responsive: md:grid-cols-3 */
+@media (min-width: 768px) {
+  .md\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* flexbox */
+.flex { display: flex; }
+.inline-flex { display: inline-flex; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-1 { gap: 0.25rem; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 0.75rem; }
+
+/* ===== Typography ===== */
+
+.text-3xl {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.font-bold { font-weight: 700; }
+.font-semibold { font-weight: 600; }
+.font-medium { font-weight: 500; }
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+
+.whitespace-nowrap { white-space: nowrap; }
+
+/* ===== Backgrounds & borders ===== */
+
+.bg-white { background-color: #ffffff; }
+.bg-gray-100 { background-color: #f3f4f6; }
+
+.bg-red-600 { background-color: #dc2626; }
+.text-white { color: #ffffff; }
+
+/* Borders */
+.border {
+  border-width: 1px;
+  border-style: solid;
+  border-color: #d1d5db; /* gray-300 */
+}
+
+.rounded { border-radius: 0.25rem; }
+.rounded-lg { border-radius: 0.5rem; }
+.rounded-2xl { border-radius: 1rem; }
+
+/* Inputs */
+input[type="number"],
+input[type="text"] {
+  font: inherit;
+}
+
+/* Specific helpers used in your app */
+
+.w-24 { width: 6rem; }
+.w-20 { width: 5rem; }
+
+.min-w-full { min-width: 100%; }
+.border-collapse { border-collapse: collapse; }
+
+.overflow-x-auto { overflow-x: auto; }
+
+/* Simple shadow */
+.shadow {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* Table cells */
+th,
+td {
+  border: 1px solid #d1d5db;
+}
+
+th {
+  background-color: #f3f4f6;
+}
+
+.align-middle { vertical-align: middle; }
