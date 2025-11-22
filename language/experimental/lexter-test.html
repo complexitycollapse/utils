@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Lexer Test Harness</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 1.5rem;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: #121212;
+        color: #f5f5f5;
+      }
+
+      h1 {
+        font-size: 1.35rem;
+        margin: 0 0 0.5rem 0;
+      }
+
+      p {
+        margin: 0 0 0.75rem 0;
+        color: #bbbbbb;
+        font-size: 0.95rem;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .input-panel,
+      .output-panel {
+        background: #1e1e1e;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 0 0 1px #252525;
+      }
+
+      label {
+        display: block;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        color: #cccccc;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 200px;
+        resize: vertical;
+        padding: 0.75rem;
+        border-radius: 4px;
+        border: 1px solid #333333;
+        background: #111111;
+        color: #f5f5f5;
+        font-family: "JetBrains Mono", "Fira Code", ui-monospace,
+          SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+          "Courier New", monospace;
+        font-size: 0.9rem;
+        line-height: 1.4;
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: #4f8cff;
+        box-shadow: 0 0 0 1px #4f8cff55;
+      }
+
+      .hint {
+        display: block;
+        margin-top: 0.75rem;
+        font-size: 0.8rem;
+        color: #888888;
+      }
+
+      .status-bar {
+        font-size: 0.85rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+
+      .status-count {
+        color: #bbbbbb;
+      }
+
+      .status-error {
+        color: #ff8080;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        white-space: pre-wrap;
+      }
+
+      .tokens-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: stretch;
+      }
+
+      .token {
+        display: flex;
+        flex-direction: column;
+        min-width: 7rem;
+        max-width: 15rem;
+        padding: 0.35rem 0.5rem;
+        border-radius: 4px;
+        background: #181818;
+        border: 1px solid #333333;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: background 0.15s, box-shadow 0.15s, border-color 0.15s;
+      }
+
+      .token:hover {
+        background: #2b2b2b;
+      }
+
+      .token.selected {
+        border-color: #4f8cff;
+        box-shadow: 0 0 0 2px #4f8cff55;
+        background: #1b283d;
+      }
+
+      .token.no-highlight {
+        cursor: default;
+        opacity: 0.7;
+      }
+
+      .token-type {
+        font-weight: 600;
+        margin-bottom: 0.15rem;
+      }
+
+      .token-type.keyword {
+        color: #ffcc66;
+      }
+
+      .token-type.literal {
+        color: #99e2ff;
+      }
+
+      .token-type.punctuation {
+        color: #ff99c2;
+      }
+
+      .token-type.layout {
+        color: #a0d080;
+      }
+
+      .token-type.meta {
+        color: #c792ea;
+      }
+
+      .token-value {
+        word-break: break-word;
+        color: #cccccc;
+        margin-bottom: 0.15rem;
+      }
+
+      .token-meta {
+        font-size: 0.72rem;
+        color: #777777;
+      }
+
+      .empty-message {
+        font-size: 0.9rem;
+        color: #777777;
+      }
+
+      .highlighted-range {
+        background: #4f8cff44;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Lexer Test Harness</h1>
+      <p>
+        Type in the source below. Tokens update automatically. Click a token to
+        highlight its range in the source. Tokens with no visual representation
+        (e.g. <code>EOF</code>) are shown but not highlighted.
+      </p>
+
+      <div class="input-panel">
+        <label for="source">Source</label>
+        <textarea id="source" spellcheck="false"></textarea>
+        <span class="hint">
+          Tabs are not allowed; use spaces for indentation.
+        </span>
+      </div>
+
+      <div class="output-panel">
+        <div class="status-bar">
+          <span class="status-count" id="tokenCount">No tokens yet.</span>
+          <span class="status-error" id="errorMessage"></span>
+        </div>
+        <div id="tokens" class="tokens-container">
+          <div class="empty-message">
+            Lexer output will appear here as a row of token boxes.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { tokenize } from "./lexer.js";
+
+      const sourceEl = document.getElementById("source");
+      const tokensContainer = document.getElementById("tokens");
+      const tokenCountEl = document.getElementById("tokenCount");
+      const errorEl = document.getElementById("errorMessage");
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function classifyTokenKind(type) {
+        if (
+          type === "IF" ||
+          type === "THEN" ||
+          type === "MATCH" ||
+          type === "NOT" ||
+          type === "AND" ||
+          type === "OR"
+        ) {
+          return "keyword";
+        }
+        if (
+          type === "NUMBER" ||
+          type === "STRING" ||
+          type === "IDENT" ||
+          type === "FLAG"
+        ) {
+          return "literal";
+        }
+        if (
+          type === "PLUS" ||
+          type === "MINUS" ||
+          type === "STAR" ||
+          type === "SLASH" ||
+          type === "PERCENT" ||
+          type === "DOT" ||
+          type === "COMMA" ||
+          type === "LPAREN" ||
+          type === "RPAREN" ||
+          type === "COLON" ||
+          type === "LT" ||
+          type === "LTE" ||
+          type === "GT" ||
+          type === "GTE" ||
+          type === "EQUAL" ||
+          type === "NEQ"
+        ) {
+          return "punctuation";
+        }
+        if (type === "INDENT" || type === "DEDENT" || type === "NEWLINE") {
+          return "layout";
+        }
+        if (type === "EOF") {
+          return "meta";
+        }
+        return "";
+      }
+
+      function prettyValue(token) {
+        if (token.type === "NEWLINE") {
+          return "⏎";
+        }
+        if (token.value === null || token.value === undefined) {
+          return String(token.value);
+        }
+        return token.value;
+      }
+
+      // Convert (line, column) + length into a character offset range in the source.
+      // Assumes 1-based line/column from the lexer.
+      function rangeFromLineColLength(text, line, column, length) {
+        if (
+          typeof line !== "number" ||
+          typeof column !== "number" ||
+          typeof length !== "number"
+        ) {
+          return null;
+        }
+
+        const lines = text.split("\n");
+        const lineIndex = Math.max(0, line - 1);
+        let offset = 0;
+
+        for (let i = 0; i < lineIndex && i < lines.length; i++) {
+          offset += lines[i].length + 1; // +1 for '\n'
+        }
+
+        offset += Math.max(0, column - 1);
+
+        let start = offset;
+        let end = offset + length;
+
+        if (start < 0 || start > text.length) {
+          return null;
+        }
+        if (end < start) {
+          end = start;
+        }
+        if (end > text.length) {
+          end = text.length;
+        }
+
+        return { start, end };
+      }
+
+      function renderTokens(tokens) {
+        tokensContainer.innerHTML = "";
+
+        if (!tokens || tokens.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "empty-message";
+          empty.textContent =
+            "Lexer produced no tokens. Enter some input and try again.";
+          tokensContainer.appendChild(empty);
+          tokenCountEl.textContent = "No tokens.";
+          return;
+        }
+
+        tokenCountEl.textContent = `Tokens: ${tokens.length}`;
+
+        tokens.forEach((token, index) => {
+          const tokenEl = document.createElement("div");
+          tokenEl.className = "token";
+
+          const kind = classifyTokenKind(token.type);
+          const typeEl = document.createElement("div");
+          typeEl.className = "token-type" + (kind ? " " + kind : "");
+          typeEl.textContent = token.type;
+
+          const valueEl = document.createElement("div");
+          valueEl.className = "token-value";
+          valueEl.innerHTML = escapeHtml(prettyValue(token));
+
+          const metaEl = document.createElement("div");
+          metaEl.className = "token-meta";
+          const lengthText =
+            token.length == null ? "len: –" : "len: " + token.length;
+          metaEl.textContent = `#${index} · line ${token.line}, column ${
+            token.column
+          } · ${lengthText}`;
+
+          tokenEl.appendChild(typeEl);
+          tokenEl.appendChild(valueEl);
+          tokenEl.appendChild(metaEl);
+
+          const hasVisualRange =
+            typeof token.length === "number" && token.length > 0;
+
+          if (hasVisualRange) {
+            tokenEl.addEventListener("click", () => selectToken(tokenEl, token));
+          } else {
+            tokenEl.classList.add("no-highlight");
+          }
+
+          tokensContainer.appendChild(tokenEl);
+        });
+      }
+
+      function clearTokenSelection() {
+        document.querySelectorAll(".token").forEach((t) =>
+          t.classList.remove("selected")
+        );
+      }
+
+      function selectToken(el, token) {
+        clearTokenSelection();
+        el.classList.add("selected");
+        highlightSourceRange(token);
+      }
+
+      function highlightSourceRange(token) {
+        if (token.length == null || token.length <= 0) {
+          return;
+        }
+
+        const src = sourceEl.value;
+        const range = rangeFromLineColLength(
+          src,
+          token.line,
+          token.column,
+          token.length
+        );
+
+        if (!range) {
+          return;
+        }
+
+        const start = range.start;
+        const end = range.end;
+
+        const before = escapeHtml(src.slice(0, start));
+        const mid = escapeHtml(src.slice(start, end));
+        const after = escapeHtml(src.slice(end));
+
+        const highlightedHtml =
+          "<pre><code>" +
+          before +
+          '<span class="highlighted-range">' +
+          mid +
+          "</span>" +
+          after +
+          "</code></pre>";
+
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = highlightedHtml;
+        wrapper.style.whiteSpace = "pre-wrap";
+        wrapper.style.background = "#111111";
+        wrapper.style.padding = "0.75rem";
+        wrapper.style.borderRadius = "4px";
+        wrapper.style.border = "1px solid #333333";
+        wrapper.style.fontFamily =
+          '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+        wrapper.style.lineHeight = "1.4";
+        wrapper.id = "highlightedView";
+
+        sourceEl.style.display = "none";
+        const existing = document.getElementById("highlightedView");
+        if (existing) {
+          existing.remove();
+        }
+        sourceEl.parentNode.insertBefore(wrapper, sourceEl.nextSibling);
+
+        // Clicking the highlighted view returns to the editable textarea
+        wrapper.addEventListener("click", () => {
+          wrapper.remove();
+          sourceEl.style.display = "block";
+          sourceEl.focus();
+        });
+      }
+
+      function debounce(fn, delay) {
+        let id = null;
+        return function (...args) {
+          if (id !== null) {
+            clearTimeout(id);
+          }
+          id = setTimeout(() => {
+            id = null;
+            fn.apply(this, args);
+          }, delay);
+        };
+      }
+
+      function runLexer() {
+        const source = sourceEl.value;
+        errorEl.textContent = "";
+        const highlighted = document.getElementById("highlightedView");
+        if (highlighted) {
+          highlighted.remove();
+          sourceEl.style.display = "block";
+        }
+
+        try {
+          const tokens = tokenize(source);
+          renderTokens(tokens);
+        } catch (err) {
+          tokensContainer.innerHTML = "";
+          const errorDiv = document.createElement("div");
+          errorDiv.className = "empty-message";
+          errorDiv.textContent = "Lexer error — see message above.";
+          tokensContainer.appendChild(errorDiv);
+
+          errorEl.textContent =
+            err && err.message ? String(err.message) : String(err);
+          tokenCountEl.textContent = "Tokenization failed.";
+        }
+      }
+
+      const debouncedRunLexer = debounce(runLexer, 120);
+
+      // Auto-tokenize on typing
+      sourceEl.addEventListener("input", debouncedRunLexer);
+
+      // Some starter text so there's something to look at.
+      sourceEl.value =
+        "if x > y then:\n" +
+        "  match x:\n" +
+        "    Lit n -> n + 1\n" +
+        "    Add a b -> a + b\n";
+
+      runLexer();
+    </script>
+  </body>
+</html>
