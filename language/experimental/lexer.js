@@ -108,7 +108,7 @@ export function tokenize(source) {
         }
 
         // Otherwise, it's the minus operator
-        tokens.push(makeToken("MINUS", "-", lineNumber, column, 1));
+        tokens.push(makeToken("-", "-", lineNumber, column, 1));
         i += 1;
         column += 1;
         continue;
@@ -140,55 +140,55 @@ export function tokenize(source) {
 
       // Punctuation / operators.
       if (ch === "+") {
-        tokens.push(makeToken("PLUS", "+", lineNumber, column, 1));
+        tokens.push(makeToken("+", "+", lineNumber, column, 1));
         i += 1;
         column += 1;
         continue;
       }
       if (ch === "*") {
-        tokens.push(makeToken("STAR", "*", lineNumber, column, 1));
+        tokens.push(makeToken("*", "*", lineNumber, column, 1));
         i += 1;
         column += 1;
         continue;
       }
       if (ch === "/") {
-        tokens.push(makeToken("SLASH", "/", lineNumber, column, 1));
+        tokens.push(makeToken("/", "/", lineNumber, column, 1));
         i += 1;
         column += 1;
         continue;
       }
       if (ch === "%") {
-        tokens.push(makeToken("PERCENT", "%", lineNumber, column, 1));
+        tokens.push(makeToken("%", "%", lineNumber, column, 1));
         i += 1;
         column += 1;
         continue;
       }
       if (ch === ".") {
-        tokens.push(makeToken("DOT", ".", lineNumber, column, 1));
+        tokens.push(makeToken(".", ".", lineNumber, column, 1));
         i += 1;
         column += 1;
         continue;
       }
       if (ch === ",") {
-        tokens.push(makeToken("COMMA", ",", lineNumber, column, 1));
+        tokens.push(makeToken(",", ",", lineNumber, column, 1));
         i += 1;
         column += 1;
         continue;
       }
       if (ch === "(") {
-        tokens.push(makeToken("LPAREN", "(", lineNumber, column, 1));
+        tokens.push(makeToken("(", "(", lineNumber, column, 1));
         i += 1;
         column += 1;
         continue;
       }
       if (ch === ")") {
-        tokens.push(makeToken("RPAREN", ")", lineNumber, column, 1));
+        tokens.push(makeToken(")", ")", lineNumber, column, 1));
         i += 1;
         column += 1;
         continue;
       }
       if (ch === ":") {
-        tokens.push(makeToken("COLON", ":", lineNumber, column, 1));
+        tokens.push(makeToken(":", ":", lineNumber, column, 1));
         i += 1;
         column += 1;
         continue;
@@ -196,11 +196,11 @@ export function tokenize(source) {
       if (ch === "<") {
         const next = rawLine[i + 1];
         if (next === "=") {
-          tokens.push(makeToken("LTE", "<=", lineNumber, column, 2));
+          tokens.push(makeToken("<=", "<=", lineNumber, column, 2));
           i += 2;
           column += 2;
         } else {
-          tokens.push(makeToken("LT", "<", lineNumber, column, 1));
+          tokens.push(makeToken("<", "<", lineNumber, column, 1));
           i += 1;
           column += 1;
         }
@@ -209,11 +209,11 @@ export function tokenize(source) {
       if (ch === ">") {
         const next = rawLine[i + 1];
         if (next === "=") {
-          tokens.push(makeToken("GTE", ">=", lineNumber, column, 2));
+          tokens.push(makeToken(">=", ">=", lineNumber, column, 2));
           i += 2;
           column += 2;
         } else {
-          tokens.push(makeToken("GT", ">", lineNumber, column, 1));
+          tokens.push(makeToken(">", ">", lineNumber, column, 1));
           i += 1;
           column += 1;
         }
@@ -221,7 +221,7 @@ export function tokenize(source) {
       }
       if (ch === "=") {
         const next = rawLine[i + 1];
-        tokens.push(makeToken("EQUAL", "=", lineNumber, column, 1));
+        tokens.push(makeToken("=", "=", lineNumber, column, 1));
         i += 1;
         column += 1;
         continue;
@@ -229,7 +229,7 @@ export function tokenize(source) {
       if (ch === "!") {
         const next = rawLine[i + 1];
         if (next === "=") {
-          tokens.push(makeToken("NEQ", "!=", lineNumber, column, 2));
+          tokens.push(makeToken("!=", "!=", lineNumber, column, 2));
           i += 2;
           column += 2;
           continue;

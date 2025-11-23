@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Parser Test Harness</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 1.5rem;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: #121212;
+        color: #f5f5f5;
+      }
+
+      h1 {
+        font-size: 1.35rem;
+        margin: 0 0 0.5rem 0;
+      }
+
+      p {
+        margin: 0 0 0.75rem 0;
+        color: #bbbbbb;
+        font-size: 0.95rem;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .input-panel,
+      .output-panel {
+        background: #1e1e1e;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 0 0 1px #252525;
+      }
+
+      label {
+        display: block;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        color: #cccccc;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 200px;
+        resize: vertical;
+        padding: 0.75rem;
+        border-radius: 4px;
+        border: 1px solid #333333;
+        background: #111111;
+        color: #f5f5f5;
+        font-family: "JetBrains Mono", "Fira Code", ui-monospace,
+          SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+          "Courier New", monospace;
+        font-size: 0.9rem;
+        line-height: 1.4;
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: #4f8cff;
+        box-shadow: 0 0 0 1px #4f8cff55;
+      }
+
+      .hint {
+        display: block;
+        margin-top: 0.75rem;
+        font-size: 0.8rem;
+        color: #888888;
+      }
+
+      .status-bar {
+        font-size: 0.85rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+
+      .status-count {
+        color: #bbbbbb;
+      }
+
+      .status-error {
+        color: #ff8080;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        white-space: pre-wrap;
+      }
+
+      .tree-container {
+        font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+          Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 0.8rem;
+      }
+
+      .empty-message {
+        font-size: 0.9rem;
+        color: #777777;
+      }
+
+      .ast-node {
+        border-left: 2px solid #333333;
+        margin-left: 0.75rem;
+        padding-left: 0.5rem;
+        margin-bottom: 0.4rem;
+      }
+
+      .ast-node-root {
+        border-left: none;
+        margin-left: 0;
+        padding-left: 0;
+      }
+
+      .ast-node-header {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.4rem;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        background: #181818;
+        border: 1px solid #333333;
+        cursor: pointer;
+        transition: background 0.15s, box-shadow 0.15s, border-color 0.15s;
+      }
+
+      .ast-node-header:hover {
+        background: #262626;
+      }
+
+      .ast-node.selected > .ast-node-header {
+        border-color: #4f8cff;
+        box-shadow: 0 0 0 2px #4f8cff55;
+        background: #1b283d;
+      }
+
+      .ast-node-type {
+        font-weight: 600;
+        color: #ffcc66;
+      }
+
+      .ast-node-meta {
+        color: #888888;
+        font-size: 0.72rem;
+      }
+
+      .ast-node-toggle {
+        font-size: 0.72rem;
+        color: #aaaaaa;
+        opacity: 0.9;
+      }
+
+      .ast-node-fields {
+        margin-top: 0.2rem;
+        margin-bottom: 0.2rem;
+      }
+
+      .ast-field {
+        display: flex;
+        align-items: flex-start;
+        margin-top: 0.12rem;
+      }
+
+      .ast-field-name {
+        min-width: 4.5rem;
+        color: #999999;
+        padding-right: 0.4rem;
+      }
+
+      .ast-field-value {
+        flex: 1;
+        color: #cccccc;
+      }
+
+      .ast-primitive {
+        color: #cccccc;
+      }
+
+      .ast-node.collapsed > .ast-node-children {
+        display: none;
+      }
+
+      .ast-node.collapsed > .ast-node-header .ast-node-toggle::before {
+        content: "+";
+      }
+
+      .ast-node:not(.collapsed) > .ast-node-header .ast-node-toggle::before {
+        content: "−";
+      }
+
+      .ast-node-header.no-loc {
+        cursor: default;
+      }
+
+      /* JSON output pane */
+
+      .json-output {
+        margin: 0;
+        padding: 0.75rem;
+        background: #111111;
+        border-radius: 4px;
+        border: 1px solid #333333;
+        font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+          Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 0.8rem;
+        line-height: 1.4;
+        white-space: pre;
+        overflow: auto;
+        max-height: 300px;
+      }
+
+      .json-output-title {
+        font-size: 0.85rem;
+        color: #bbbbbb;
+        margin-bottom: 0.35rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Parser Test Harness</h1>
+      <p>
+        Type in the source below. The parser runs automatically and the parse
+        tree is shown underneath. Click a node header to select it and
+        highlight its span in the source (if it has location info). The JSON
+        representation of the AST is shown in the bottom pane.
+      </p>
+
+      <div class="input-panel">
+        <label for="source">Source</label>
+        <textarea id="source" spellcheck="false"></textarea>
+        <span class="hint">
+          Tabs are not allowed; use spaces for indentation.
+        </span>
+      </div>
+
+      <div class="output-panel">
+        <div class="status-bar">
+          <span class="status-count" id="nodeCount">No AST yet.</span>
+          <span class="status-error" id="errorMessage"></span>
+        </div>
+        <div id="tree" class="tree-container">
+          <div class="empty-message">
+            Parse tree will appear here once the input parses successfully.
+          </div>
+        </div>
+      </div>
+
+      <div class="output-panel">
+        <div class="json-output-title">AST as JSON</div>
+        <pre id="jsonOutput" class="json-output">
+// no AST yet
+        </pre>
+      </div>
+    </div>
+
+    <script type="module">
+      import { parse } from "./parser.js";
+
+      const sourceEl = document.getElementById("source");
+      const treeContainer = document.getElementById("tree");
+      const nodeCountEl = document.getElementById("nodeCount");
+      const errorEl = document.getElementById("errorMessage");
+      const jsonEl = document.getElementById("jsonOutput");
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      // Same idea as in the lexer test: convert (line, column, length)
+      // into a [start, end) range in character offsets.
+      function rangeFromLineColLength(text, line, column, length) {
+        if (
+          typeof line !== "number" ||
+          typeof column !== "number" ||
+          typeof length !== "number"
+        ) {
+          return null;
+        }
+
+        const lines = text.split("\n");
+        const lineIndex = Math.max(0, line - 1);
+        let offset = 0;
+
+        for (let i = 0; i < lineIndex && i < lines.length; i++) {
+          offset += lines[i].length + 1; // +1 for '\n'
+        }
+
+        offset += Math.max(0, column - 1);
+
+        let start = offset;
+        let end = offset + length;
+
+        if (start < 0 || start > text.length) return null;
+        if (end < start) end = start;
+        if (end > text.length) end = text.length;
+
+        return { start, end };
+      }
+
+      function isAstNode(value) {
+        return (
+          value &&
+          typeof value === "object" &&
+          !Array.isArray(value) &&
+          (typeof value.type === "string" || typeof value.kind === "string")
+        );
+      }
+
+      function renderAst(ast) {
+        treeContainer.innerHTML = "";
+
+        if (!ast) {
+          const empty = document.createElement("div");
+          empty.className = "empty-message";
+          empty.textContent = "Parser returned no AST.";
+          treeContainer.appendChild(empty);
+          nodeCountEl.textContent = "No AST.";
+          return;
+        }
+
+        const visited = new WeakSet();
+        let totalNodes = 0;
+
+        function renderNode(node, isRoot = false, fieldName = null) {
+          if (!isAstNode(node)) {
+            const prim = document.createElement("span");
+            prim.className = "ast-primitive";
+            prim.textContent = JSON.stringify(node);
+            return prim;
+          }
+
+          if (visited.has(node)) {
+            const cyc = document.createElement("span");
+            cyc.className = "ast-primitive";
+            cyc.textContent = "[cycle]";
+            return cyc;
+          }
+          visited.add(node);
+          totalNodes++;
+
+          const nodeEl = document.createElement("div");
+          nodeEl.className = "ast-node" + (isRoot ? " ast-node-root" : "");
+
+          const header = document.createElement("div");
+          header.className = "ast-node-header";
+
+          const typeSpan = document.createElement("span");
+          typeSpan.className = "ast-node-type";
+          typeSpan.textContent = node.type || node.kind || "(node)";
+
+          const metaSpan = document.createElement("span");
+          metaSpan.className = "ast-node-meta";
+          const locBits = [];
+          if (typeof node.line === "number") locBits.push("line " + node.line);
+          if (typeof node.column === "number") {
+            locBits.push("col " + node.column);
+          }
+          if (typeof node.length === "number") {
+            locBits.push("len " + node.length);
+          }
+          if (fieldName != null) {
+            locBits.unshift(fieldName + ":");
+          }
+          metaSpan.textContent = locBits.join(" ");
+
+          const toggleSpan = document.createElement("span");
+          toggleSpan.className = "ast-node-toggle";
+
+          header.appendChild(toggleSpan);
+          header.appendChild(typeSpan);
+          header.appendChild(metaSpan);
+          nodeEl.appendChild(header);
+
+          const childrenWrapper = document.createElement("div");
+          childrenWrapper.className = "ast-node-children";
+
+          const fieldsEl = document.createElement("div");
+          fieldsEl.className = "ast-node-fields";
+
+          for (const key of Object.keys(node)) {
+            if (key === "type" || key === "kind") continue;
+            if (key === "line" || key === "column" || key === "length") {
+              continue;
+            }
+
+            const value = node[key];
+            const fieldEl = document.createElement("div");
+            fieldEl.className = "ast-field";
+
+            const nameEl = document.createElement("div");
+            nameEl.className = "ast-field-name";
+            nameEl.textContent = key;
+
+            const valueEl = document.createElement("div");
+            valueEl.className = "ast-field-value";
+
+            if (Array.isArray(value)) {
+              if (value.length === 0) {
+                valueEl.textContent = "[]";
+              } else {
+                value.forEach((item, index) => {
+                  if (isAstNode(item)) {
+                    const childNode = renderNode(
+                      item,
+                      false,
+                      key + "[" + index + "]"
+                    );
+                    valueEl.appendChild(childNode);
+                  } else {
+                    const primLine = document.createElement("div");
+                    primLine.className = "ast-primitive";
+                    primLine.textContent =
+                      "[" + index + "] = " + JSON.stringify(item);
+                    valueEl.appendChild(primLine);
+                  }
+                });
+              }
+            } else if (isAstNode(value)) {
+              const childNode = renderNode(value, false, key);
+              valueEl.appendChild(childNode);
+            } else {
+              const prim = document.createElement("span");
+              prim.className = "ast-primitive";
+              prim.textContent = JSON.stringify(value);
+              valueEl.appendChild(prim);
+            }
+
+            fieldEl.appendChild(nameEl);
+            fieldEl.appendChild(valueEl);
+            fieldsEl.appendChild(fieldEl);
+          }
+
+          childrenWrapper.appendChild(fieldsEl);
+          nodeEl.appendChild(childrenWrapper);
+
+          // Collapsing and selection / highlighting
+          const hasLoc =
+            typeof node.line === "number" &&
+            typeof node.column === "number" &&
+            typeof node.length === "number";
+          if (!hasLoc) {
+            header.classList.add("no-loc");
+          } else {
+            header.addEventListener("click", (event) => {
+              // Ctrl/Cmd-click toggles collapse; normal click selects and highlights.
+              if (event.ctrlKey || event.metaKey) {
+                nodeEl.classList.toggle("collapsed");
+                return;
+              }
+              selectNode(nodeEl, node);
+            });
+          }
+
+          return nodeEl;
+        }
+
+        if (Array.isArray(ast)) {
+          const wrapper = document.createElement("div");
+          wrapper.className = "ast-node-root-list";
+          ast.forEach((node, index) => {
+            const child = renderNode(node, true, "#" + index);
+            wrapper.appendChild(child);
+          });
+          treeContainer.appendChild(wrapper);
+        } else {
+          const rootNode = renderNode(ast, true, null);
+          treeContainer.appendChild(rootNode);
+        }
+
+        nodeCountEl.textContent = "AST nodes (approx.): " + totalNodes;
+      }
+
+      function clearSelection() {
+        document
+          .querySelectorAll(".ast-node.selected")
+          .forEach((nodeEl) => nodeEl.classList.remove("selected"));
+      }
+
+      function selectNode(nodeEl, node) {
+        clearSelection();
+        nodeEl.classList.add("selected");
+        highlightSourceRange(node);
+      }
+
+      function highlightSourceRange(node) {
+        if (
+          typeof node.line !== "number" ||
+          typeof node.column !== "number" ||
+          typeof node.length !== "number"
+        ) {
+          return;
+        }
+
+        const src = sourceEl.value;
+        const range = rangeFromLineColLength(
+          src,
+          node.line,
+          node.column,
+          node.length
+        );
+        if (!range) return;
+
+        sourceEl.focus();
+        try {
+          sourceEl.setSelectionRange(range.start, range.end);
+        } catch {
+          // ignore
+        }
+      }
+
+      function debounce(fn, delay) {
+        let id = null;
+        return function (...args) {
+          if (id !== null) {
+            clearTimeout(id);
+          }
+          id = setTimeout(() => {
+            id = null;
+            fn.apply(this, args);
+          }, delay);
+        };
+      }
+
+      // Safe JSON stringify that won't choke on accidental cycles.
+      function safeStringify(value, space = 2) {
+        const seen = new WeakSet();
+        return JSON.stringify(
+          value,
+          (key, val) => {
+            if (typeof val === "object" && val !== null) {
+              if (seen.has(val)) return "[Circular]";
+              seen.add(val);
+            }
+            return val;
+          },
+          space
+        );
+      }
+
+      function runParser() {
+        const source = sourceEl.value;
+        errorEl.textContent = "";
+        clearSelection();
+
+        if (!source.trim()) {
+          treeContainer.innerHTML =
+            '<div class="empty-message">Enter some source to see a parse tree.</div>';
+          nodeCountEl.textContent = "No AST yet.";
+          jsonEl.textContent = "// no AST (empty input)";
+          return;
+        }
+
+        try {
+          const ast = parse(source);
+          renderAst(ast);
+          jsonEl.textContent = safeStringify(ast, 2);
+          jsonEl.scrollTop = 0;
+        } catch (err) {
+          treeContainer.innerHTML = "";
+          const errorDiv = document.createElement("div");
+          errorDiv.className = "empty-message";
+          errorDiv.textContent = "Parser error — see message above.";
+          treeContainer.appendChild(errorDiv);
+
+          errorEl.textContent =
+            err && err.message ? String(err.message) : String(err);
+          nodeCountEl.textContent = "Parsing failed.";
+          jsonEl.textContent = "// no AST (parse error)";
+        }
+      }
+
+      const debouncedRunParser = debounce(runParser, 140);
+
+      sourceEl.addEventListener("input", debouncedRunParser);
+
+      // Some starter text
+      sourceEl.value =
+        "if x > y then:\n" +
+        "  match x:\n" +
+        "    Lit n -> n + 1\n" +
+        "    Add a b -> a + b\n";
+
+      runParser();
+    </script>
+  </body>
+</html>
