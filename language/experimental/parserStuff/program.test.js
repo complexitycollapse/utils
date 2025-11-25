@@ -8,15 +8,20 @@ function parse(source) {
   return parsed;
 }
 
-function stmt(source) {
+function stmts(source) {
   const parsed = parse(source);
-  expect(parsed.stmts).toHaveLength(1);
-  expect(parsed.stmts[0]).toHaveProperty("type", "statement");
-  return parsed.stmts[0];
+  return parsed.stmts;
+}
+
+function stmt(source) {
+  const s = stmts(source);
+  expect(s).toHaveLength(1);
+  return s[0];
 }
 
 function expr(source) {
   const s = stmt(source);
+  expect(s).toHaveProperty("type", "expression statement");
   expect(s.expression).toBeTruthy();
   return s.expression;
 }
@@ -186,5 +191,105 @@ describe("Logical expressions", () => {
       type: "prefix",
       right: { value: true }
     });
+  });
+
+  it("x < y", () => {
+    expect(expr("x < y")).toMatchObject({
+      type: "binary operator",
+      left: { name: "x" },
+      right: { name: "y" }
+    });
+  });
+
+  it("not x < y", () => {
+    expect(expr("not x < y")).toMatchObject({
+      type: "prefix",
+      operator: "not",
+      right: {
+        type: "binary operator",
+        operator: "<",
+        left: { name: "x" },
+        right: { name: "y" }
+      }});
+  });
+
+  it("x < y and y > z", () => {
+    expect(expr("x < y and y > z")).toMatchObject({
+      type: "binary operator",
+      operator: "and",
+      left: {
+        operator: "<",
+        left: { name: "x" },
+        right: { name: "y" }
+      },
+      right: {
+        operator: ">",
+        left: { name: "y" },
+        right: { name: "z" }
+      }});
+  });
+});
+
+describe("statement blocks", () => {
+  it("if x then y", () => {
+    expect(stmt("if x then y")).toMatchObject({
+      type: "if statement",
+      test: { name: "x" },
+      consequent: [{ expression: { name: "y" }}]
+    });
+  });
+
+  it("if x > y then z", () => {
+    expect(stmt("if x > y then z")).toMatchObject({
+      type: "if statement",
+      test: {
+        operator: ">",
+        left: { name: "x" },
+        right: { name: "y" }},
+      consequent: [{ expression: { name: "z" }}]
+    });
+  });
+
+  it("if x > y then:\\n  z", () => {
+    expect(stmt("if x > y then:\n  z")).toMatchObject({
+      type: "if statement",
+      test: {
+        operator: ">",
+        left: { name: "x" },
+        right: { name: "y" }},
+      consequent: [{ expression: { name: "z" }}]
+    });
+  });
+
+  it("if x > y then:\\n  a\\n  b\\n  c", () => {
+    expect(stmt("if x > y then:\n  a\n  b\n  c")).toMatchObject({
+      type: "if statement",
+      consequent: [
+        { expression: { name: "a" }},
+        { expression: { name: "b" }},
+        { expression: { name: "c" }}
+      ]});
+  });
+
+  it("if x > y then:\\n  a\\n  b\\nc", () => {
+    expect(stmts("if x > y then:\n  a\n  b\nc")).toMatchObject([{
+      type: "if statement",
+      consequent: [
+        { expression: { name: "a" }},
+        { expression: { name: "b" }}
+      ]},
+      { expression: { type: "identifier", name: "c" }}
+    ]);
+  });
+
+  it("if x then if y then z", () => {
+    expect(stmt("if x then if y then z")).toMatchObject({
+      type: "if statement",
+      test: { name: "x" },
+      consequent: [{
+        type: "if statement",
+        test: { name: "y" },
+        consequent: [{ expression: { name: "z" }}]
+      }]});
   });
 });

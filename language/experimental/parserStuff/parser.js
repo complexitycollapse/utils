@@ -8,6 +8,11 @@ export function parse(source) {
 
 function createParser(tokens) {
   let index = 0, currentGroupingDepth = 0, ignoredIndents = 0;
+  const delimiterStack = [];
+
+  function pushDelimiters(delimiters) { delimiterStack.unshift(new Set(delimiters)); }
+  function popDelimiters() { delimiterStack.shift(); }
+  function isDelimiter(t) { delimiterStack[0] && delimiterStack[0].has(t.type); }
 
   function check(offset = 0) {
     if (index + offset >= tokens.length) {
@@ -100,5 +105,6 @@ function createParser(tokens) {
 
   return { tokens, get current() { return current() }, peek, at, atNext, advance, expect, syntaxError, makeNode,
     nuds: new Map(), leds: new Map(), tokens, set groupingDepth(val) { currentGroupingDepth = val },
-    get groupingDepth() { return currentGroupingDepth; }, skipContinuedLineExcessIndentation, skipLineNoise };
+    get groupingDepth() { return currentGroupingDepth; }, skipContinuedLineExcessIndentation, skipLineNoise,
+  pushDelimiters, popDelimiters, isDelimiter };
 }

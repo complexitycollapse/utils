@@ -16,6 +16,11 @@ export function program(source) {
   binaryOperator(p, "*", 50);
   binaryOperator(p, "/", 50); // TODO: which way should this associate with *?
   binaryOperator(p, "OR", 20);
+  binaryOperator(p, "AND", 20);
+  binaryOperator(p, "<", 30);
+  binaryOperator(p, ">", 30);
+  binaryOperator(p, "=", 30);
+  binaryOperator(p, "!=", 30);
   prefix(p, "NOT", (p, t) => p.makeNode("prefix", { operator: "not", right: parseExpression(p, 0)}));
 
   prefix(p, "(", (p, t) => {
@@ -74,10 +79,48 @@ function getRbp(p, t) {
 function parseStatement(p) {
   let t = p.current;
 
-  const expr = parseExpression(p, 0);
+  if (p.at("IF")) {
+    const t = p.advance();
+    p.pushDelimiters(["THEN"]);
+    const test = parseExpression(p, 0);
+    p.popDelimiters();
+    p.expect("THEN");
+    const consequent = parseStatementBlock(p);
+    return p.makeNode("if statement", { test, consequent }, t);
+  } else {
+    const expr = parseExpression(p, 0);
+    parseStatementTerminator(p);
+    return p.makeNode("expression statement", { expression: expr }, t);
+  }
+}
+
+function parseStatementTerminator(p) {
   p.expect("NEWLINE");
   p.skipContinuedLineExcessIndentation();
-  return p.makeNode("statement", { expression: expr }, t);
+}
+
+function parseStatementBlock(p) {
+  const stmts = [];
+
+  if (p.at(":")) {
+    p.advance();
+    parseStatementTerminator(p);
+    skipEmptyLines(p);
+    p.expect("INDENT");
+    skipEmptyLines(p);
+    while (true) {
+      stmts.push(parseStatement(p));
+      skipEmptyLines(p);
+      if (p.at("DEDENT")) {
+        p.advance();
+        break;
+      }
+    }
+  } else {
+    stmts.push(parseStatement(p));
+  }
+
+  return stmts;
 }
 
 function parseExpression(p, rbp) {
@@ -94,7 +137,10 @@ function parseExpression(p, rbp) {
   while (true) {
     p.skipLineNoise();
     t = p.current;
-    if ((p.groupingDepth === 0 && t.type === "NEWLINE") || rbp >= getRbp(p, t)) { break; }
+    if ((p.groupingDepth === 0 && t.type === "NEWLINE") || p.isDelimiter(t) 
+      || rbp >= getRbp(p, t)) {
+      break;
+    }
     t = p.advance();
 
     const led = p.leds.get(t.type);
