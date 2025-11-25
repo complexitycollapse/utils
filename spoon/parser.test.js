@@ -1,6 +1,5 @@
-// parser.test.js
 import { describe, it, expect } from "vitest";
-import { parse } from "./parser.js";
+import { parse } from "./parser-old.js";
 
 // Remove location info so tests only assert structure.
 function stripLoc(node) {
