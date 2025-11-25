@@ -7,27 +7,32 @@ export function parse(source) {
 }
 
 function createParser(tokens) {
-  let index = 0, currentGroupingDepth = 0, ignoredIndents = 0;
-  const delimiterStack = [];
-
-  function pushDelimiters(delimiters) { delimiterStack.unshift(new Set(delimiters)); }
-  function popDelimiters() { delimiterStack.shift(); }
-  function isDelimiter(t) { delimiterStack[0] && delimiterStack[0].has(t.type); }
+  let obj = {
+    groupingDepth: 0,
+    ignoredIndents: 0,
+    delimiterStack: [],
+    index: 0,
+    nuds: new Map(),
+    leds: new Map()
+  };
+  function pushDelimiters(delimiters) { obj.delimiterStack.unshift(new Set(delimiters)); }
+  function popDelimiters() { obj.delimiterStack.shift(); }
+  function isDelimiter(t) { return obj.delimiterStack[0] && obj.delimiterStack[0].has(t.type); }
 
   function check(offset = 0) {
-    if (index + offset >= tokens.length) {
+    if (obj.index + offset >= tokens.length) {
       throw new Error("Parser has gone over the end");
     }
   }
 
   function current() {
     check();
-    return tokens[index];
+    return tokens[obj.index];
   }
 
   function peek(offset = 1) {
     check(offset);
-    return tokens[index + offset];
+    return tokens[obj.index + offset];
   }
 
   function at(type) {
@@ -36,13 +41,13 @@ function createParser(tokens) {
   }
 
   function skipLineNoise() {
-    if (currentGroupingDepth === 0) { return; }
-    let t = tokens[index];
+    if (obj.groupingDepth === 0) { return; }
+    let t = tokens[obj.index];
     while(t.type === "NEWLINE" || t.type === "DEDENT" || t.type === "INDENT") {
-      if (t.type === "INDENT") { ignoredIndents++; }
-      if (t.type === "DEDENT") { ignoredIndents--; }
-      ++index
-      t = tokens[index];
+      if (t.type === "INDENT") { obj.ignoredIndents++; }
+      if (t.type === "DEDENT") { obj.ignoredIndents--; }
+      ++obj.index
+      t = tokens[obj.index];
     }
   }
 
@@ -52,7 +57,7 @@ function createParser(tokens) {
   }
 
   function advance() {
-    return tokens[index++];
+    return tokens[obj.index++];
   }
 
   /**
@@ -60,13 +65,13 @@ function createParser(tokens) {
    * lexer to generate indents and dedents when the line is completed. This fn detects them and drops them.
    */
   function skipContinuedLineExcessIndentation() {
-    while (ignoredIndents > 0 && current().type === "DEDENT") {
-      ++index;
-      --ignoredIndents;
+    while (obj.ignoredIndents > 0 && current().type === "DEDENT") {
+      ++obj.index;
+      --obj.ignoredIndents;
     }
-    while (ignoredIndents < 0 && current().type === "INDENT") {
-      ++index;
-      ++ignoredIndents;
+    while (obj.ignoredIndents < 0 && current().type === "INDENT") {
+      ++obj.index;
+      ++obj.ignoredIndents;
     }
   }
 
@@ -77,7 +82,7 @@ function createParser(tokens) {
         message || `Expected ${type}, got ${t ? t.type : "EOF"}.`,
       );
     }
-    index += 1;
+    obj.index += 1;
     return t;
   }
 
@@ -103,8 +108,15 @@ function createParser(tokens) {
     return node;
   }
 
-  return { tokens, get current() { return current() }, peek, at, atNext, advance, expect, syntaxError, makeNode,
-    nuds: new Map(), leds: new Map(), tokens, set groupingDepth(val) { currentGroupingDepth = val },
-    get groupingDepth() { return currentGroupingDepth; }, skipContinuedLineExcessIndentation, skipLineNoise,
-  pushDelimiters, popDelimiters, isDelimiter };
+  function skipEmptyLines() {
+    while (at("NEWLINE")) {
+      advance();
+    }
+  }
+
+  Object.defineProperties(obj, Object.getOwnPropertyDescriptors({ tokens, get current() { return current(); }, peek, at, atNext, advance,
+  expect, syntaxError, makeNode, tokens, skipContinuedLineExcessIndentation, skipLineNoise,
+  pushDelimiters, popDelimiters, isDelimiter, skipEmptyLines }));
+
+  return obj;
 }

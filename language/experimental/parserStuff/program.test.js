@@ -293,3 +293,12 @@ describe("statement blocks", () => {
       }]});
   });
 });
+
+describe("continued statements", () => {
+  it("continued if", () => {
+    expect(stmt("if x \n  then y")).toMatchObject({
+      test: { name: "x" },
+      consequent: [{ expression: { name: y }}] 
+    });
+  });
+});

@@ -1,4 +1,6 @@
 import { parse } from "./parser.js";
+import { parseExpression } from "./expressions.js";
+import { parseStatement } from "./statements.js"
 
 /**
  * 
@@ -35,7 +37,7 @@ export function program(source) {
   const stmts = [];
 
   while (true) {
-    skipEmptyLines(p);
+    p.skipEmptyLines();
 
     if (p.at("EOF")) {
       break;
@@ -45,12 +47,6 @@ export function program(source) {
   }
 
   return p.makeNode("program", { stmts });
-}
-
-function skipEmptyLines(parser) {
-  while (parser.at("NEWLINE")) {
-    parser.advance();
-  }
 }
 
 function prefix(parser, type, nud) {
@@ -70,85 +66,4 @@ function binaryOperator(p, type, lbp) {
     operator: t.value,
     left: l,
     right: parseExpression(p, rbp) } , t)); 
-}
-
-function getRbp(p, t) {
-  return p.leds.get(t.type)?.rbp ?? 0;
-}
-
-function parseStatement(p) {
-  let t = p.current;
-
-  if (p.at("IF")) {
-    const t = p.advance();
-    p.pushDelimiters(["THEN"]);
-    const test = parseExpression(p, 0);
-    p.popDelimiters();
-    p.expect("THEN");
-    const consequent = parseStatementBlock(p);
-    return p.makeNode("if statement", { test, consequent }, t);
-  } else {
-    const expr = parseExpression(p, 0);
-    parseStatementTerminator(p);
-    return p.makeNode("expression statement", { expression: expr }, t);
-  }
-}
-
-function parseStatementTerminator(p) {
-  p.expect("NEWLINE");
-  p.skipContinuedLineExcessIndentation();
-}
-
-function parseStatementBlock(p) {
-  const stmts = [];
-
-  if (p.at(":")) {
-    p.advance();
-    parseStatementTerminator(p);
-    skipEmptyLines(p);
-    p.expect("INDENT");
-    skipEmptyLines(p);
-    while (true) {
-      stmts.push(parseStatement(p));
-      skipEmptyLines(p);
-      if (p.at("DEDENT")) {
-        p.advance();
-        break;
-      }
-    }
-  } else {
-    stmts.push(parseStatement(p));
-  }
-
-  return stmts;
-}
-
-function parseExpression(p, rbp) {
-  p.skipLineNoise();
-  let t = p.advance();
-
-  const nud = p.nuds.get(t.type);
-  if (!nud) {
-    throw p.syntaxError(t, `Expression cannot begin with ${t.type}`);
-  }
-
-  let left = nud(p, t);
-
-  while (true) {
-    p.skipLineNoise();
-    t = p.current;
-    if ((p.groupingDepth === 0 && t.type === "NEWLINE") || p.isDelimiter(t) 
-      || rbp >= getRbp(p, t)) {
-      break;
-    }
-    t = p.advance();
-
-    const led = p.leds.get(t.type);
-    if (!led) {
-      throw p.syntaxError(t, "Unrecognised operator");
-    }
-    left = led.led(p, left, t, led.rbp);
-  }
-
-  return left;
 }
