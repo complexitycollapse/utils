@@ -286,6 +286,7 @@ function parseExpression(
 
         // You cannot write 'foo () ()'; the result of 'foo ()' must be
         // parenthesised before calling it again.
+        // TODO: surely this isn't necessary. Instead, this is the end of the expression
         if (isZeroArgCallResultNeedingParens(left)) {
           throw parser.error(
             t,
@@ -365,7 +366,7 @@ function parsePrefix(parser, terminators) {
     case "IDENT":
       return makeNode("Identifier", { name: t.value }, t);
     case "(": {
-      const innerTerminators = new Set([")"]);
+      const innerTerminators = new Set([")"]); // TODO: add DEDENT?
       const expr = parseExpression(parser, 0, innerTerminators);
       parser.expect(")", "Expected ')' after expression.");
       expr._grouped = true;
@@ -457,19 +458,10 @@ function parseCallExpression(parser, callee, outerTerminators) {
   const callTerminators =
     outerTerminators || DEFAULT_EXPR_TERMINATORS;
 
-  // Are commas available to this call as separators, or do they
-  // belong to an outer call?
-  //
-  // If the outer terminators include ',', we're nested inside a
-  // comma-separated argument list, so commas should *end* this call.
-  const allowCommas = !outerTerminators || !outerTerminators.has(",");
-
   // When parsing a *single argument value*, we stop on:
   // - the same things that end the call
-  // - comma (always ends the current argument value)
   // - FLAG: so nested calls don't steal flags that belong to the outer call
   const valueTerminators = new Set(callTerminators);
-  valueTerminators.add(",");
   valueTerminators.add("FLAG");
 
   // You cannot tack more arguments directly onto a zero-argument call
@@ -494,12 +486,6 @@ function parseCallExpression(parser, callee, outerTerminators) {
     }
 
     if (t.type === "FLAG") {
-      // In a nested call (inside a comma-separated arg list), a FLAG
-      // belongs to the *outer* call, so we end this call here.
-      if (!allowCommas) {
-        break;
-      }
-
       parser.advance();
       const name = t.value;
 
@@ -557,9 +543,6 @@ function parseCallExpression(parser, callee, outerTerminators) {
         // Our normal rule is that positional arguments cannot follow
         // named / flag arguments. However, if:
         //   - the immediately preceding argument is a *named* argument,
-        //   - its current value is a simple callee (identifier or member),
-        //   - and the very next token is a comma (so this argument list
-        //     is comma-separated),
         // then we reinterpret the pattern:
         //   -verbose <value>, <expr>,
         // as a nested call:
@@ -567,13 +550,10 @@ function parseCallExpression(parser, callee, outerTerminators) {
         // and do *not* treat <expr> as a separate positional argument
         // to the outer call.
         const last = args[args.length - 1];
-        const next = parser.current();
         const canNestAsCall =
           last &&
           last.kind === "named" &&
-          isSimpleCallee(last.value) &&
-          next &&
-          next.type === ",";
+          isSimpleCallee(last.value);
         if (canNestAsCall) {
           last.value = makeNode(
             "CallExpr",
@@ -602,18 +582,6 @@ function parseCallExpression(parser, callee, outerTerminators) {
           value: expr,
         });
       }
-    }
-
-    if (parser.at(",")) {
-      // If this is the *outermost* call in this context, the comma
-      // separates its arguments. If we're nested inside a comma-
-      // separated arg list, the comma belongs to the outer call and
-      // should terminate this call instead.
-      if (!allowCommas) {
-        break;
-      }
-      parser.advance();
-      continue;
     }
   }
 

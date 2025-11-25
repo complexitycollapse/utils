@@ -6,6 +6,8 @@ const KEYWORDS = new Map([
   ["not", "NOT"],
   ["and", "AND"],
   ["or", "OR"],
+  ["true", "TRUE"],
+  ["false", "FALSE"],
 ]);
 
 export function tokenize(source) {
