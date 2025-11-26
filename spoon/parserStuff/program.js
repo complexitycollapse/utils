@@ -26,19 +26,14 @@ export function program(source) {
   prefix(p, "NOT", (p, t) => p.makeNode("prefix", { operator: "not", right: parseExpression(p, 0)}));
 
   prefix(p, "(", (p, t) => {
-    p.groupingDepth++;
     const expr = parseExpression(p, 0);
-    p.skipLineNoise();
     p.expect(")");
-    p.groupingDepth--;
     return expr;
   });
 
   const stmts = [];
 
   while (true) {
-    p.skipEmptyLines();
-
     if (p.at("EOF")) {
       break;
     }

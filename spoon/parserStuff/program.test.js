@@ -35,6 +35,10 @@ describe("Single tokens", () => {
     expect(expr("\nfoo")).toMatchObject({ type: "identifier", name: "foo"});
   });
 
+   it ("foo the newlines returns identifier", () => {
+    expect(expr("foo\n\n\n")).toMatchObject({ type: "identifier", name: "foo"});
+  });
+
   it ("123 returns number", () => {
     expect(expr("123")).toMatchObject({ type: "number", value: 123});
   });
@@ -117,8 +121,17 @@ describe("Arithmetic expressions", () => {
     });
   });
 
-  it("1 +\\n 2 throws error as expr is split across lines", () => {
-    expect(() => program("1 +\n 2")).toThrow();
+  it("1 + \\n2 throws error as expr is split across lines", () => {
+    expect(() => program("1 + \n2")).toThrow();
+  });
+
+  it("1 +\\n 2 doesn't throw an error as the line continues at the indent", () => {
+    expect(expr("1 +\n 2")).toMatchObject({
+      type: "binary operator",
+      operator: "+",
+      left: { value: 1 },
+      right: { value: 2 }
+    });
   });
 
   it("(1 + \\n2) is valid because lines are grouped", () => {
@@ -295,10 +308,35 @@ describe("statement blocks", () => {
 });
 
 describe("continued statements", () => {
-  it("continued if", () => {
+  it("if x \\n  then y", () => {
     expect(stmt("if x \n  then y")).toMatchObject({
       test: { name: "x" },
-      consequent: [{ expression: { name: y }}] 
+      consequent: [{ expression: { name: "y" }}] 
+    });
+  });
+
+  it("uncontinued if", () => {
+    expect(() => parse("if x \nthen y")).toThrow();
+  });
+
+  it("if\\n x then y", () => {
+    expect(stmt("if\n x then y")).toMatchObject({
+      test: { name: "x" },
+      consequent: [{ expression: { name: "y" }}] 
+    });
+  });
+
+  it("if x then\\n y", () => {
+    expect(stmt("if x then\n y")).toMatchObject({
+      test: { name: "x" },
+      consequent: [{ expression: { name: "y" }}] 
+    });
+  });
+
+  it("if x +\\n y then z", () => {
+    expect(stmt("if x +\n y then z")).toMatchObject({
+      test: { left: { name: "x" }, right: { name: "y" }},
+      consequent: [{ expression: { name: "z" }}] 
     });
   });
 });

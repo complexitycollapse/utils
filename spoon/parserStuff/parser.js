@@ -2,77 +2,34 @@ import { tokenize } from "../lexer.js";
 
 export function parse(source) {
   const tokens = tokenize(source);
-  const parser = createParser(tokens);
+  const tokenSource = TokenSource(tokens);
+  const parser = createParser(tokenSource);
   return parser;
 }
 
-function createParser(tokens) {
+function createParser(tokenSource) {
   let obj = {
-    groupingDepth: 0,
     ignoredIndents: 0,
     delimiterStack: [],
     index: 0,
     nuds: new Map(),
     leds: new Map()
   };
+
   function pushDelimiters(delimiters) { obj.delimiterStack.unshift(new Set(delimiters)); }
   function popDelimiters() { obj.delimiterStack.shift(); }
   function isDelimiter(t) { return obj.delimiterStack[0] && obj.delimiterStack[0].has(t.type); }
 
-  function check(offset = 0) {
-    if (obj.index + offset >= tokens.length) {
-      throw new Error("Parser has gone over the end");
-    }
-  }
-
   function current() {
-    check();
-    return tokens[obj.index];
-  }
-
-  function peek(offset = 1) {
-    check(offset);
-    return tokens[obj.index + offset];
+    return tokenSource.current();
   }
 
   function at(type) {
-    check();
     return current().type === type;
   }
 
-  function skipLineNoise() {
-    if (obj.groupingDepth === 0) { return; }
-    let t = tokens[obj.index];
-    while(t.type === "NEWLINE" || t.type === "DEDENT" || t.type === "INDENT") {
-      if (t.type === "INDENT") { obj.ignoredIndents++; }
-      if (t.type === "DEDENT") { obj.ignoredIndents--; }
-      ++obj.index
-      t = tokens[obj.index];
-    }
-  }
-
-  function atNext(type) {
-    check(1);
-    return peek().type === type;
-  }
-
   function advance() {
-    return tokens[obj.index++];
-  }
-
-  /**
-   * Line continuations are allowed to be more or less indented than the line the continue, which causes the
-   * lexer to generate indents and dedents when the line is completed. This fn detects them and drops them.
-   */
-  function skipContinuedLineExcessIndentation() {
-    while (obj.ignoredIndents > 0 && current().type === "DEDENT") {
-      ++obj.index;
-      --obj.ignoredIndents;
-    }
-    while (obj.ignoredIndents < 0 && current().type === "INDENT") {
-      ++obj.index;
-      ++obj.ignoredIndents;
-    }
+    return tokenSource.advance();
   }
 
   function expect(type, message) {
@@ -82,17 +39,12 @@ function createParser(tokens) {
         message || `Expected ${type}, got ${t ? t.type : "EOF"}.`,
       );
     }
-    obj.index += 1;
+    advance();
     return t;
   }
 
   function syntaxError(token, message) {
-    if (!token) {
-      return new SyntaxError(message);
-    }
-    return new SyntaxError(
-      `${message} (line ${token.line}, column ${token.column}).`,
-    );
+    return tokenSource.syntaxError(token, message);
   }
 
   function makeNode(type, props, loc) {
@@ -108,15 +60,122 @@ function createParser(tokens) {
     return node;
   }
 
-  function skipEmptyLines() {
-    while (at("NEWLINE")) {
-      advance();
+  Object.defineProperties(obj, Object.getOwnPropertyDescriptors({
+    get current() { return current(); }, at, advance, popBlockStack: tokenSource.popBlockStack,
+    expect, syntaxError, makeNode, get currentLineIsDedented() { return tokenSource.lineIsDedented; },
+    pushDelimiters, popDelimiters, isDelimiter, tryEnterBlock: tokenSource.tryEnterBlock }));
+
+  return obj;
+}
+
+function TokenSource(tokens) {
+  let index = 0, indent = 0, logicalLineIndent = 0, newline, bracketsCount = 0;
+  let blockIndentStack = [];
+
+  function chompIndents() {
+    let t = tokens[index], delta = 0;
+
+    while (true) {
+      if (t.type === "INDENT") {
+        ++delta;
+        index++;
+        t = tokens[index];
+      } else if (t.type === "DEDENT") {
+        --delta;
+        index++;
+        t = tokens[index];
+      } else {
+        break;
+      }
     }
+
+    return delta;
   }
 
-  Object.defineProperties(obj, Object.getOwnPropertyDescriptors({ tokens, get current() { return current(); }, peek, at, atNext, advance,
-  expect, syntaxError, makeNode, tokens, skipContinuedLineExcessIndentation, skipLineNoise,
-  pushDelimiters, popDelimiters, isDelimiter, skipEmptyLines }));
+  let obj = {
+    lineIsDedented: false,
+    advance() {
+      let result = obj.current();
+
+      // If we were storing a newline it has now been returned so drop it
+      if (newline) {
+        newline = undefined;
+      } else {
+        ++index;
+      }
+
+      if (result.type === "(") {
+        ++bracketsCount;
+      } else if (result.type === ")") {
+        bracketsCount--;
+      }
+
+      let t = tokens[index];
+
+      if (t.type === "NEWLINE") {
+        newline = t;
+        ++index;
+
+        // Chomp empty lines
+        while(tokens[index].type === "NEWLINE") {
+          ++index;
+        }
+
+        // Chomp all indents/dedents at the beginning of the next line
+        let indentDelta = chompIndents();
+        indent += indentDelta;
+        this.lineIsDedented = indentDelta;
+        
+        if (bracketsCount <= 0 && indent <= logicalLineIndent) {
+          // New logical line has started
+          logicalLineIndent = indent;
+        } else {
+          // This is a continuation of the logical line, so drop the NEWLINE
+          newline = undefined;
+        }
+      }
+
+      return result;
+    },
+    current() {
+      if (newline) { return newline; }
+      obj.check();
+      return tokens[index];
+    },
+    syntaxError(token, message) {
+      if (!token) {
+        return new SyntaxError(message);
+      }
+      return new SyntaxError(
+        `${message} (line ${token.line}, column ${token.column}).`,
+      )
+    },
+    check(offset = 0) {
+      if (index + offset >= tokens.length) {
+        throw new Error("Parser has gone over the end");
+      }
+    },
+    tryEnterBlock() {
+      this.lineIsDedented = false;
+   
+      if (tokens[index].type === ":" && tokens[index + 1].type === "NEWLINE") {
+        index += 2;
+        indent += chompIndents();
+        if (indent <= logicalLineIndent) {
+          throw this.syntaxError(token[index], "empty statement block");
+        }
+        blockIndentStack.push(logicalLineIndent);
+        logicalLineIndent = indent;
+        return true;
+      }
+    },
+    popBlockStack() {
+      logicalLineIndent = blockIndentStack.pop();
+    }
+  };
+
+  // Fast-forward to the first non-empty line
+  while(tokens[index].type === "NEWLINE") { index++; }
 
   return obj;
 }

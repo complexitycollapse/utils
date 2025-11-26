@@ -13,32 +13,21 @@ export function parseStatement(p) {
     return p.makeNode("if statement", { test, consequent }, t);
   } else {
     const expr = parseExpression(p, 0);
-    parseStatementTerminator(p);
+    p.expect("NEWLINE");
     return p.makeNode("expression statement", { expression: expr }, t);
   }
-}
-
-function parseStatementTerminator(p) {
-  p.expect("NEWLINE");
-  p.skipContinuedLineExcessIndentation();
 }
 
 function parseStatementBlock(p) {
   const stmts = [];
 
-  if (p.at(":")) {
-    p.advance();
-    parseStatementTerminator(p);
-    p.skipEmptyLines();
-    p.expect("INDENT");
-    p.skipEmptyLines();
+  if (p.tryEnterBlock()) {
     while (true) {
-      stmts.push(parseStatement(p));
-      p.skipEmptyLines();
-      if (p.at("DEDENT")) {
-        p.advance();
+      if (p.currentLineIsDedented) {
+        p.popBlockStack();
         break;
       }
+      stmts.push(parseStatement(p));
     }
   } else {
     stmts.push(parseStatement(p));
