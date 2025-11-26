@@ -1,6 +1,6 @@
 import { parse } from "./parser.js";
 import { parseExpression } from "./expressions.js";
-import { parseStatement } from "./statements.js"
+import { parseStatementLine } from "./statements.js"
 
 /**
  * 
@@ -38,7 +38,7 @@ export function program(source) {
       break;
     }
 
-    stmts.push(parseStatement(p));
+    stmts.push(parseStatementLine(p));
   }
 
   return p.makeNode("program", { stmts });

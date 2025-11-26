@@ -315,7 +315,7 @@ describe("continued statements", () => {
     });
   });
 
-  it("uncontinued if", () => {
+  it("if x \nthen y", () => {
     expect(() => parse("if x \nthen y")).toThrow();
   });
 
@@ -337,6 +337,27 @@ describe("continued statements", () => {
     expect(stmt("if x +\n y then z")).toMatchObject({
       test: { left: { name: "x" }, right: { name: "y" }},
       consequent: [{ expression: { name: "z" }}] 
+    });
+  });
+
+  it("(if x then y)", () => {
+    expect(stmt("(if x then y)")).toMatchObject({
+      test: { name: "x" },
+      consequent: [{ expression: { name: "y" }}] 
+    });
+  });
+
+  it("(if x \\nthen y)", () => {
+    expect(stmt("(if x \nthen y)")).toMatchObject({
+      test: { name: "x" },
+      consequent: [{ expression: { name: "y" }}] 
+    });
+  });
+
+  it("(if x \\nthen:\\n y)", () => {
+    expect(stmt("(if x then:\n y)")).toMatchObject({
+      test: { name: "x" },
+      consequent: [{ expression: { name: "y" }}] 
     });
   });
 });
