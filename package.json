@@ -4,7 +4,10 @@
   "description": "",
   "main": "app/main/main.js",
   "type": "module",
-  "workspaces": ["./os/*"],
+  "private": true,
+  "workspaces": [
+    "./os/*",
+    "./other/*"],
   "scripts": {
     "start": "electron .",
     "build": "vite build",
