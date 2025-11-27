@@ -1,5 +1,7 @@
-export function parseExpression(p, rbp) {
+export function parseExpression(p, rbp, forbidCalls) {
   let t = p.advance();
+
+  const end = t => p.isDelimiter(t) || rbp >= getLbp(p, t);
 
   const nud = p.nuds.get(t.type);
   if (!nud) {
@@ -10,18 +12,30 @@ export function parseExpression(p, rbp) {
 
   while (true) {
     t = p.current;
-    if (p.isDelimiter(t) || rbp >= getLbp(p, t)) {
+    if (p.isDelimiter(t)) {
       break;
     }
-    t = p.advance();
 
     // Is this a valid function call head?
-    if (left.type == "identifier" || left.type === "member access" || left.grouped) {
-      if (t.type === "()") {
-        // TODO: need to check for further arguments (invalid in this case)
-        return p.makeNode("call", { head: left, args: [] });
+    if (!forbidCalls && (left.type == "identifier" || left.type === "member access" || left.grouped)) {
+      if (p.current.type === "()") {
+        p.advance();
+        left = p.makeNode("call", { head: left, args: [] });
+      } else {
+        const args = [];
+        while (!p.isDelimiter(t) && p.current.type != "NEWLINE") {
+          if (!p.nuds.get(p.current.type)) { break; }
+          args.push(parseExpression(p, 70, true));
+        }
+        if (args.length > 0) {
+          left = p.makeNode("call", { head: left, args });
+          continue;
+        }
       }
     }
+
+    if (end(p.current)) { break; }
+    t = p.advance();
 
     const led = p.leds.get(t.type);
     if (!led) {

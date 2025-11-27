@@ -26,7 +26,7 @@ function expr(source) {
   return s.expression;
 }
 
-describe("Single tokens", () => {
+describe("Simple tokens", () => {
   it ("foo returns identifier", () => {
     expect(expr("foo")).toMatchObject({ type: "identifier", name: "foo"});
   });
@@ -121,7 +121,7 @@ describe("Arithmetic expressions", () => {
     });
   });
 
-  it("1 + \\n2 throws error as expr is split across lines", () => {
+  it("1 + \\n2 throws as expr is split across lines", () => {
     expect(() => program("1 + \n2")).toThrow();
   });
 
@@ -315,7 +315,7 @@ describe("continued statements", () => {
     });
   });
 
-  it("if x \nthen y", () => {
+  it("if x \nthen y throws", () => {
     expect(() => parse("if x \nthen y")).toThrow();
   });
 
@@ -396,7 +396,7 @@ describe("member access", () => {
   });
 });
 
-describe("function calls", () => {
+describe("zero argument calls", () => {
   it("foo ()", () => {
     expect(expr("foo ()")).toMatchObject({
       type: "call",
@@ -418,6 +418,171 @@ describe("function calls", () => {
       type: "call",
       head: { type: "call" },
       args: []
+    });
+  });
+
+  it("foo () x throws", () => {
+    expect(() => parse("foo () x")).toThrow();
+  });
+
+  it("foo x () throws", () => {
+    expect(() => parse("foo x ()")).toThrow();
+  });
+
+  it("foo () () throws", () => {
+    expect(() => parse("foo () ()")).toThrow();
+  });
+
+  it("foo () + x", () => {
+    expect(expr("foo () + x")).toMatchObject({
+      type: "binary operator",
+      operator: "+",
+      left: { type: "call" },
+      right: { name: "x" }
+    });
+  });
+
+  it("x + foo ()", () => {
+    expect(expr("x + foo ()")).toMatchObject({
+      type: "binary operator",
+      operator: "+",
+      right: { type: "call" },
+      left: { name: "x" }
+    });
+  });
+});
+
+describe("positional arguments", () => {
+  it("foo x", () => {
+    expect(expr("foo x")).toMatchObject({
+      type: "call",
+      head: { name: "foo" },
+      args: [{ name: "x" }]
+    });
+  });
+
+  it("foo 123", () => {
+    expect(expr("foo 123")).toMatchObject({
+      type: "call",
+      head: { name: "foo" },
+      args: [{ value: 123 }]
+    });
+  });
+
+  it("(foo x)", () => {
+    expect(expr("(foo x)")).toMatchObject({
+      type: "call",
+      head: { name: "foo" },
+      args: [{ name: "x" }]
+    });
+  });
+
+  it("(foo 123)", () => {
+    expect(expr("(foo 123)")).toMatchObject({
+      type: "call",
+      head: { name: "foo" },
+      args: [{ value: 123 }]
+    });
+  });
+
+  it("(foo \\nx)", () => {
+    expect(expr("(foo \nx)")).toMatchObject({
+      type: "call",
+      head: { name: "foo" },
+      args: [{ name: "x" }]
+    });
+  });
+
+  it("foo\\n x", () => {
+    expect(expr("foo\n x")).toMatchObject({
+      type: "call",
+      head: { name: "foo" },
+      args: [{ name: "x" }]
+    });
+  });
+
+  it("foo \\nx parses are two separate statements", () => {
+    expect(stmts("foo \nx")).toHaveLength(2);
+  });
+
+  it("foo x + 5", () => {
+    expect(expr("foo x + 5")).toMatchObject({
+      type: "binary operator",
+      left: {
+        type: "call",
+        args: [{ name: "x" }]
+       },
+      right: { value: 5 }
+    });
+  });
+
+  it("5 + foo x", () => {
+    expect(expr("5 + foo x")).toMatchObject({
+      type: "binary operator",
+      right: {
+        type: "call",
+        args: [{ name: "x" }]
+       },
+      left: { value: 5 }
+    });
+  });
+
+  it("foo x y", () => {
+    expect(expr("foo x y")).toMatchObject({
+      type: "call",
+      head: { name: "foo" },
+      args: [{ name: "x" }, { name: "y" }]
+    });
+  });
+
+  it("foo x.y", () => {
+    expect(expr("foo x.y")).toMatchObject({
+      type: "call",
+      head: { name: "foo" },
+      args: [{ type: "member access" }]
+    });
+  });
+
+  it("foo x.y z", () => {
+    expect(expr("foo x.y z")).toMatchObject({
+      type: "call",
+      head: { name: "foo" },
+      args: [{ type: "member access" }, { name: "z" }]
+    });
+  });
+
+  it("foo z x.y", () => {
+    expect(expr("foo z x.y")).toMatchObject({
+      type: "call",
+      head: { name: "foo" },
+      args: [{ name: "z" }, { type: "member access" }]
+    });
+  });
+
+  it("bar (foo x)", () => {
+    expect(expr("bar (foo x)")).toMatchObject({
+      type: "call",
+      args: [{
+        type: "call",
+        head: { name: "foo" },
+        args: [{ name: "x" }]
+      }]
+    });
+  });
+
+  it("if foo x then bar y", () => {
+    expect(stmt("if foo x then bar y")).toMatchObject({
+      type: "if statement",
+      test: { type: "call" },
+      consequent: [{ expression: { type: "call" }}]
+    });
+  });
+
+  it("if foo x then:\n bar y", () => {
+    expect(stmt("if foo x then bar y")).toMatchObject({
+      type: "if statement",
+      test: { type: "call" },
+      consequent: [{ expression: { type: "call" }}]
     });
   });
 });

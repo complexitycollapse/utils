@@ -18,7 +18,7 @@ function parseStatement(p, openBracket) {
     // If the statement is an expression then it will have consumed the closing bracket. If it's a
     // proper statement then it won't. This handles the ambiguity over whether brackets are being
     // used to group a statement or an expression.
-    
+
     if (stmt.type != "expression statement") {
       p.expect(")");
     }
