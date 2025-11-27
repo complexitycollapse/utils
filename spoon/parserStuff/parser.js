@@ -13,7 +13,8 @@ function createParser(tokenSource) {
     delimiterStack: [],
     index: 0,
     nuds: new Map(),
-    leds: new Map()
+    leds: new Map(),
+    unreadToken: undefined
   };
 
   function pushDelimiters(delimiters) { obj.delimiterStack.unshift(new Set(delimiters)); }
@@ -21,6 +22,7 @@ function createParser(tokenSource) {
   function isDelimiter(t) { return obj.delimiterStack[0] && obj.delimiterStack[0].has(t.type); }
 
   function current() {
+    if (obj.unreadToken) { return obj.unreadToken; }
     return tokenSource.current();
   }
 
@@ -29,7 +31,16 @@ function createParser(tokenSource) {
   }
 
   function advance() {
+    if (obj.unreadToken) {
+      const t = obj.unreadToken;
+      obj.unreadToken = undefined;
+      return t;
+    }
     return tokenSource.advance();
+  }
+
+  function unread(t) {
+    obj.unreadToken = t;
   }
 
   function expect(type, message) {
@@ -63,7 +74,7 @@ function createParser(tokenSource) {
   Object.defineProperties(obj, Object.getOwnPropertyDescriptors({
     get current() { return current(); }, at, advance, popBlockStack: tokenSource.popBlockStack,
     expect, syntaxError, makeNode, get currentLineIsDedented() { return tokenSource.lineIsDedented; },
-    pushDelimiters, popDelimiters, isDelimiter, tryEnterBlock: tokenSource.tryEnterBlock }));
+    pushDelimiters, popDelimiters, isDelimiter, tryEnterBlock: tokenSource.tryEnterBlock, unread }));
 
   return obj;
 }

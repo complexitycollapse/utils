@@ -178,6 +178,12 @@ export function tokenize(source) {
         continue;
       }
       if (ch === "(") {
+        if (rawLine.length >= i && rawLine[i+1] === ")") {
+          tokens.push(makeToken("()", "()", lineNumber, column, 2));
+          i += 2;
+          column += 2;
+          continue;
+        } 
         tokens.push(makeToken("(", "(", lineNumber, column, 1));
         i += 1;
         column += 1;

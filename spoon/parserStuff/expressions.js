@@ -10,10 +10,18 @@ export function parseExpression(p, rbp) {
 
   while (true) {
     t = p.current;
-    if (p.isDelimiter(t) || rbp >= getRbp(p, t)) {
+    if (p.isDelimiter(t) || rbp >= getLbp(p, t)) {
       break;
     }
     t = p.advance();
+
+    // Is this a valid function call head?
+    if (left.type == "identifier" || left.type === "member access" || left.grouped) {
+      if (t.type === "()") {
+        // TODO: need to check for further arguments (invalid in this case)
+        return p.makeNode("call", { head: left, args: [] });
+      }
+    }
 
     const led = p.leds.get(t.type);
     if (!led) {
@@ -21,10 +29,10 @@ export function parseExpression(p, rbp) {
     }
     left = led.led(p, left, t, led.rbp);
   }
-
+  
   return left;
 }
 
-function getRbp(p, t) {
-  return p.leds.get(t.type)?.rbp ?? 0;
+function getLbp(p, t) {
+  return p.leds.get(t.type)?.lbp ?? 0;
 }

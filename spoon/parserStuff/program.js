@@ -24,11 +24,21 @@ export function program(source) {
   binaryOperator(p, "=", 30);
   binaryOperator(p, "!=", 30);
   prefix(p, "NOT", (p, t) => p.makeNode("prefix", { operator: "not", right: parseExpression(p, 0)}));
+  infix(p, ".", 80, (p, l, t, rbp) => {
+    const member = p.expect("IDENT");
+    return p.makeNode("member access", { left: l, right: member.value }, t);
+  });
 
   prefix(p, "(", (p, t) => {
     const expr = parseExpression(p, 0);
+    expr.grouped = true;
     p.expect(")");
     return expr;
+  });
+
+  suffix(p, "()", 70, (p, l, t, rbp) => {
+    // Never call this. Handled as a special case in parseExpression.
+    throw p.syntaxError("() is not in valid function call position.");
   });
 
   const stmts = [];

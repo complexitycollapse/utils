@@ -361,3 +361,63 @@ describe("continued statements", () => {
     });
   });
 });
+
+describe("member access", () => {
+  it("x.y", () => {
+    expect(expr("x.y")).toMatchObject({
+      type: "member access",
+      left: { name: "x" },
+      right: "y"
+    });
+  });
+
+  it("x.y.z", () => {
+    expect(expr("x.y.z")).toMatchObject({
+      type: "member access",
+      left: {
+        type: "member access",
+        left: { name: "x" },
+        right: "y"
+      },
+      right: "z"
+    });
+  });
+
+  it("(x + y).z", () => {
+    expect(expr("(x + y).z")).toMatchObject({
+      type: "member access",
+      left: {
+        type: "binary operator",
+        left: { name: "x" },
+        right: {name: "y" }
+      },
+      right: "z"
+    });
+  });
+});
+
+describe("function calls", () => {
+  it("foo ()", () => {
+    expect(expr("foo ()")).toMatchObject({
+      type: "call",
+      head: { name: "foo" },
+      args: []
+    });
+  });
+
+  it("foo.bar ()", () => {
+    expect(expr("foo.bar ()")).toMatchObject({
+      type: "call",
+      head: { type: "member access" },
+      args: []
+    });
+  });
+
+  it("(foo ()) ()", () => {
+    expect(expr("(foo ()) ()")).toMatchObject({
+      type: "call",
+      head: { type: "call" },
+      args: []
+    });
+  });
+});
