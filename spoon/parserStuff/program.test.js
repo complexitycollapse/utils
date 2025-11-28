@@ -457,7 +457,7 @@ describe("positional arguments", () => {
     expect(expr("foo x")).toMatchObject({
       type: "call",
       head: { name: "foo" },
-      args: [{ name: "x" }]
+      args: [{ type: "positional", value: { name: "x" }}]
     });
   });
 
@@ -465,7 +465,7 @@ describe("positional arguments", () => {
     expect(expr("foo 123")).toMatchObject({
       type: "call",
       head: { name: "foo" },
-      args: [{ value: 123 }]
+      args: [{ type: "positional", value: { value: 123 }}]
     });
   });
 
@@ -473,7 +473,7 @@ describe("positional arguments", () => {
     expect(expr("(foo x)")).toMatchObject({
       type: "call",
       head: { name: "foo" },
-      args: [{ name: "x" }]
+      args: [{ type: "positional", value: { name: "x" }}]
     });
   });
 
@@ -481,7 +481,7 @@ describe("positional arguments", () => {
     expect(expr("(foo 123)")).toMatchObject({
       type: "call",
       head: { name: "foo" },
-      args: [{ value: 123 }]
+      args: [{ type: "positional", value: { value: 123 }}]
     });
   });
 
@@ -489,7 +489,7 @@ describe("positional arguments", () => {
     expect(expr("(foo \nx)")).toMatchObject({
       type: "call",
       head: { name: "foo" },
-      args: [{ name: "x" }]
+      args: [{ value: { name: "x" }}]
     });
   });
 
@@ -497,7 +497,7 @@ describe("positional arguments", () => {
     expect(expr("foo\n x")).toMatchObject({
       type: "call",
       head: { name: "foo" },
-      args: [{ name: "x" }]
+      args: [{ value: { name: "x" }}]
     });
   });
 
@@ -510,7 +510,7 @@ describe("positional arguments", () => {
       type: "binary operator",
       left: {
         type: "call",
-        args: [{ name: "x" }]
+        args: [{ value: { name: "x" }}]
        },
       right: { value: 5 }
     });
@@ -521,7 +521,7 @@ describe("positional arguments", () => {
       type: "binary operator",
       right: {
         type: "call",
-        args: [{ name: "x" }]
+        args: [{ value: { name: "x" }}]
        },
       left: { value: 5 }
     });
@@ -531,7 +531,7 @@ describe("positional arguments", () => {
     expect(expr("foo x y")).toMatchObject({
       type: "call",
       head: { name: "foo" },
-      args: [{ name: "x" }, { name: "y" }]
+      args: [{ value: { name: "x" }}, { value: { name: "y" }}]
     });
   });
 
@@ -539,7 +539,7 @@ describe("positional arguments", () => {
     expect(expr("foo x.y")).toMatchObject({
       type: "call",
       head: { name: "foo" },
-      args: [{ type: "member access" }]
+      args: [{ value: { type: "member access" }}]
     });
   });
 
@@ -547,7 +547,7 @@ describe("positional arguments", () => {
     expect(expr("foo x.y z")).toMatchObject({
       type: "call",
       head: { name: "foo" },
-      args: [{ type: "member access" }, { name: "z" }]
+      args: [{ value: { type: "member access" }}, { value: { name: "z" }}]
     });
   });
 
@@ -555,18 +555,18 @@ describe("positional arguments", () => {
     expect(expr("foo z x.y")).toMatchObject({
       type: "call",
       head: { name: "foo" },
-      args: [{ name: "z" }, { type: "member access" }]
+      args: [{ value: { name: "z" }}, { value: { type: "member access" }}]
     });
   });
 
   it("bar (foo x)", () => {
     expect(expr("bar (foo x)")).toMatchObject({
       type: "call",
-      args: [{
+      args: [{ value: {
         type: "call",
         head: { name: "foo" },
-        args: [{ name: "x" }]
-      }]
+        args: [{ value: { name: "x" }}]
+      }}]
     });
   });
 
@@ -583,6 +583,88 @@ describe("positional arguments", () => {
       type: "if statement",
       test: { type: "call" },
       consequent: [{ expression: { type: "call" }}]
+    });
+  });
+});
+
+describe("named arguments", () => {
+  it ("foo -switch1", () => {
+    expect(expr("foo -switch1")).toMatchObject({
+      type: "call",
+      args: [{ type: "switch", name: "switch1"}
+    ]});
+  });
+
+  it ("foo -switch1 -switch2", () => {
+    expect(expr("foo -switch1 -switch2")).toMatchObject({
+      type: "call",
+      args: [
+        { type: "switch", name: "switch1"},
+        { type: "switch", name: "switch2"}
+    ]});
+  });
+
+  it ("foo -enum:123 throws", () => {
+    expect(() => parse("foo -enum:123")).toThrow();
+  });
+
+  it ("foo -enum: throws", () => {
+    expect(() => parse("foo -enum:")).toThrow();
+  });
+
+  it ("foo -enum: -switch throws", () => {
+    expect(() => parse("foo -enum: -switch")).toThrow();
+  });
+
+  it ("foo -en:foo", () => {
+    expect(expr("foo -en:foo")).toMatchObject({
+      type: "call",
+      args: [{ type: "enum", name: "en", value: "foo"}]
+    });
+  });
+
+  it ("foo -nmd foo", () => {
+    expect(expr("foo -nmd foo")).toMatchObject({
+      type: "call",
+      args: [{ type: "named", name: "nmd", value: { name: "foo" }}]
+    });
+  });
+
+  it ("foo -nmd 123", () => {
+    expect(expr("foo -nmd 123")).toMatchObject({
+      type: "call",
+      args: [{ type: "named", name: "nmd", value: { value: 123 }}]
+    });
+  });
+
+  it ("foo -nmd (bar x)", () => {
+    expect(expr("foo -nmd (bar x)")).toMatchObject({
+      type: "call",
+      args: [{ type: "named", name: "nmd", value: { type: "call" }}]
+    });
+  });
+
+  it ("foo bar -nmd foo", () => {
+    expect(expr("foo bar -nmd foo")).toMatchObject({
+      type: "call",
+      args: [
+        { type: "positional", value: {name: "bar" }},
+        { type: "named", name: "nmd", value: { name: "foo" }}
+    ]});
+  });
+
+  it ("foo -nmd bar x throws", () => {
+    expect(() => parse("foo -nmd bar x")).toThrow();
+  });
+
+  it ("foo -nmd 123 + 456", () => {
+    expect(expr("foo -nmd 123 + 456")).toMatchObject({
+      type: "binary operator",
+      left: {
+        type: "call",
+        args: [{ type: "named", name: "nmd", value: { value: 123 }}]
+      },
+      right: { value: 456 }
     });
   });
 });

@@ -1,7 +1,10 @@
+const callBp = 70;
+
 export function parseExpression(p, rbp, forbidCalls) {
   let t = p.advance();
 
   const end = t => p.isDelimiter(t) || rbp >= getLbp(p, t);
+  const endOfArgs = () => p.isDelimiter(p.current) || p.current.type === "NEWLINE";
 
   const nud = p.nuds.get(t.type);
   if (!nud) {
@@ -12,9 +15,7 @@ export function parseExpression(p, rbp, forbidCalls) {
 
   while (true) {
     t = p.current;
-    if (p.isDelimiter(t)) {
-      break;
-    }
+    if (p.isDelimiter(t)) { break; }
 
     // Is this a valid function call head?
     if (!forbidCalls && (left.type == "identifier" || left.type === "member access" || left.grouped)) {
@@ -23,10 +24,38 @@ export function parseExpression(p, rbp, forbidCalls) {
         left = p.makeNode("call", { head: left, args: [] });
       } else {
         const args = [];
-        while (!p.isDelimiter(t) && p.current.type != "NEWLINE") {
+        let pos = 0;
+
+        while (!endOfArgs() && p.current.type != "FLAG") {
           if (!p.nuds.get(p.current.type)) { break; }
-          args.push(parseExpression(p, 70, true));
+          const arg = p.current;
+          args.push(p.makeNode("positional", { pos, value: parseExpression(p, callBp, true) }, arg));
+          ++pos;
         }
+
+        while (!endOfArgs() && p.current.type === "FLAG") {
+          const name = p.advance();
+          if (endOfArgs() || p.current.type === "FLAG") {
+            // switch
+            args.push(p.makeNode("switch", { name: name.value }, name));
+          } else if (p.current.type === ":") {
+            // enum
+            p.advance();
+            if (p.current.type != "IDENT") {
+              // TODO: can check against the signature for valid value too
+              throw p.syntaxError(p.current, "Enum expected");
+            }
+            args.push(p.makeNode("enum", { name: name.value, value: p.current.value }, name));
+            p.advance();
+          } else {
+            // normal named argument
+            args.push(p.makeNode(
+              "named",
+              { name: name.value, value: parseExpression(p, callBp, true)},
+              name));
+          }
+        }
+
         if (args.length > 0) {
           left = p.makeNode("call", { head: left, args });
           continue;
