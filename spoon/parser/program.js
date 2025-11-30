@@ -52,13 +52,25 @@ export function program(source, globals = {}) {
   });
 
   infix(p, ":", 10, (p, l, t, rbp) => {
-    if (l.type != "identifier") {
-      throw p.syntaxError(l, "Expected symbol.");
+    const bindings = [];
+    p.pushDelimiters([","]);
+
+    while(true) {
+      if (l.type != "identifier") {
+        throw p.syntaxError(l, "Expected symbol.");
+      }
+      const value = parseExpression(p, 0);
+      bindings.push({ symbol: l.name, value });
+      if (!p.at(",")) { break; }
+      p.advance();
+      p.pushDelimiters([":"]);
+      l = parseExpression(p, 0);
+      p.popDelimiters();
+      p.expect(":");
     }
-
-    const value = parseExpression(p, 0);
-
-    return p.makeNode("binding", { symbol: l.name, value, children: ["value"] }, t);
+    
+    p.popDelimiters();
+    return p.makeNode("binding", { bindings }, t);
   });
 
   const stmts = [];
@@ -86,7 +98,9 @@ function bindVariables(p, node, env) {
   } else if (node.type === "identifier") {
     bindIdentifier(p, env, node);
   } else if (node.type === "binding") {
-    addVar(p, env, node);
+    node.bindings.forEach(binding => {
+      addVar(p, env, node, binding.symbol);
+    });
   } else if (node.type === "statement block") {
     const newEnv = { parent: env, bindings: new Map() }
     node.stmts.forEach(s => bindVariables(p, s, newEnv));
@@ -105,12 +119,12 @@ function bindIdentifier(p, env, node) {
   }
 }
 
-function addVar(p, env, identifier) {
+function addVar(p, env, node, symbol) {
   const bindings = env.bindings;
-  if (bindings.has(identifier.symbol)) {
-    throw p.syntaxError(identifier, identifier.symbol + " is already bound in this context.");
+  if (bindings.has(symbol)) {
+    throw p.syntaxError(node, symbol + " is already bound in this context.");
   }
-  bindings.set(identifier.symbol, { name: identifier.symbol });
+  bindings.set(symbol, { name: symbol });
 }
 
 function prefix(parser, type, nud) {

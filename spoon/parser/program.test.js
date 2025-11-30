@@ -685,20 +685,25 @@ describe("binding", () => {
   it("x: 123 is an expression", () => {
     expect(expr("x: 123")).toMatchObject({
       type: "binding",
-      symbol: "x",
-      value: { type: "number", value: 123}
-    });
+      bindings : [{
+        symbol: "x",
+        value: { type: "number", value: 123}
+    }]});
   });
 
   it("x: y: 123 associates to the right", () => {
     expect(expr("x: y: 123")).toMatchObject({
       type: "binding",
-      symbol: "x",
-      value: {
-        type: "binding",
-        symbol: "y",
-        value: { type: "number", value: 123}
-      }});
+      bindings: [{
+        symbol: "x",
+        value: {
+          type: "binding",
+          bindings: [{
+            symbol: "y",
+            value: { type: "number", value: 123}
+          }]
+        }}]
+      });
   });
 
   it("ux: 123 binds a name at the top level", () => {
@@ -731,5 +736,9 @@ describe("binding", () => {
 
   it("IF test bindings are visible in block consequent", () => {
     expect(() => parse("if ux: x then:\n ux")).not.toThrow();
+  });
+
+  it("Compound bindings will bind all variables", () => {
+    expect(() => parse("ux: 1, uy: 2, uz: 3\nux\nuy\nuz")).not.toThrow();
   });
 });

@@ -42,11 +42,11 @@ A hash introduces a line comment, which lasts until the end of the physical line
 ## Statements
 Each logical line contains exactly one statement, although that statement may be made up of many sub-statements and statement blocks.
 
-Statements either begin with a keyword (which invokes the relevant statement parselet) or they are an expression, or a variable declaration.
+Statements either begin with a keyword (which invokes the relevant statement parselet) or they are an expression.
 
-Expressions consist of numbers, strings, variables, operators, member access, function calls and expression keywords (e.g. IF is a keyword introducing a conditional expression). Statement blocks may also form parts of expressions if the syntax allows (e.g. an IF expression can contain a statement block). The usual arithmetic, comparison and logical operators are supported. Equality is represented by single equals (there is no double equals). Keywords "and", "or" and "not" are used as logical operators. Member access uses an infix dot between an expression and a member name (an identifier).
+Expressions consist of numbers, strings, variables, operators, member access, function calls, symbol bindings and expression keywords (e.g. IF is a keyword introducing a conditional expression). Statement blocks may also form parts of expressions if the syntax allows (e.g. an IF expression can contain a statement block). The usual arithmetic, comparison and logical operators are supported. Equality is represented by single equals (there is no double equals). Keywords "and", "or" and "not" are used as logical operators. Member access uses an infix dot between an expression and a member name (an identifier).
 
-A variable declaration consists of an identifier, followed by a colon, and then an expression for the value. Then optionally there may be a comma followed by another declaration, recursively.
+A symbol binding consists of an identifier, followed by a colon, and then an expression for the value. Then optionally there may be a comma followed by another binding, recursively. The interpretation of a symbol binding nested in an expression is that the binding can capture (and return) the value of a sub-expression. The scope of the binding is from the point it is bound and onwards (including the rest of the expression it is contained in) until the end of the containing statement block or program.
 
 Everywhere a statement block may occur, it's valid to use a single statement instead. This is indicated by not putting a colon and placing the statement on the same logical line. The following are equivalent:
 
