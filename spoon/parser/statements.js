@@ -30,14 +30,18 @@ function parseStatement(p, openBracket) {
       p.unread(openBracket);
     }
     const expr = parseExpression(p, 0);
-    return p.makeNode("expression statement", { expression: expr }, t);
+    return p.makeNode(
+      "expression statement",
+      { expression: expr },
+      t);
   }
 }
 
 export function parseStatementBlock(p) {
-  const stmts = [];
+  const start = p.current;
 
   if (p.tryEnterBlock()) {
+    const stmts = [];
     stmts.push(parseStatement(p));
 
     while (true) {
@@ -48,9 +52,10 @@ export function parseStatementBlock(p) {
       p.expect("NEWLINE");
       stmts.push(parseStatement(p));
     }
-  } else {
-    stmts.push(parseStatement(p));
-  }
 
-  return stmts;
+    return p.makeNode("statement block", { stmts }, start);
+
+  } else {
+    return parseStatement(p);
+  }
 }

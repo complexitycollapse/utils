@@ -248,7 +248,7 @@ describe("statement blocks", () => {
     expect(expr("if x then y")).toMatchObject({
       type: "if expression",
       test: { name: "x" },
-      consequent: [{ expression: { name: "y" }}]
+      consequent: { expression: { name: "y" }}
     });
   });
 
@@ -259,7 +259,7 @@ describe("statement blocks", () => {
         operator: ">",
         left: { name: "x" },
         right: { name: "y" }},
-      consequent: [{ expression: { name: "z" }}]
+      consequent: { expression: { name: "z" }}
     });
   });
 
@@ -270,30 +270,30 @@ describe("statement blocks", () => {
         operator: ">",
         left: { name: "x" },
         right: { name: "y" }},
-      consequent: [{ expression: { name: "z" }}]
+      consequent: { type: "statement block", stmts: [{ expression: { name: "z" }}]}
     });
   });
 
   it("if x > y then:\\n  a\\n  b\\n  c", () => {
     expect(expr("if x > y then:\n  a\n  b\n  c")).toMatchObject({
       type: "if expression",
-      consequent: [
+      consequent: { stmts: [
         { expression: { name: "a" }},
         { expression: { name: "b" }},
         { expression: { name: "c" }}
-      ]});
+      ]}});
   });
-//sdfs
+
   it("if x > y then:\\n  a\\n  b\\nc", () => {
     expect(stmts("if x > y then:\n  a\n  b\nc")).toMatchObject([
       {
         type: "expression statement",
         expression: {
         type: "if expression",
-        consequent: [
+        consequent: { stmts: [
           { expression: { name: "a" }},
           { expression: { name: "b" }}
-        ]}
+        ]}}
       },
       { expression: { type: "identifier", name: "c" }}
     ]);
@@ -303,13 +303,13 @@ describe("statement blocks", () => {
     expect(expr("if x then if y then z")).toMatchObject({
       type: "if expression",
       test: { name: "x" },
-      consequent: [{
+      consequent: {
         type: "expression statement",
         expression: {
           type: "if expression",
           test: { name: "y" },
-          consequent: [{ expression: { name: "z" }}]
-     }}]});
+          consequent: { expression: { name: "z" }}
+     }}});
   });
 });
 
@@ -317,7 +317,7 @@ describe("continued statements", () => {
   it("if x \\n  then y", () => {
     expect(expr("if x \n  then y")).toMatchObject({
       test: { name: "x" },
-      consequent: [{ expression: { name: "y" }}] 
+      consequent: { expression: { name: "y" }}
     });
   });
 
@@ -328,42 +328,42 @@ describe("continued statements", () => {
   it("if\\n x then y", () => {
     expect(expr("if\n x then y")).toMatchObject({
       test: { name: "x" },
-      consequent: [{ expression: { name: "y" }}] 
+      consequent: { expression: { name: "y" }}
     });
   });
 
   it("if x then\\n y", () => {
     expect(expr("if x then\n y")).toMatchObject({
       test: { name: "x" },
-      consequent: [{ expression: { name: "y" }}] 
+      consequent: { expression: { name: "y" }}
     });
   });
 
   it("if x +\\n y then z", () => {
     expect(expr("if x +\n y then z")).toMatchObject({
       test: { left: { name: "x" }, right: { name: "y" }},
-      consequent: [{ expression: { name: "z" }}] 
+      consequent: { expression: { name: "z" }}
     });
   });
 
   it("(if x then y)", () => {
     expect(expr("(if x then y)")).toMatchObject({
       test: { name: "x" },
-      consequent: [{ expression: { name: "y" }}] 
+      consequent: { expression: { name: "y" }}
     });
   });
 
   it("(if x \\nthen y)", () => {
     expect(expr("(if x \nthen y)")).toMatchObject({
       test: { name: "x" },
-      consequent: [{ expression: { name: "y" }}] 
+      consequent: { expression: { name: "y" }}
     });
   });
 
   it("(if x \\nthen:\\n y)", () => {
     expect(expr("(if x then:\n y)")).toMatchObject({
       test: { name: "x" },
-      consequent: [{ expression: { name: "y" }}] 
+      consequent: { stmts: [{ expression: { name: "y" }}]}
     });
   });
 });
@@ -580,7 +580,7 @@ describe("positional arguments", () => {
     expect(expr("if foo x then bar y")).toMatchObject({
       type: "if expression",
       test: { type: "call" },
-      consequent: [{ expression: { type: "call" }}]
+      consequent: { expression: { type: "call" }}
     });
   });
 
@@ -588,7 +588,7 @@ describe("positional arguments", () => {
     expect(expr("if foo x then bar y")).toMatchObject({
       type: "if expression",
       test: { type: "call" },
-      consequent: [{ expression: { type: "call" }}]
+      consequent: { expression: { type: "call" }}
     });
   });
 });
