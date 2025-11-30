@@ -23,15 +23,6 @@ function parseStatement(p, openBracket) {
       p.expect(")");
     }
     return stmt;
-  }
-  else if (p.at("IF")) {
-    const t = p.advance();
-    p.pushDelimiters(["THEN"]);
-    const test = parseExpression(p, 0);
-    p.popDelimiters();
-    p.expect("THEN");
-    const consequent = parseStatementBlock(p);
-    return p.makeNode("if statement", { test, consequent }, t);
   } else {
     if (openBracket) {
       // Brackets can begin either a statement or an expression. In this case the statement
@@ -43,7 +34,7 @@ function parseStatement(p, openBracket) {
   }
 }
 
-function parseStatementBlock(p) {
+export function parseStatementBlock(p) {
   const stmts = [];
 
   if (p.tryEnterBlock()) {

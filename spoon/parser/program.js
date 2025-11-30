@@ -1,6 +1,6 @@
 import { parse } from "./parser.js";
 import { parseExpression } from "./expressions.js";
-import { parseStatementLine } from "./statements.js"
+import { parseStatementLine, parseStatementBlock } from "./statements.js"
 
 /**
  * 
@@ -28,6 +28,15 @@ export function program(source) {
     const member = p.expect("IDENT");
     return p.makeNode("member access", { left: l, right: member.value }, t);
   });
+
+  prefix(p, "IF", (p, t) => {
+    p.pushDelimiters(["THEN"]);
+    const test = parseExpression(p, 0);
+    p.popDelimiters();
+    p.expect("THEN");
+    const consequent = parseStatementBlock(p);
+    return p.makeNode("if expression", { test, consequent }, t);
+  })
 
   prefix(p, "(", (p, t) => {
     const expr = parseExpression(p, 0);
