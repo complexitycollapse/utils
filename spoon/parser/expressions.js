@@ -21,7 +21,7 @@ export function parseExpression(p, rbp, forbidCalls) {
     if (!forbidCalls && (left.type == "identifier" || left.type === "member access" || left.grouped)) {
       if (p.current.type === "()") {
         p.advance();
-        left = p.makeNode("call", { head: left, args: [] });
+        left = p.makeNode("call", { head: left, args: [], children: ["head", "args"] });
       } else {
         const args = [];
         let pos = 0;
@@ -29,7 +29,10 @@ export function parseExpression(p, rbp, forbidCalls) {
         while (!endOfArgs() && p.current.type != "FLAG") {
           if (!p.nuds.get(p.current.type)) { break; }
           const arg = p.current;
-          args.push(p.makeNode("positional", { pos, value: parseExpression(p, callBp, true) }, arg));
+          args.push(p.makeNode(
+            "positional",
+            { pos, value: parseExpression(p, callBp, true), children: ["value"] },
+            arg));
           ++pos;
         }
 
@@ -51,13 +54,13 @@ export function parseExpression(p, rbp, forbidCalls) {
             // normal named argument
             args.push(p.makeNode(
               "named",
-              { name: name.value, value: parseExpression(p, callBp, true)},
+              { name: name.value, value: parseExpression(p, callBp, true), children: ["value"]},
               name));
           }
         }
 
         if (args.length > 0) {
-          left = p.makeNode("call", { head: left, args });
+          left = p.makeNode("call", { head: left, args, children: ["head", "args"] });
           continue;
         }
       }

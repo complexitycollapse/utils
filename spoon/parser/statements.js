@@ -32,7 +32,7 @@ function parseStatement(p, openBracket) {
     const expr = parseExpression(p, 0);
     return p.makeNode(
       "expression statement",
-      { expression: expr },
+      { expression: expr, children: ["expression"] },
       t);
   }
 }
@@ -53,7 +53,7 @@ export function parseStatementBlock(p) {
       stmts.push(parseStatement(p));
     }
 
-    return p.makeNode("statement block", { stmts }, start);
+    return p.makeNode("statement block", { stmts, children: ["stmts"] }, start);
 
   } else {
     return parseStatement(p);

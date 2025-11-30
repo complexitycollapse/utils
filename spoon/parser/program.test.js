@@ -2,7 +2,7 @@ import { it, describe, expect } from "vitest";
 import { program } from "./program.js";
 
 function parse(source) {
-  const parsed = program(source);
+  const parsed = program(source, ["x", "y", "z" , "foo", "bar", "baz", "a", "b", "c"]);
   expect(parsed).toBeTruthy();
   expect(parsed).toHaveProperty("type", "program");
   return parsed;
@@ -672,5 +672,64 @@ describe("named arguments", () => {
       },
       right: { value: 456 }
     });
+  });
+});
+
+describe("binding", () => {
+  it("unbound variables", () => {
+    expect(() => expr("ux")).toThrow();
+    expect(() => expr("uy")).toThrow();
+    expect(() => expr("uz")).toThrow();
+  });
+
+  it("x: 123 is an expression", () => {
+    expect(expr("x: 123")).toMatchObject({
+      type: "binding",
+      symbol: "x",
+      value: { type: "number", value: 123}
+    });
+  });
+
+  it("x: y: 123 associates to the right", () => {
+    expect(expr("x: y: 123")).toMatchObject({
+      type: "binding",
+      symbol: "x",
+      value: {
+        type: "binding",
+        symbol: "y",
+        value: { type: "number", value: 123}
+      }});
+  });
+
+  it("ux: 123 binds a name at the top level", () => {
+    expect(() => parse("ux: 123\nux")).not.toThrow();
+  });
+
+  it("Unbound symbols report an error", () => {
+    expect(() => parse("ux: 123\nuy")).toThrow();
+  });
+
+  it("Top level variable cannot be used before binding", () => {
+    expect(() => parse("ux\nx: 123")).toThrow();
+  });
+
+  it("Variable can be bound in statement block", () => {
+    expect(() => parse("if x then:\n  ux: 123\n  ux")).not.toThrow();
+  });
+
+  it("Variable bound in statement block has block scope", () => {
+    expect(() => parse("if x then:\n  ux: 123\nux")).toThrow();
+  });
+
+  it("Block-scoped variable cannot be used before binding", () => {
+    expect(() => parse("if x then:\n  ux\n  ux: 123")).toThrow();
+  });
+
+  it("IF test bindings are visible in consequent", () => {
+    expect(() => parse("if ux: x then ux")).not.toThrow();
+  });
+
+  it("IF test bindings are visible in block consequent", () => {
+    expect(() => parse("if ux: x then:\n ux")).not.toThrow();
   });
 });
