@@ -51,7 +51,7 @@ export function program(source, globals = {}) {
     throw p.syntaxError(t, "() is not in valid function call position.");
   });
 
-  infix(p, ":", 10, (p, l, t, rbp) => {
+  infix(p, ":", 100, (p, l, t, rbp) => {
     const bindings = [];
     p.pushDelimiters([","]);
 

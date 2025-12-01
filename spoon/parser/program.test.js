@@ -741,4 +741,40 @@ describe("binding", () => {
   it("Compound bindings will bind all variables", () => {
     expect(() => parse("ux: 1, uy: 2, uz: 3\nux\nuy\nuz")).not.toThrow();
   });
+
+  it("Binds strongly to the left", () => {
+    expect(expr("x + y: 123")).toMatchObject({
+      left: { name: "x" },
+      right: { bindings: [{ symbol: "y" }]}
+    });
+  });
+
+  it("Binds weakly to the right", () => {
+    expect(expr("x: y + z")).toMatchObject({
+      type: "binding",
+      bindings: [{ 
+        symbol: "x",
+        value: {
+          left: { name: "y" },
+          right: { name: "z" }
+        }
+       }]      
+    });
+  });
+
+  it("Binds weakly to the right but not as weakly as comma", () => {
+    expect(expr("x: y + z, y: z")).toMatchObject({
+      type: "binding",
+      bindings: [{ 
+        symbol: "x",
+        value: {
+          left: { name: "y" },
+          right: { name: "z" }
+        }
+       }, {
+        symbol: "y",
+        value: { name: "z" }
+       }]      
+    });
+  });
 });
