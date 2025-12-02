@@ -11,6 +11,7 @@ export function program(source, globals = []) {
 
   prefix(p, "IDENT", (p, t) => p.makeNode("identifier", { name: t.value }, t));
   prefix(p, "NUMBER", (p, t) => p.makeNode("number", { value: t.value }, t));
+  prefix(p, "STRING", (p, t) => p.makeNode("string", { value: t.value }, t));
   prefix(p, "TRUE", (p, t) => p.makeNode("boolean", { value: true }, t));
   prefix(p, "FALSE", (p, t) => p.makeNode("boolean", { value: false }, t));
   binaryOperator(p, "+", 40);
