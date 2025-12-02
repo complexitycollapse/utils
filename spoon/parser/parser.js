@@ -155,10 +155,12 @@ function TokenSource(tokens) {
     },
     syntaxError(token, message) {
       if (!token) {
-        return new SyntaxError(message);
+        throw new Error("Argument exception: syntaxError missing token arg");
       }
       return new SyntaxError(
         `${message} (line ${token.line}, column ${token.column}).`,
+        token.line,
+        token.column
       )
     },
     check(offset = 0) {
@@ -189,4 +191,22 @@ function TokenSource(tokens) {
   while(tokens[index].type === "NEWLINE") { index++; }
 
   return obj;
+}
+
+export class SyntaxError extends Error {
+  constructor(message, line, column) {
+    super(message);
+
+    // Set the error name explicitly
+    this.name = "SyntaxError";
+
+    // Custom properties
+    this.line = line;
+    this.column = column;
+
+    // Maintain proper stack trace (V8 / Node / modern browsers)
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, SyntaxError);
+    }
+  }
 }
