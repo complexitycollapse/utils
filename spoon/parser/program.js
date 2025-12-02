@@ -6,7 +6,7 @@ import { parseStatementLine, parseStatementBlock } from "./statements.js"
  * 
  * @param {string} source 
  */
-export function program(source, globals = {}) {
+export function program(source, globals = []) {
   const p = parse(source);
 
   prefix(p, "IDENT", (p, t) => p.makeNode("identifier", { name: t.value }, t));

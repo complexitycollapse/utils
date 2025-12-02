@@ -1,0 +1,6 @@
+- Clean syntax without excessive punctuation, but enough to help parse the language.
+- Extensible Pratt parser.
+- Capture sub-expression values through bindings (replaces need for anaphorphic variables).
+- Some kind of co-routine or streams-like mechanism to alleviate control flow problems.
+- Perhaps a rule engine of some sort.
+- Radical polymorphism.
