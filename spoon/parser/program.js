@@ -112,7 +112,7 @@ function bindVariables(p, node, env) {
 
 function bindIdentifier(p, env, node) {
   if (!env) {
-    throw p.syntaxError(node, node.name + " is undefined");
+    throw p.syntaxError(node, "Undeclared variable: " + node.name);
   } else if (env.bindings.has(node.name)) {
     node.env = env;
   } else {
