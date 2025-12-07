@@ -1,6 +1,9 @@
 import readline from "readline";
 import { program } from "./parser/program.js";
 import { SyntaxError } from "./parser/parser.js";
+import { evaluate, createEnv } from "./interpreter/interpreter.js";
+import NativeFunction from "./functions/native-function.js";
+import { PositionalParameter, Signature } from "./functions/signature.js";
 
 const PRIMARY_PROMPT = "spoon> ";
 const CONT_PROMPT = "...   ";
@@ -62,7 +65,17 @@ async function startRepl() {
 
   let buffer = "";
   let prompt = PRIMARY_PROMPT;
-  let pendingSyntaxError = null;
+  let pendingSyntaxError = undefined;
+  let env = createEnv(undefined);
+  
+  const testFn = NativeFunction(
+    "test",
+    Signature([
+      PositionalParameter("a", 0)
+    ]),
+    args => console.log("My params are:", args));
+
+  testFn.add(env);
 
   const ask = (p) =>
     new Promise((resolve) => {
@@ -75,12 +88,12 @@ async function startRepl() {
       // No pending input – second Ctrl+C exits.
       console.log("\n(^C again to exit)");
       buffer = "";
-      pendingSyntaxError = null;
+      pendingSyntaxError = undefined;
       prompt = PRIMARY_PROMPT;
     } else {
       console.log("\nInput cancelled.");
       buffer = "";
-      pendingSyntaxError = null;
+      pendingSyntaxError = undefined;
       prompt = PRIMARY_PROMPT;
     }
   });
@@ -90,7 +103,7 @@ async function startRepl() {
   /* eslint-disable no-constant-condition */
   while (true) {
     const line = await ask(prompt);
-    if (line === null || line === undefined) break;
+    if (line === undefined || line === undefined) break;
 
     const trimmed = line.trim();
 
@@ -100,9 +113,14 @@ async function startRepl() {
     }
     if (trimmed === ":reset" || trimmed === ":clear") {
       buffer = "";
-      pendingSyntaxError = null;
+      pendingSyntaxError = undefined;
       prompt = PRIMARY_PROMPT;
       console.log("(input buffer cleared)");
+      continue;
+    }
+
+    if (trimmed === ":env" || trimmed === ":e") {
+      console.log(env);
       continue;
     }
 
@@ -122,7 +140,7 @@ async function startRepl() {
       printSourceWithErrorUnderline(buffer, err);
 
       buffer = "";
-      pendingSyntaxError = null;
+      pendingSyntaxError = undefined;
       prompt = PRIMARY_PROMPT;
       continue;
     }
@@ -131,20 +149,21 @@ async function startRepl() {
     try {
       if (buffer.trim() === "") {
         buffer = "";
-        pendingSyntaxError = null;
+        pendingSyntaxError = undefined;
         prompt = PRIMARY_PROMPT;
         continue;
       }
 
-      const ast = program(buffer);
-      //const result = evaluate(ast);
-      const result = JSON.stringify(ast);
-      if (result !== undefined) {
-        console.log(result);
+      const ast = program(buffer, env.names);
+      const result = evaluate(ast, { env });
+
+      if (result?.value !== undefined) {
+        console.log(JSON.stringify(result.value));
+        env = result.env;
       }
 
       buffer = "";
-      pendingSyntaxError = null;
+      pendingSyntaxError = undefined;
       prompt = PRIMARY_PROMPT;
     } catch (err) {
       if (err instanceof SyntaxError) {
@@ -158,13 +177,13 @@ async function startRepl() {
           printSourceWithErrorUnderline(buffer, err);
 
           buffer = "";
-          pendingSyntaxError = null;
+          pendingSyntaxError = undefined;
           prompt = PRIMARY_PROMPT;
         }
       } else {
         console.error("Runtime error:", err);
         buffer = "";
-        pendingSyntaxError = null;
+        pendingSyntaxError = undefined;
         prompt = PRIMARY_PROMPT;
       }
     }
