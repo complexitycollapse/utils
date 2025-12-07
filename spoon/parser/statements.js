@@ -1,4 +1,5 @@
 import { parseExpression } from "./expressions.js";
+import { parseFunctionDefinition } from "./functions.js";
 
 export function parseStatementLine(p) {
   const stmt = parseStatement(p);
@@ -23,6 +24,8 @@ function parseStatement(p, openBracket) {
       p.expect(")");
     }
     return stmt;
+  } else if (p.at("FN")) {
+    return parseFunctionDefinition(p, p.advance());
   } else {
     if (openBracket) {
       // Brackets can begin either a statement or an expression. In this case the statement
@@ -37,7 +40,7 @@ function parseStatement(p, openBracket) {
   }
 }
 
-export function parseStatementBlock(p) {
+export function parseStatementBlock(p, allowInline) {
   const start = p.current;
 
   if (p.tryEnterBlock()) {
@@ -54,7 +57,9 @@ export function parseStatementBlock(p) {
     }
 
     return p.makeNode("statement block", { stmts, children: ["stmts"] }, start);
-
+  } else if (allowInline && p.at(":")) {
+    p.advance();
+    return parseStatement(p);
   } else {
     return parseStatement(p);
   }

@@ -1,6 +1,7 @@
 import { parse } from "./parser.js";
 import { parseExpression } from "./expressions.js";
 import { parseStatementLine, parseStatementBlock } from "./statements.js"
+import { parseFunctionExpression } from "./functions.js";
 
 /**
  * 
@@ -45,6 +46,10 @@ export function parseModule(source, globals = []) {
     expr.grouped = true;
     p.expect(")");
     return expr;
+  });
+
+  prefix(p, "FN", (p, t) => {
+    return parseFunctionExpression(p, t);
   });
 
   suffix(p, "()", 70, (p, l, t, rbp) => {
