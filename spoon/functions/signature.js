@@ -7,32 +7,41 @@ export function Signature(parametersList) {
     parameters: new Map(),
     positional: [],
     match(args) {
-      // TODO: this doesn't check that the correct params are passed.
-
-      const result = new Map();
       const namesUsed = new Set();
-      const argsWithNames = [
-        ...args.named.entries(),
-        ...args.enums.entries(),
-        ...args.switches.entries()
-      ];
+      const result = [];
+      const positional = [];
 
-      argsWithNames.forEach(([name, value]) => {
-        namesUsed.add(name);
-        result.set(name, value);
+      // Check all the arguments and create a list of args in evaluation order.
+      args.forEach(a => {
+        if (a.name) {
+          if (!obj.parameters.has(a.name)) {
+            throw new Error(a.name + " is not a valid argument");
+          }
+          if (namesUsed.has(a.name)) {
+            throw new Error("Duplicate argument name " + a.name);
+          }
+          result.push({ type: a.type, name: a.name, value: a.value });
+          namesUsed.add(a.name);
+        } else {
+          const arg = { type: "named", value: a.value };
+          positional.push(arg);
+          result.push(arg);
+        }
       });
 
-      let currentPositionalParam = 0;
-      args.positional.forEach(arg => {
-        while (currentPositionalParam < obj.positional.length &&
-           namesUsed.has(obj.positional[currentPositionalParam].name)) {
-          ++currentPositionalParam;
+      // Assign parameter names to positional arguments.
+      let positionalIndex = 0;
+      positional.forEach(p => {
+        while (namesUsed.has(obj.positional[positionalIndex]?.name)) {
+          ++positionalIndex;
         }
-        if (currentPositionalParam >= obj.positional.length) {
+
+        if (positionalIndex >= obj.positional.length) {
           throw new Error("Too many positional args.");
         }
-        result.set(obj.positional[currentPositionalParam].name, arg);
-        ++currentPositionalParam;
+
+        p.name = obj.positional[positionalIndex].name;
+        ++positionalIndex;
       });
 
       return result;

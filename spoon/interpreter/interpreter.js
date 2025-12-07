@@ -68,23 +68,6 @@ function bind(env, name, value) {
  */
 
 /**
- * Call a value as a function.
- *
- * @param {any} callee
- * @param {CallArgs} args
- * @returns {any}
- */
-function callValue(callee, args) {
-  if (callee && typeof callee.callable) {
-    const namedArgs = callee.signature.match(args);
-    const actualParams = new Map([...namedArgs.entries()].map(([k, v]) => [k, v()]));
-    return callee.fn(actualParams);
-  }
-
-  throw new TypeError("Value is not callable");
-}
-
-/**
  * Evaluate a Spoon program source string.
  *
  * - `globals` is an object mapping names to initial values (e.g. builtins).
@@ -311,27 +294,20 @@ function evalMemberAccess(node, env) {
 function evalCall(node, env) {
   const callee = evalExpression(node.head, env);
 
-  /** @type {any[]} */
-  const positional = [];
-  /** @type {Record<string, any>} */
-  const named = new Map();
-  /** @type {Set<string>} */
-  const switches = new Map();
-  /** @type {Record<string, string>} */
-  const enums = new Map();
+  if (!callee?.callable) {
+    throw new TypeError("Value is not callable");
+  }
 
-  // TODO should check for duplicate arguments.
+  const argsForEvaluation = callee.signature.match(node.args);
+  const actualParameters = new Map();
 
-  for (const arg of node.args) {
+  for (const arg of argsForEvaluation) {
     switch (arg.type) {
-      case "positional":
-        positional.push(() => evalExpression(arg.value, env));
-        break;
       case "named":
-        named.set(arg.name,() => evalExpression(arg.value, env));
+        actualParameters.set(arg.name, evalExpression(arg.value, env));
         break;
       case "switch":
-        named.set(arg.name, () => true);
+        actualParameters.set(arg.name, true);
         break;
       case "enum":
         enums.set(arg.name, arg.value);
@@ -341,7 +317,7 @@ function evalCall(node, env) {
     }
   }
 
-  return callValue(callee, { positional, named, switches, enums });
+  return callee.fn(actualParameters);
 }
 
 /**
