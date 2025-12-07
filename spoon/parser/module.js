@@ -2,6 +2,7 @@ import { parse } from "./parser.js";
 import { parseExpression } from "./expressions.js";
 import { parseStatementLine, parseStatementBlock } from "./statements.js"
 import { parseFunctionExpression } from "./functions.js";
+import Bindings from "./bindings.js";
 
 /**
  * 
@@ -80,10 +81,7 @@ export function parseModule(source, globals = []) {
   });
 
   const stmts = [];
-  const rootEnv = { 
-    parent: { bindings: new Map(globals.map(g => [g, { name: g }]))},
-    bindings: new Map()
-  };
+  const rootEnv = Bindings(Bindings(undefined, globals.map(g => [g, { name: g }])));
 
   while (true) {
     if (p.at("EOF")) {
@@ -108,7 +106,7 @@ function bindVariables(p, node, env) {
       addVar(p, env, node, binding.symbol);
     });
   } else if (node.type === "statement block") {
-    const newEnv = { parent: env, bindings: new Map() }
+    const newEnv = Bindings(env);
     node.stmts.forEach(s => bindVariables(p, s, newEnv));
   } else if (node.children) {
     node.children.forEach(childProp => bindVariables(p, node[childProp], env));
@@ -118,7 +116,7 @@ function bindVariables(p, node, env) {
 function bindIdentifier(p, env, node) {
   if (!env) {
     throw p.syntaxError(node, "Undeclared variable: " + node.name);
-  } else if (env.bindings.has(node.name)) {
+  } else if (env.has(node.name)) {
     node.env = env;
   } else {
     bindIdentifier(p, env.parent, node);
@@ -126,11 +124,10 @@ function bindIdentifier(p, env, node) {
 }
 
 function addVar(p, env, node, symbol) {
-  const bindings = env.bindings;
-  if (bindings.has(symbol)) {
+  if (env.has(symbol)) {
     throw p.syntaxError(node, symbol + " is already bound in this context.");
   }
-  bindings.set(symbol, { name: symbol });
+  env.bind(symbol, { name: symbol });
 }
 
 function prefix(parser, type, nud) {
