@@ -1,10 +1,10 @@
 import { it, describe, expect } from "vitest";
-import { program } from "./program.js";
+import { parseModule } from "./module.js";
 
 function parse(source) {
-  const parsed = program(source, ["x", "y", "z" , "foo", "bar", "baz", "a", "b", "c"]);
+  const parsed = parseModule(source, ["x", "y", "z" , "foo", "bar", "baz", "a", "b", "c"]);
   expect(parsed).toBeTruthy();
-  expect(parsed).toHaveProperty("type", "program");
+  expect(parsed).toHaveProperty("type", "module");
   return parsed;
 }
 

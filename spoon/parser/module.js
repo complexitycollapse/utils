@@ -6,7 +6,7 @@ import { parseStatementLine, parseStatementBlock } from "./statements.js"
  * 
  * @param {string} source 
  */
-export function program(source, globals = []) {
+export function parseModule(source, globals = []) {
   const p = parse(source);
 
   prefix(p, "IDENT", (p, t) => p.makeNode("identifier", { name: t.value }, t));
@@ -90,7 +90,7 @@ export function program(source, globals = []) {
     stmts.push(statement);
   }
 
-  return p.makeNode("program", { stmts, children: ["stmts"] });
+  return p.makeNode("module", { stmts, children: ["stmts"] });
 }
 
 function bindVariables(p, node, env) {
