@@ -119,6 +119,8 @@ export function evalModule(node, env) {
  */
 export function evalStatement(node, env) {
   switch (node.type) {
+    case "function definition":
+      return evalFunctionDefinition(node, env);
     case "expression statement":
       return evalExpression(node.expression, env);
     case "statement block":
@@ -194,6 +196,12 @@ export function evalExpression(node, env) {
     default:
       throw new Error(`Unknown expression type: ${node.type}`);
   }
+}
+
+function evalFunctionDefinition(node, env) {
+  const { name, fn } = node;
+  const fnValue = evalFunctionLiteral(fn, env);
+  bind(env, name, fnValue);
 }
 
 /**
