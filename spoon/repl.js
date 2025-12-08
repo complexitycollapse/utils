@@ -1,9 +1,9 @@
 import readline from "readline";
-import { program } from "./parser/program.js";
+import { parseModule } from "./parser/module.js";
 import { SyntaxError } from "./parser/parser.js";
 import { evaluate, createEnv } from "./interpreter/interpreter.js";
-import NativeFunction from "./functions/native-function.js";
-import { PositionalParameter, Signature } from "./functions/signature.js";
+import { NativeFunction } from "./functions/function.js";
+import { Parameter, Signature } from "./functions/signature.js";
 
 const PRIMARY_PROMPT = "spoon> ";
 const CONT_PROMPT = "...   ";
@@ -71,7 +71,7 @@ async function startRepl() {
   const testFn = NativeFunction(
     "test",
     Signature([
-      PositionalParameter("a", 0)
+      Parameter("a", true)
     ]),
     args => console.log("My params are:", args));
 
@@ -154,7 +154,7 @@ async function startRepl() {
         continue;
       }
 
-      const ast = program(buffer, env.names);
+      const ast = parseModule(buffer, env.names);
       const result = evaluate(ast, { env });
 
       if (result?.value !== undefined) {

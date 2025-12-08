@@ -24,4 +24,4 @@ The product will be built incrementally starting with an MVP. The user will guid
  - Use the ChatGPT-model.md file for understanding the ontology and terminology of the project.
 
 ### Context
-The syntax is described in syntax.md, the semantics in semantics.md. There is also a parser in program.js that parses programs, calling into statements.js and expressions.js. Tests are provided in program.test.js.
+The syntax is described in syntax.md, the semantics in semantics.md. There is also a parser in module.js that parses programs, calling into statements.js and expressions.js. Tests are provided in module.test.js.

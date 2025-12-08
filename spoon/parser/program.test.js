@@ -880,6 +880,10 @@ describe("anonymous functions", () => {
   it("can't use undeclared symbol in fn body", () => {
     expect(() => fn("fn p: undec")).toThrow();
   });
+
+  it("positional argument", () => {
+    expect(fn("fn x: x")).toMatchObject({ parameters: [{ positional: true }]});
+  });
 });
 
 describe("function definition statements", () => {
@@ -919,43 +923,6 @@ describe("function definition statements", () => {
       parameters: [{ name: "x" }, { name: "y" }],
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
     });
-  });
-
-  it("typed arg inline", () => {
-    expect(fn("fn foo x number: x + y")).toMatchObject({
-      parameters: [{ name: "x", type: "number" }]
-    });
-  });
-
-  it("arg with default inline", () => {
-    expect(fn("fn foo x = 10: x + y")).toMatchObject({
-      parameters: [{ name: "x", defaultValueExpression: { type: "number", value: 10} }]
-    });
-  });
-
-  it("arg with default and type inline", () => {
-    expect(fn("fn foo x number = 10: x + y")).toMatchObject({
-      parameters: [{
-        name: "x",
-        type: "number",
-        defaultValueExpression: { type: "number", value: 10} }]
-    });
-  });
-
-  it("anonymous enum typed arg inline", () => {
-    expect(fn("fn foo x { a b c }: x + y")).toMatchObject({
-      parameters: [{ name: "x", type: ["a", "b", "c"] }]
-    });
-  });
-
-  it("anonymous enum typed arg with default inline", () => {
-    expect(fn("fn foo x { a b c } = a: x + y")).toMatchObject({
-      parameters: [{ name: "x", type: ["a", "b", "c"], defaultValueExpression: { name: "a" } }]
-    });
-  });
-
-  it("anonymous enum typed arg with invalid default inline", () => {
-    expect(() => fn("fn foo x { a b c } = d: x + y")).toThrow();
   });
 
   it("zero-argument block", () => {

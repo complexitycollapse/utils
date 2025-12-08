@@ -3,4 +3,5 @@
 - Capture sub-expression values through bindings (replaces need for anaphorphic variables).
 - Some kind of co-routine or streams-like mechanism to alleviate control flow problems.
 - Perhaps a rule engine of some sort.
-- Radical polymorphism.
+- Radical generics.
+- Bags and sets like in Maude, so you can apply a function to "whatever's in here". Could get the state-like features of Maude?

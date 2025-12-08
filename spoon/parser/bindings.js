@@ -22,8 +22,8 @@ export default function Bindings(parent, bindingEntries, signatureEntries) {
     signatures: new Map(signatureEntries ?? []),
     has(name) { return obj.bindings.has(name); },
     bind(name, value) { obj.bindings.set(name, value); },
-    get(name) { obj.binfings.get(name); },
-    get names() { return [...bindings.keys()]; }
+    get(name) { obj.bindings.get(name); },
+    get names() { return [...obj.bindings.keys()]; }
   };
 
   return obj;

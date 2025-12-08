@@ -48,26 +48,18 @@ export function Signature(parametersList) {
     }
   };
 
-  obj.positional = parametersList.filter(p => p.type === "positional");
+  obj.positional = parametersList.filter(p => p.positional);
   obj.parameters = new Map(parametersList.map(p => ([p.name, p])));
 
   return obj;
 }
 
-export function PositionalParameter(name, position) {
-  return Parameter(name, position, "positional");
-}
-
-export function NamedParameter(name) {
-  return Parameter(name, undefined, "named");
-}
-
-export function Parameter(name, position, type) {
+export function Parameter(name, positional, type, defaultValueExpression) {
   let obj = {
     name,
-    position,
     type,
-    get positional() { return position != undefined; },
+    positional,
+    defaultValueExpression,
     get enum() { return false; }
   };
 

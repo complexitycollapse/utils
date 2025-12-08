@@ -1,3 +1,6 @@
+import { SpoonFunction } from "../functions/function.js";
+import { Parameter, Signature } from "../functions/signature.js";
+
 /**
  * @typedef {Object} SpoonEnv
  * @property {SpoonEnv|undefined} parent
@@ -11,15 +14,15 @@
  * @param {Record<string, any>} [initial]
  * @returns {SpoonEnv}
  */
-export function createEnv(parent = undefined, initial = {}, signaturesArg = {}) {
+export function createEnv(parent = undefined, initial = new Map(), signaturesArg = new Map()) {
   const bindings = new Map();
   const signatures = new Map();
 
-  for (const [name, value] of Object.entries(initial)) {
+  for (const [name, value] of initial.entries()) {
     bindings.set(name, value);
   }
 
-  for (const [name, value] of Object.entries(signatures)) {
+  for (const [name, value] of signatures.entries()) {
     signatures.set(name, value);
   }
 
@@ -29,7 +32,7 @@ export function createEnv(parent = undefined, initial = {}, signaturesArg = {}) 
 /**
  * Look up a variable in an environment chain.
  * Throws if the variable is not found. This assumes the static
- * binder in program.js has already guaranteed that names are valid. :contentReference[oaicite:2]{index=2}
+ * binder in module.js has already guaranteed that names are valid. :contentReference[oaicite:2]{index=2}
  *
  * @param {SpoonEnv} env
  * @param {string} name
@@ -74,9 +77,6 @@ function bind(env, name, value) {
  * - Returns the value of the last top-level statement (or undefined).
  * - Re-uses `env` so you can build a REPL by calling this repeatedly.
  *
- * NOTE: We call the existing `program()` function so that the static
- * binder runs and enforces name-validity and scoping. 
- *
  * @param {any} ast
  * @param {Object} [options]
  * @param {SpoonEnv} [options.env]  // existing environment (for REPL)
@@ -85,21 +85,21 @@ function bind(env, name, value) {
  */
 export function evaluate(ast, options = {}) {
   const env =
-    options.env ?? createEnv(undefined, options.globals ?? {});
-  const value = evalProgram(ast, env);
+    options.env ?? createEnv(undefined, new Map(Object.entries(options.globals ?? {})));
+  const value = evalModule(ast, env);
   return { value, env, ast };
 }
 
 /**
- * Evaluate a parsed "program" node. :contentReference[oaicite:6]{index=6}
+ * Evaluate a parsed "module" node. :contentReference[oaicite:6]{index=6}
  *
  * @param {any} node
  * @param {SpoonEnv} env
  * @returns {any}
  */
-export function evalProgram(node, env) {
-  if (node.type !== "program") {
-    throw new TypeError(`Expected program node, got ${node.type}`);
+export function evalModule(node, env) {
+  if (node.type !== "module") {
+    throw new TypeError(`Expected module node, got ${node.type}`);
   }
 
   let result;
@@ -117,7 +117,7 @@ export function evalProgram(node, env) {
  * @param {SpoonEnv} env
  * @returns {any}
  */
-function evalStatement(node, env) {
+export function evalStatement(node, env) {
   switch (node.type) {
     case "expression statement":
       return evalExpression(node.expression, env);
@@ -136,7 +136,7 @@ function evalStatement(node, env) {
  * @param {SpoonEnv} parentEnv
  * @returns {any}
  */
-function evalStatementBlock(node, parentEnv) {
+export function evalStatementBlock(node, parentEnv) {
   const blockEnv = createEnv(parentEnv);
   let result;
   for (const stmt of node.stmts) {
@@ -188,9 +188,25 @@ export function evalExpression(node, env) {
       // Can appear as IF consequent in inline form: "if x then y".
       return evalExpression(node.expression, env);
 
+    case "function":
+      return evalFunctionLiteral(node, env);
+
     default:
       throw new Error(`Unknown expression type: ${node.type}`);
   }
+}
+
+/**
+ * Evaluate a function literal.
+ *
+ * @param {any} node
+ * @param {SpoonEnv} env
+ * @returns {any}
+ */
+function evalFunctionLiteral(node, env) {
+  const params = node.parameters.map(p =>
+    Parameter(p.name, p.positional, p.type, p.defaultValueExpression));
+  return SpoonFunction(Signature(params), env, node.body);
 }
 
 /**

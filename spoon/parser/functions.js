@@ -1,5 +1,5 @@
-import { parseExpression } from "./expressions";
-import { parseStatementBlock } from "./statements";
+import { parseExpression } from "./expressions.js";
+import { parseStatementBlock } from "./statements.js";
 
 export function parseFunctionDefinition(p, t) {
   if (!p.at("IDENT")) {
@@ -34,10 +34,11 @@ export function parseFunctionExpression(p, t) {
 function parseParameter(p) {
   const t = p.current;
 
-  if (!p.at("IDENT")) {
+  if (!p.at("IDENT") && !p.at("FLAG")) {
     throw p.syntaxError(p.current, "Invalid parameter spec");
   }
 
+  const positional = !!p.at("IDENT");
   const name = p.advance().value;
   let type = p.at("IDENT") ? p.advance().value : undefined;
 
@@ -70,5 +71,5 @@ function parseParameter(p) {
     }
   }
 
-  return p.makeNode("parameter", { name, type, defaultValueExpression }, t);
+  return p.makeNode("parameter", { name, type, defaultValueExpression, positional }, t);
 }
