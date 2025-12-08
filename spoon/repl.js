@@ -39,6 +39,7 @@ function printSourceWithErrorUnderline(source, err) {
 
 // Heuristic: is this probably "incomplete at end" rather than a real error?
 function isProbablyIncomplete(source, err) {
+  if (source.trim()[source.trim().length - 1] === ":") return true;
   if (!(err instanceof SyntaxError)) return false;
 
   const lines = source.split("\n");

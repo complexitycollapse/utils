@@ -884,6 +884,10 @@ describe("anonymous functions", () => {
   it("positional argument", () => {
     expect(fn("fn x: x")).toMatchObject({ parameters: [{ positional: true }]});
   });
+
+  it("named argument", () => {
+    expect(fn("fn -x: x")).toMatchObject({ parameters: [{ positional: false }]});
+  });
 });
 
 describe("function definition statements", () => {
