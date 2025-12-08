@@ -175,7 +175,7 @@ function TokenSource(tokens) {
         index += 2;
         indent += chompIndents();
         if (indent <= logicalLineIndent) {
-          throw this.syntaxError(token[index], "empty statement block");
+          throw this.syntaxError(tokens[index], "empty statement block");
         }
         blockIndentStack.push(logicalLineIndent);
         logicalLineIndent = indent;
