@@ -341,7 +341,7 @@ function evalCall(node, env) {
     }
   }
 
-  return callee.fn(actualParameters);
+  return callee.invoke(actualParameters);
 }
 
 /**
