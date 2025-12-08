@@ -872,6 +872,14 @@ describe("anonymous functions", () => {
       ]}
     });
   });
+
+  it("can use parameter in fn body", () => {
+    expect(() => fn("fn p: p")).not.toThrow();
+  });
+
+  it("can't use undeclared symbol in fn body", () => {
+    expect(() => fn("fn p: undec")).toThrow();
+  });
 });
 
 describe("function definition statements", () => {
@@ -968,5 +976,13 @@ describe("function definition statements", () => {
         { type: "expression statement" }
       ]}
     });
+  });
+
+  it("can use parameter in fn body", () => {
+    expect(() => ("fn foo p: p")).not.toThrow();
+  });
+
+  it("can't use undeclared symbol in fn body", () => {
+    expect(() => fn("fn foo p: undec")).toThrow();
   });
 });

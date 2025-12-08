@@ -103,11 +103,19 @@ function bindVariables(p, node, env) {
     bindIdentifier(p, env, node);
   } else if (node.type === "binding") {
     node.bindings.forEach(binding => {
+      bindVariables(p, binding.value, env);
+    });
+    node.bindings.forEach(binding => {
       addVar(p, env, node, binding.symbol);
     });
   } else if (node.type === "statement block") {
     const newEnv = Bindings(env);
     node.stmts.forEach(s => bindVariables(p, s, newEnv));
+  } else if (node.type === "function definition") {
+    bindVariables(p, node.fn, env);
+  } else if (node.type === "function") {
+    node.env = Bindings(env, node.parameters.map(p => [p.name, p]));
+    if (node.body) { bindVariables(p, node.body, node.env); }
   } else if (node.children) {
     node.children.forEach(childProp => bindVariables(p, node[childProp], env));
   }
