@@ -49,7 +49,7 @@ export function parseModule(source, globals = []) {
     return expr;
   });
 
-  prefix(p, "FN", (p, t) => {
+  prefix(p, "\\", (p, t) => {
     return parseFunctionExpression(p, t);
   });
 

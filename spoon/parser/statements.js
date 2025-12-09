@@ -7,7 +7,7 @@ export function parseStatementLine(p) {
   return stmt;
 }
 
-function parseStatement(p, openBracket) {
+export function parseStatement(p, openBracket) {
   let t = p.current;
 
   if (p.at("(")) {
@@ -40,7 +40,7 @@ function parseStatement(p, openBracket) {
   }
 }
 
-export function parseStatementBlock(p, allowInline) {
+export function parseStatementBlock(p) {
   const start = p.current;
 
   if (p.tryEnterBlock()) {
@@ -57,9 +57,6 @@ export function parseStatementBlock(p, allowInline) {
     }
 
     return p.makeNode("statement block", { stmts, children: ["stmts"] }, start);
-  } else if (allowInline && p.at(":")) {
-    p.advance();
-    return parseStatement(p);
   } else {
     return parseStatement(p);
   }

@@ -1,5 +1,5 @@
 import { parseExpression } from "./expressions.js";
-import { parseStatementBlock } from "./statements.js";
+import { parseStatementBlock, parseStatement } from "./statements.js";
 
 export function parseFunctionDefinition(p, t) {
   if (!p.at("IDENT")) {
@@ -13,7 +13,7 @@ export function parseFunctionDefinition(p, t) {
 
 export function parseFunctionExpression(p, t) {
   const parameters = [];
-  while(!p.at(":") && !p.at("NEWLINE") && !p.isDelimiter(p.current)) {
+  while(!p.at(":") && !p.at("NEWLINE") && !p.at("RIGHT ARROW") && !p.isDelimiter(p.current)) {
     parameters.push(parseParameter(p));
     if (!p.at(",")) {
       break;
@@ -21,11 +21,16 @@ export function parseFunctionExpression(p, t) {
     p.advance();
   }
 
-  if (!p.at(":")) {
-    throw p.syntaxError(p.current, "statement expected");
-  }
+  let body;
 
-  const body = parseStatementBlock(p, true);
+  if (p.at("RIGHT ARROW")) {
+    p.advance();
+    body = parseStatement(p);
+  } else if (!p.at(":")) {
+    throw p.syntaxError(p.current, "=> or : expected");
+  } else {
+    body = parseStatementBlock(p);
+  }
 
   // TODO: also needs an environment
   return p.makeNode("function", { parameters, body }, t);

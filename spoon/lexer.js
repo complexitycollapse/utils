@@ -84,7 +84,7 @@ export function tokenize(source) {
         continue;
       }
 
-      // Negative numbers or flags or minus operator.
+      // Negative numbers or flags or minus operator or arrow.
       if (ch === "-" && i + 1 < lineLength) {
         const next = rawLine[i + 1];
 
@@ -160,6 +160,12 @@ export function tokenize(source) {
         column += 1;
         continue;
       }
+      if (ch === "\\") {
+        tokens.push(makeToken("\\", "\\", lineNumber, column, 1));
+        i += 1;
+        column += 1;
+        continue;
+      }
       if (ch === "%") {
         tokens.push(makeToken("%", "%", lineNumber, column, 1));
         i += 1;
@@ -217,7 +223,7 @@ export function tokenize(source) {
       if (ch === "<") {
         const next = rawLine[i + 1];
         if (next === "=") {
-          tokens.push(makeToken("<=", "<=", lineNumber, column, 2));
+          tokens.push(makeToken("LEFT ARROW", "<=", lineNumber, column, 2));
           i += 2;
           column += 2;
         } else {
@@ -242,6 +248,12 @@ export function tokenize(source) {
       }
       if (ch === "=") {
         const next = rawLine[i + 1];
+        if (next === ">") {
+          i += 2;
+          column += 2;
+          tokens.push(makeToken("RIGHT ARROW", "=>", lineNumber, column, 2));
+          continue;
+        }
         tokens.push(makeToken("=", "=", lineNumber, column, 1));
         i += 1;
         column += 1;

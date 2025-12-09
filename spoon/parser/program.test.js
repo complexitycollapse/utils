@@ -788,7 +788,7 @@ describe("anonymous functions", () => {
   }
 
   it("zero-argument inline", () => {
-    expect(fn("fn: x + y")).toMatchObject({
+    expect(fn("\\ => x + y")).toMatchObject({
       type: "function",
       parameters: [],
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
@@ -796,7 +796,7 @@ describe("anonymous functions", () => {
   });
 
   it("simple argument inline", () => {
-    expect(fn("fn x: x + y")).toMatchObject({
+    expect(fn("\\ x => x + y")).toMatchObject({
       type: "function",
       parameters: [{ name: "x" }],
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
@@ -804,7 +804,7 @@ describe("anonymous functions", () => {
   });
 
   it("two simple arguments inline", () => {
-    expect(fn("fn x, y: x + y")).toMatchObject({
+    expect(fn("\\ x, y => x + y")).toMatchObject({
       type: "function",
       parameters: [{ name: "x" }, { name: "y" }],
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
@@ -812,21 +812,21 @@ describe("anonymous functions", () => {
   });
 
   it("typed arg inline", () => {
-    expect(fn("fn x number: x + y")).toMatchObject({
+    expect(fn("\\ x number:\n x + y")).toMatchObject({
       type: "function",
       parameters: [{ name: "x", type: "number" }]
     });
   });
 
   it("arg with default inline", () => {
-    expect(fn("fn x = 10: x + y")).toMatchObject({
+    expect(fn("\\ x = 10:\n x + y")).toMatchObject({
       type: "function",
       parameters: [{ name: "x", defaultValueExpression: { type: "number", value: 10} }]
     });
   });
 
   it("arg with default and type inline", () => {
-    expect(fn("fn x number = 10: x + y")).toMatchObject({
+    expect(fn("\\ x number = 10:\n x + y")).toMatchObject({
       type: "function",
       parameters: [{
         name: "x",
@@ -836,23 +836,23 @@ describe("anonymous functions", () => {
   });
 
   it("anonymous enum typed arg inline", () => {
-    expect(fn("fn x { a b c }: x + y")).toMatchObject({
+    expect(fn("\\ x { a b c }:\n x + y")).toMatchObject({
       parameters: [{ name: "x", type: ["a", "b", "c"] }]
     });
   });
 
   it("anonymous enum typed arg with default inline", () => {
-    expect(fn("fn x { a b c } = a: x + y")).toMatchObject({
+    expect(fn("\\ x { a b c } = a:\n x + y")).toMatchObject({
       parameters: [{ name: "x", type: ["a", "b", "c"], defaultValueExpression: { name: "a" } }]
     });
   });
 
   it("anonymous enum typed arg with invalid default inline", () => {
-    expect(() => fn("fn x { a b c } = d: x + y")).toThrow();
+    expect(() => fn("\\ x { a b c } = d:\n x + y")).toThrow();
   });
 
   it("zero-argument block", () => {
-    expect(fn("fn:\n x + y\n z")).toMatchObject({
+    expect(fn("\\ :\n x + y\n z")).toMatchObject({
       type: "function",
       parameters: [],
       body: { type: "statement block", stmts: [{
@@ -863,7 +863,7 @@ describe("anonymous functions", () => {
   });
 
   it("simple argument block", () => {
-    expect(fn("fn x:\n x + y\n z")).toMatchObject({
+    expect(fn("\\ x:\n x + y\n z")).toMatchObject({
       type: "function",
       parameters: [{ name: "x" }],
       body: { type: "statement block", stmts: [{
@@ -874,19 +874,31 @@ describe("anonymous functions", () => {
   });
 
   it("can use parameter in fn body", () => {
-    expect(() => fn("fn p: p")).not.toThrow();
+    expect(() => fn("\\ p:\n p")).not.toThrow();
   });
 
   it("can't use undeclared symbol in fn body", () => {
-    expect(() => fn("fn p: undec")).toThrow();
+    expect(() => fn("\\ p:\n undec")).toThrow();
   });
 
   it("positional argument", () => {
-    expect(fn("fn x: x")).toMatchObject({ parameters: [{ positional: true }]});
+    expect(fn("\\ x:\n x")).toMatchObject({ parameters: [{ positional: true }]});
   });
 
   it("named argument", () => {
-    expect(fn("fn -x: x")).toMatchObject({ parameters: [{ positional: false }]});
+    expect(fn("\\ -x:\n x")).toMatchObject({ parameters: [{ positional: false }]});
+  });
+
+  it("arrow function", () => {
+    expect(fn("\\ -x => x")).toMatchObject({ parameters: [{ positional: false }]});
+  });
+
+  it("arrow function with newline", () => {
+    expect(fn("\\ -x =>\n x")).toMatchObject({ parameters: [{ positional: false }]});
+  });
+
+  it("params must be followed by arrow or colon", () => {
+    expect(() => fn("\\ -x x")).toThrow();
   });
 });
 
@@ -898,15 +910,15 @@ describe("function definition statements", () => {
   }
 
   it("has correct name", () => {
-    expect(stmt("fn foo: x + y")).toHaveProperty("name", "foo");
+    expect(stmt("fn foo:\n x + y")).toHaveProperty("name", "foo");
   });
 
   it("has type function definition", () => {
-    expect(stmt("fn foo: x + y")).toHaveProperty("type", "function definition");
+    expect(stmt("fn foo:\n x + y")).toHaveProperty("type", "function definition");
   });
 
   it("zero-argument inline", () => {
-    expect(fn("fn foo: x + y")).toMatchObject({
+    expect(fn("fn foo => x + y")).toMatchObject({
       type: "function",
       parameters: [],
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
@@ -914,7 +926,7 @@ describe("function definition statements", () => {
   });
 
   it("simple argument inline", () => {
-    expect(fn("fn foo x: x + y")).toMatchObject({
+    expect(fn("fn foo x => x + y")).toMatchObject({
       type: "function",
       parameters: [{ name: "x" }],
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
@@ -922,7 +934,7 @@ describe("function definition statements", () => {
   });
 
   it("two simple arguments inline", () => {
-    expect(fn("fn foo x, y: x + y")).toMatchObject({
+    expect(fn("fn foo x, y => x + y")).toMatchObject({
       type: "function",
       parameters: [{ name: "x" }, { name: "y" }],
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
@@ -950,10 +962,10 @@ describe("function definition statements", () => {
   });
 
   it("can use parameter in fn body", () => {
-    expect(() => ("fn foo p: p")).not.toThrow();
+    expect(() => ("fn foo p:\n p")).not.toThrow();
   });
 
   it("can't use undeclared symbol in fn body", () => {
-    expect(() => fn("fn foo p: undec")).toThrow();
+    expect(() => fn("fn foo p:\n undec")).toThrow();
   });
 });
