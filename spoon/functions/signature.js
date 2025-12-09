@@ -6,26 +6,26 @@ export function Signature(parametersList) {
   let obj = {
     parameters: new Map(),
     positional: [],
-    match(args) {
+    match(args, instance) {
       const namesUsed = new Set();
-      const result = [];
+      const matchedArgs = [];
       const positional = [];
 
       // Check all the arguments and create a list of args in evaluation order.
       args.forEach(a => {
         if (a.name) {
           if (!obj.parameters.has(a.name)) {
-            throw new Error(a.name + " is not a valid argument");
+            return { failure: a.name + " is not a valid argument" };
           }
           if (namesUsed.has(a.name)) {
-            throw new Error("Duplicate argument name " + a.name);
+            return { failure: "Duplicate argument name " + a.name };
           }
-          result.push({ type: a.type, name: a.name, value: a.value });
+          matchedArgs.push({ type: a.type, name: a.name, value: a.value });
           namesUsed.add(a.name);
         } else {
           const arg = { type: "named", value: a.value };
           positional.push(arg);
-          result.push(arg);
+          matchedArgs.push(arg);
         }
       });
 
@@ -37,14 +37,14 @@ export function Signature(parametersList) {
         }
 
         if (positionalIndex >= obj.positional.length) {
-          throw new Error("Too many positional args.");
+          return { failure: "Too many positional args." };
         }
 
         p.name = obj.positional[positionalIndex].name;
         ++positionalIndex;
       });
 
-      return result;
+      return { success: true, matchedArgs, instance };
     }
   };
 

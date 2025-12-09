@@ -1,4 +1,4 @@
-import { SpoonFunction } from "../functions/function.js";
+import { GenericFunction, SpoonFunction } from "../functions/function.js";
 import { Parameter, Signature } from "../functions/signature.js";
 
 /**
@@ -59,6 +59,7 @@ function lookup(env, name) {
  */
 function bind(env, name, value) {
   env.bindings.set(name, value);
+  return value;
 }
 
 /**
@@ -201,7 +202,16 @@ export function evalExpression(node, env) {
 function evalFunctionDefinition(node, env) {
   const { name, fn } = node;
   const fnValue = evalFunctionLiteral(fn, env);
-  bind(env, name, fnValue);
+
+  let genericFn = env.bindings.get(name);
+  if (genericFn === undefined) {
+    genericFn = bind(env, name, GenericFunction(name));
+  }
+  if (!genericFn.isGenericFunction) {
+    throw new Error(`Symbol ${name} is not bound to a generic function`);
+  }
+
+  genericFn.addInstance(fnValue);
 }
 
 /**
@@ -322,10 +332,13 @@ function evalCall(node, env) {
     throw new TypeError("Value is not callable");
   }
 
-  const argsForEvaluation = callee.signature.match(node.args);
+  const { success, failure, matchedArgs, instance } = callee.match(node.args);
+  if (!success) {
+    throw new Error(failure);
+  }
   const actualParameters = new Map();
 
-  for (const arg of argsForEvaluation) {
+  for (const arg of matchedArgs) {
     switch (arg.type) {
       case "named":
         actualParameters.set(arg.name, evalExpression(arg.value, env));
@@ -341,7 +354,7 @@ function evalCall(node, env) {
     }
   }
 
-  return callee.invoke(actualParameters);
+  return instance.invoke(actualParameters);
 }
 
 /**

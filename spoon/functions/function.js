@@ -1,5 +1,30 @@
 import { evalStatement, createEnv, evalExpression } from "../interpreter/interpreter.js";
 
+export function GenericFunction(name) {
+  let obj = {
+    callable: true,
+    isGenericFunction: true,
+    name,
+    instances: [],
+    addInstance(instance) {
+      obj.instances.push(instance);
+      return obj;
+    },
+    match(args) {
+      if (obj.instances.length === 1) { return obj.instances[0].match(args, obj.instances[0]); }
+
+      for (const instance of obj.instances) {
+        const match = instance.match(args, instance);
+        if (match.success) { return match; }
+      }
+
+      return {};
+    }
+  };
+
+  return obj;
+}
+
 export function NativeFunction(name, signature, fn) {
   let obj = {
     callable: true,
@@ -12,7 +37,8 @@ export function NativeFunction(name, signature, fn) {
     },
     invoke(actualParameters) {
       return obj.fn(actualParameters);
-    }
+    },
+    match(args) { return signature.match(args, obj); }
   };
 
   return obj;
@@ -39,7 +65,8 @@ export function SpoonFunction(signature, env, body) {
         }
       });
       return evalStatement(body, callEnv);
-    }
+    },
+    match(args) { return signature.match(args, obj); }
   };
 
   return obj;
