@@ -14,7 +14,7 @@ export function GenericFunction(name) {
       if (obj.instances.length === 1) { return obj.instances[0].match(args, obj.instances[0]); }
 
       for (const instance of obj.instances) {
-        const match = instance.match(args, instance);
+        const match = instance.match(args);
         if (match.success) { return match; }
       }
 

@@ -12,7 +12,7 @@ export function Signature(parametersList) {
       const positional = [];
 
       // Check all the arguments and create a list of args in evaluation order.
-      args.forEach(a => {
+      for (const a of args) {
         if (a.name) {
           if (!obj.parameters.has(a.name)) {
             return { failure: a.name + " is not a valid argument" };
@@ -27,11 +27,11 @@ export function Signature(parametersList) {
           positional.push(arg);
           matchedArgs.push(arg);
         }
-      });
+      };
 
       // Assign parameter names to positional arguments.
       let positionalIndex = 0;
-      positional.forEach(p => {
+      for (const p of positional) {
         while (namesUsed.has(obj.positional[positionalIndex]?.name)) {
           ++positionalIndex;
         }
@@ -42,7 +42,7 @@ export function Signature(parametersList) {
 
         p.name = obj.positional[positionalIndex].name;
         ++positionalIndex;
-      });
+      };
 
       return { success: true, matchedArgs, instance };
     }
