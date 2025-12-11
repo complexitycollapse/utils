@@ -910,15 +910,19 @@ describe("function definition statements", () => {
   }
 
   it("has correct name", () => {
-    expect(stmt("fn foo:\n x + y")).toHaveProperty("name", "foo");
+    expect(stmt("fn quux:\n x + y")).toHaveProperty("name", "quux");
   });
 
   it("has type function definition", () => {
-    expect(stmt("fn foo:\n x + y")).toHaveProperty("type", "function definition");
+    expect(stmt("fn quux:\n x + y")).toHaveProperty("type", "function definition");
+  });
+
+  it("binds the given name", () => {
+    expect(() => stmts("fn quux:\n x\nquux")).not.toThrow();
   });
 
   it("zero-argument inline", () => {
-    expect(fn("fn foo => x + y")).toMatchObject({
+    expect(fn("fn quux => x + y")).toMatchObject({
       type: "function",
       parameters: [],
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
@@ -926,7 +930,7 @@ describe("function definition statements", () => {
   });
 
   it("simple argument inline", () => {
-    expect(fn("fn foo x => x + y")).toMatchObject({
+    expect(fn("fn quux x => x + y")).toMatchObject({
       type: "function",
       parameters: [{ name: "x" }],
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
@@ -934,7 +938,7 @@ describe("function definition statements", () => {
   });
 
   it("two simple arguments inline", () => {
-    expect(fn("fn foo x, y => x + y")).toMatchObject({
+    expect(fn("fn quux x, y => x + y")).toMatchObject({
       type: "function",
       parameters: [{ name: "x" }, { name: "y" }],
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
@@ -942,7 +946,7 @@ describe("function definition statements", () => {
   });
 
   it("zero-argument block", () => {
-    expect(fn("fn foo:\n x + y\n z")).toMatchObject({
+    expect(fn("fn quux:\n x + y\n z")).toMatchObject({
       parameters: [],
       body: { type: "statement block", stmts: [{
         type: "expression statement" },
@@ -952,7 +956,7 @@ describe("function definition statements", () => {
   });
 
   it("simple argument block", () => {
-    expect(fn("fn foo x:\n x + y\n z")).toMatchObject({
+    expect(fn("fn quux x:\n x + y\n z")).toMatchObject({
       parameters: [{ name: "x" }],
       body: { type: "statement block", stmts: [{
         type: "expression statement" },
@@ -962,10 +966,53 @@ describe("function definition statements", () => {
   });
 
   it("can use parameter in fn body", () => {
-    expect(() => ("fn foo p:\n p")).not.toThrow();
+    expect(() => ("fn quux p:\n p")).not.toThrow();
   });
 
   it("can't use undeclared symbol in fn body", () => {
-    expect(() => fn("fn foo p:\n undec")).toThrow();
+    expect(() => fn("fn quux p:\n undec")).toThrow();
+  });
+});
+
+describe("union", () => {
+  it("simple union has correct type, name, constructor", () => {
+    expect(stmt("union foo:\n con1")).toMatchObject({
+      type: "union",
+      name: "foo",
+      constructors: [{
+        type: "constructor",
+        name: "con1"
+      }]
+    });
+  });
+
+  it("union with type parameters", () => {
+    expect(stmt("union foo x, y, z:\n con1")).toMatchObject({
+      typeParams: [{ name: "x" }, { name: "y" }, { name: "z" }]
+    });
+  });
+
+  it("union with multiple constructors", () => {
+    expect(stmt("union foo:\n con1\n con2\n con3")).toMatchObject({
+      constructors: [{ name: "con1" }, { name: "con2" }, { name: "con3" }]
+    });
+  });
+
+  it("union with parameterised constructor", () => {
+    expect(stmt("union foo:\n con1 x, y")).toMatchObject({
+      constructors: [{ name: "con1", params: [{ name: "x"}, { name: "y"}]}]
+    });
+  });
+
+  it("union with typed parameterised constructor", () => {
+    expect(stmt("union foo:\n con1 x string, y number")).toMatchObject({
+      constructors: [{ name: "con1", params: [
+        { name: "x", paramType: { type: "parameter type", value: "string" }},
+        { name: "y", paramType: { type: "parameter type", value: "number" }}]}]
+    });
+  });
+
+  it("constructor symbols are bound", () => {
+    expect(() => stmts("union foo:\n con1\n con2\ncon1\ncon2")).not.toThrow();
   });
 });

@@ -26,6 +26,8 @@ export function parseStatement(p, openBracket) {
     return stmt;
   } else if (p.at("FN")) {
     return parseFunctionDefinition(p, p.advance());
+  } else if (p.at("UNION")) {
+    return parseUnion(p, p.advance());
   } else {
     if (openBracket) {
       // Brackets can begin either a statement or an expression. In this case the statement
@@ -60,4 +62,51 @@ export function parseStatementBlock(p) {
   } else {
     return parseStatement(p);
   }
+}
+
+function parseUnion(p, t) {
+  const name = p.expect("IDENT").value;
+  const typeParams = [];
+  while(!p.at(":") && !p.at("NEWLINE") && !p.isDelimiter()) {
+    typeParams.push({ name: p.expect("IDENT").value });
+    if (! p.at(",")) { break; }
+    p.advance();
+  }
+
+  const constructors = [];
+
+  if (p.tryEnterBlock()) {
+    constructors.push(parseConstructor(p));
+
+    while (true) {
+      if (p.currentLineIsDedented || p.isDelimiter(p.current)) {
+        p.popBlockStack();
+        break;
+      }
+      p.expect("NEWLINE");
+      constructors.push(parseConstructor(p, p.current));
+    }
+  } else {
+    throw p.syntaxError(p.current, "Expected constructor block");
+  }
+
+  return p.makeNode("union", { name, typeParams, constructors }, t);
+}
+
+function parseConstructor(p, t) {
+  const name = p.expect("IDENT").value;
+
+  const params = [];
+  while (!p.at("NEWLINE") && !p.isDelimiter()) {
+    const t = p.current;
+    const paramName = p.expect("IDENT").value;
+    const paramType = p.at("IDENT") ?
+      p.makeNode("parameter type", { value: p.current.value }, p.advance()) :
+      undefined;
+    params.push(p.makeNode("parameter", { name: paramName, paramType }, t));
+    if (!p.at(",")) { break; }
+    p.advance();
+  }
+
+  return p.makeNode("constructor", { name, params }, t);
 }

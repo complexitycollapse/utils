@@ -8,7 +8,8 @@ const KEYWORDS = new Map([
   ["or", "OR"],
   ["true", "TRUE"],
   ["false", "FALSE"],
-  ["fn", "FN"]
+  ["fn", "FN"],
+  ["union", "UNION"]
 ]);
 
 export function tokenize(source) {

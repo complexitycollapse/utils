@@ -3,6 +3,7 @@ import { parseExpression } from "./expressions.js";
 import { parseStatementLine, parseStatementBlock } from "./statements.js"
 import { parseFunctionExpression } from "./functions.js";
 import Bindings from "./bindings.js";
+import Type from "./types.js";
 
 /**
  * 
@@ -112,13 +113,24 @@ function bindVariables(p, node, env) {
     const newEnv = Bindings(env);
     node.stmts.forEach(s => bindVariables(p, s, newEnv));
   } else if (node.type === "function definition") {
+    addVar(p, env, node.fn, node.name);
     bindVariables(p, node.fn, env);
   } else if (node.type === "function") {
     node.env = Bindings(env, node.parameters.map(p => [p.name, p]));
     if (node.body) { bindVariables(p, node.body, node.env); }
+  } else if (node.type === "union") {
+    bindUnion(p, env, node);
   } else if (node.children) {
     node.children.forEach(childProp => bindVariables(p, node[childProp], env));
   }
+}
+
+function bindUnion(p, env, node) {
+  const type = Type(node.name, node.typeParams);
+  env.types.set(type.name, type);
+  node.constructors.forEach(c => {
+    addVar(p, env, c, c.name); // TODO: should automatically assign return type to constrs.
+  });
 }
 
 function bindIdentifier(p, env, node) {
