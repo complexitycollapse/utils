@@ -8,19 +8,33 @@ Every file defines a module. Modules may export and import symbols. There is not
 All functions in Spoon are open generic functions. Multiple definitions of a function may be given under the same name and they are all considered cases of the same generic function. If the definition doesn't specify parameter types then it's considered the most generic case (i.e. its parameters are typed as "any").
 
 ```
-fn print x string:
+def print x string:
   write x
 
-fn print x number:
+def print x number:
   # blah blah code
 
-fn print x:
+def print x:
   write "[Unknown]"
 ```
 
 Note that generic functions are considered to exist per module. So adding a new definition extends the generic function in the module where it's defined and in any module that explicitly imports the module. A module may choose to import the same symbol from multiple modules, plus adding its own definitions, in which case the generic function visible in that module is a combination of all of those sources.
 
 Evaluation of arguments is eager left-to-right.
+
+Anonymous functions are created with the expression keyword "fn":
+
+```
+fn x: 
+  x + 1
+```
+
+There are also arrow functions, which provide a one-line syntax:
+
+```
+def foo x => x + 1
+fn x => x + 1
+```
 
 ## Objects
 OOP is classless. Objects are created similarly to closures: they close over their containing state. They must specify the implementations for the operations they support. Invoking a method is identical to invoking a generic function, as if the method had been automatically added globally as a new case to the generic function.

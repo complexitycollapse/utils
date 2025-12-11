@@ -24,7 +24,7 @@ export function parseStatement(p, openBracket) {
       p.expect(")");
     }
     return stmt;
-  } else if (p.at("FN")) {
+  } else if (p.at("DEF")) {
     return parseFunctionDefinition(p, p.advance());
   } else if (p.at("UNION")) {
     return parseUnion(p, p.advance());

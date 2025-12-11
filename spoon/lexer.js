@@ -9,6 +9,7 @@ const KEYWORDS = new Map([
   ["true", "TRUE"],
   ["false", "FALSE"],
   ["fn", "FN"],
+  ["def", "DEF"],
   ["union", "UNION"]
 ]);
 
@@ -157,12 +158,6 @@ export function tokenize(source) {
       }
       if (ch === "/") {
         tokens.push(makeToken("/", "/", lineNumber, column, 1));
-        i += 1;
-        column += 1;
-        continue;
-      }
-      if (ch === "\\") {
-        tokens.push(makeToken("\\", "\\", lineNumber, column, 1));
         i += 1;
         column += 1;
         continue;
