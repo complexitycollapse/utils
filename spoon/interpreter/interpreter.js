@@ -14,17 +14,9 @@ import { Parameter, Signature } from "../functions/signature.js";
  * @param {Record<string, any>} [initial]
  * @returns {SpoonEnv}
  */
-export function createEnv(parent = undefined, initial = new Map(), signaturesArg = new Map()) {
-  const bindings = new Map();
-  const signatures = new Map();
-
-  for (const [name, value] of initial.entries()) {
-    bindings.set(name, value);
-  }
-
-  for (const [name, value] of signaturesArg.entries()) {
-    signatures.set(name, value);
-  }
+export function createEnv(parent = undefined, initial = {}, signaturesArg = {}) {
+  const bindings = new Map(Object.entries(initial));
+  const signatures = new Map(Object.entries(signaturesArg));
 
   return { parent, bindings, signatures, get names() {return [...bindings.keys()]; }};
 }
@@ -86,7 +78,7 @@ function bind(env, name, value) {
  */
 export function evaluate(ast, options = {}) {
   const env =
-    options.env ?? createEnv(undefined, new Map(Object.entries(options.globals ?? {})));
+    options.env ?? createEnv(undefined, options.globals);
   const value = evalModule(ast, env);
   return { value, env, ast };
 }

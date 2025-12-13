@@ -1,4 +1,6 @@
 export const typeType = defineType("type");
+export const stringType = Type("string");
+export const numberType = Type("number");
 
 export default function Type(name, parameters) {
   let obj = {

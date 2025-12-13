@@ -4,6 +4,7 @@ import { SyntaxError } from "./parser/parser.js";
 import { evaluate, createEnv } from "./interpreter/interpreter.js";
 import { NativeFunction } from "./functions/function.js";
 import { Parameter, Signature } from "./functions/signature.js";
+import { numberType, stringType } from "./parser/types.js";
 
 const PRIMARY_PROMPT = "spoon> ";
 const CONT_PROMPT = "...   ";
@@ -67,7 +68,7 @@ async function startRepl() {
   let buffer = "";
   let prompt = PRIMARY_PROMPT;
   let pendingSyntaxError = undefined;
-  let env = createEnv(undefined);
+  let env = createEnv(undefined, {string: stringType, number: numberType});
   
   const testFn = NativeFunction(
     "test",
