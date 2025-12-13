@@ -128,6 +128,7 @@ function bindVariables(p, node, env) {
 function bindUnion(p, env, node) {
   const type = Type(node.name, node.typeParams);
   env.types.set(type.name, type);
+  node.spoonType = type;
   node.constructors.forEach(c => {
     addVar(p, env, c, c.name); // TODO: should automatically assign return type to constrs.
   });

@@ -159,7 +159,7 @@ async function startRepl() {
       const result = evaluate(ast, { env });
 
       if (result?.value !== undefined) {
-        console.log(JSON.stringify(result.value));
+        console.log(result.value);
         env = result.env;
       }
 

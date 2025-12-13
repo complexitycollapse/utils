@@ -1007,8 +1007,8 @@ describe("union", () => {
   it("union with typed parameterised constructor", () => {
     expect(stmt("union foo:\n con1 x string, y number")).toMatchObject({
       constructors: [{ name: "con1", params: [
-        { name: "x", paramType: { type: "parameter type", value: "string" }},
-        { name: "y", paramType: { type: "parameter type", value: "number" }}]}]
+        { name: "x", paramType: "string"},
+        { name: "y", paramType: "number" }]}]
     });
   });
 

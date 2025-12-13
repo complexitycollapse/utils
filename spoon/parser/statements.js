@@ -100,9 +100,7 @@ function parseConstructor(p, t) {
   while (!p.at("NEWLINE") && !p.isDelimiter()) {
     const t = p.current;
     const paramName = p.expect("IDENT").value;
-    const paramType = p.at("IDENT") ?
-      p.makeNode("parameter type", { value: p.current.value }, p.advance()) :
-      undefined;
+    const paramType = p.at("IDENT") ? p.advance().value : undefined;
     params.push(p.makeNode("parameter", { name: paramName, paramType }, t));
     if (!p.at(",")) { break; }
     p.advance();

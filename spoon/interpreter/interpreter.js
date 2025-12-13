@@ -1,4 +1,4 @@
-import { GenericFunction, SpoonFunction } from "../functions/function.js";
+import { Constructor, GenericFunction, SpoonFunction } from "../functions/function.js";
 import { Parameter, Signature } from "../functions/signature.js";
 
 /**
@@ -22,7 +22,7 @@ export function createEnv(parent = undefined, initial = new Map(), signaturesArg
     bindings.set(name, value);
   }
 
-  for (const [name, value] of signatures.entries()) {
+  for (const [name, value] of signaturesArg.entries()) {
     signatures.set(name, value);
   }
 
@@ -126,6 +126,8 @@ export function evalStatement(node, env) {
       return evalExpression(node.expression, env);
     case "statement block":
       return evalStatementBlock(node, env);
+    case "union":
+      return evalUnion(node, env);
     default:
       throw new Error(`Unknown statement type: ${node.type}`);
   }
@@ -412,4 +414,15 @@ function evalBindingExpression(node, env) {
     result = value;
   }
   return result;
+}
+
+function evalUnion(node, env) {
+  env.bindings.set(node.spoonType.name, node.spoonType);
+  node.constructors.forEach(c => {
+    const sig = Signature(c.params.map(p => Parameter(p.name, true, p.type)));
+    const value = sig.parameters.size === 0 ?
+      node.spoonType.createInstance(c.name, new Map()) :
+      Constructor(node.spoonType, c.name, sig);
+    bind(env, c.name, value);
+  });
 }
