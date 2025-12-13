@@ -9,3 +9,4 @@ def sum a number, b number:
 
 x: 100, y: 200
 sum 1 y
+first
