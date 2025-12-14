@@ -146,3 +146,15 @@ The signature may specify that a parameter only accepts a specified list of valu
 
 ## Extension
 As parselets can be used to add everything else (including functions and signature definitions) this is enough for now.
+
+## Type Annotations
+A type annotation consists of a type identifier surrounded by curly brackets. Type annotations can be placed after the LHS of a symbol binding or after a parameter name in a function declaration. Examples:
+
+```
+x {number}: 5
+y {string}: "hello"
+def foo x {number}, y {number} => x + y
+x {expr number}: sum(5, 6) # an example of a polymorphic type with a type parameter
+```
+
+Type annotations are generally optional, although they may be necessary to disambiguate the different instances of a generic function.

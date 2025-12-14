@@ -7,6 +7,6 @@ second 1 2
 def sum a number, b number:
  if a > 10 then a + b
 
-x: 100, y: 200
+x {number}: 100, y {number}: 200
 sum 1 y
 first

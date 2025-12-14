@@ -1,9 +1,10 @@
 export const typeType = defineType("type");
 export const stringType = Type("string");
 export const numberType = Type("number");
+export const anyType = Type("any");
 
-export default function Type(name, parameters) {
-  let obj = {
+export function Type(name, parameters) {
+  const obj = new typeType({
     name,
     parameters,
     prototypeForInstances: defineType(name),
@@ -12,11 +13,19 @@ export default function Type(name, parameters) {
       return x;
     },
     isTypeOf(instance) {
+      if (obj === stringType) {
+        return typeof instance === "string" || instance instanceof String;
+      } 
+      if (obj === numberType) {
+        return typeof instance === "number"
+      }
+      if (obj === anyType) {
+        return true;
+      }
       return instance instanceof obj.prototypeForInstances;
     }
-  };
+  });
 
-  obj.prototype = typeType;
   return obj;
 }
 

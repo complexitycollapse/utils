@@ -3,7 +3,7 @@ import { parseExpression } from "./expressions.js";
 import { parseStatementLine, parseStatementBlock } from "./statements.js"
 import { parseFunctionExpression } from "./functions.js";
 import Bindings from "./bindings.js";
-import Type from "./types.js";
+import { anyType, Type } from "./types.js";
 
 /**
  * 
@@ -59,26 +59,57 @@ export function parseModule(source, globals = []) {
     throw p.syntaxError(t, "() is not in valid function call position.");
   });
 
+  function ensurePattern(p, node) {
+    if (node.type === "identifier") {
+      return p.makeNode("pattern", { value: node }, node);
+    } else if (node.type != "pattern" && node.type != "typed pattern") {
+      throw p.syntaxError(node, "Pattern expected");
+    }
+    return node;
+  }
+
+  function ensureTypedPattern(p, node) {
+    if (node.type === "typed pattern") { return node; }
+    else {
+      const pattern = ensurePattern(p, node);
+      return p.makeNode(
+        "typed pattern",
+        { value: pattern.value, patternType: anyType },
+        pattern);
+    }
+  }
+
   infix(p, ":", 100, (p, l, t, rbp) => {
     const bindings = [];
+    l = ensureTypedPattern(p, l);
     p.pushDelimiters([","]);
 
     while(true) {
-      if (l.type != "identifier") {
-        throw p.syntaxError(l, "Expected symbol.");
-      }
       const value = parseExpression(p, 0);
-      bindings.push({ symbol: l.name, value });
+      bindings.push({ pattern: l, value });
       if (!p.at(",")) { break; }
       p.advance();
       p.pushDelimiters([":"]);
-      l = parseExpression(p, 0);
+      l = ensureTypedPattern(p, parseExpression(p, 0));
       p.popDelimiters();
       p.expect(":");
     }
     
     p.popDelimiters();
     return p.makeNode("binding", { bindings }, t);
+  });
+
+  suffix(p, "{", 110, (p, l, t, rbp) => {
+    const pattern = ensurePattern(p, l);
+    const typeName = p.expect("IDENT").value;
+    const typeArgs = [];
+    while (!p.at("}")) { typeArgs.push(p.expect("IDENT").value); }
+    p.expect("}");
+
+    return p.makeNode(
+      "typed pattern",
+      { value: pattern.value, patternType: { name: typeName, typeArgs }},
+      t);
   });
 
   const stmts = [];
@@ -107,7 +138,7 @@ function bindVariables(p, node, env) {
       bindVariables(p, binding.value, env);
     });
     node.bindings.forEach(binding => {
-      addVar(p, env, node, binding.symbol);
+      addPatternVars(p, env, node, binding.pattern);
     });
   } else if (node.type === "statement block") {
     const newEnv = Bindings(env);
@@ -127,11 +158,16 @@ function bindVariables(p, node, env) {
 
 function bindUnion(p, env, node) {
   const type = Type(node.name, node.typeParams);
-  env.types.set(type.name, type);
+  env.bindings.set(type.name, type);
   node.spoonType = type;
   node.constructors.forEach(c => {
     addVar(p, env, c, c.name); // TODO: should automatically assign return type to constrs.
   });
+}
+
+function addPatternVars(p, env, node, pattern) {
+  // TODO: this will eventually need to support patterns properly
+  addVar(p, env, node, pattern.value.name);
 }
 
 function bindIdentifier(p, env, node) {

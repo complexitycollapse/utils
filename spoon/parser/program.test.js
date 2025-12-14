@@ -686,20 +686,36 @@ describe("binding", () => {
     expect(expr("x: 123")).toMatchObject({
       type: "binding",
       bindings : [{
-        symbol: "x",
+        pattern: { value: { name: "x"}},
         value: { type: "number", value: 123}
     }]});
+  });
+
+  it("x {number}: 123 correctly captures the type", () => {
+    expect(expr("x {number}: 123")).toMatchObject({
+      type: "binding",
+      bindings : [{
+        pattern: { value: { name: "x"}, patternType: { name: "number", typeArgs: []}},
+        value: { type: "number", value: 123}
+    }]});
+  });
+
+  it("x {fooConstr number string}: 123 correctly captures the type arguments", () => {
+    expect(expr("x {fooConstr number string}: 123")).toMatchObject({
+      bindings : [{
+        pattern: { patternType: { name: "fooConstr", typeArgs: ["number", "string"] }}
+      }]});
   });
 
   it("x: y: 123 associates to the right", () => {
     expect(expr("x: y: 123")).toMatchObject({
       type: "binding",
       bindings: [{
-        symbol: "x",
+        pattern: { value: { name: "x"}},
         value: {
           type: "binding",
           bindings: [{
-            symbol: "y",
+            pattern: { value: { name: "y"}},
             value: { type: "number", value: 123}
           }]
         }}]
@@ -742,10 +758,19 @@ describe("binding", () => {
     expect(() => parse("ux: 1, uy: 2, uz: 3\nux\nuy\nuz")).not.toThrow();
   });
 
+  it("Compound bindings with types correctly type all variables", () => {
+    expect(expr("ux {number}: 1, uy {string}: \"str\"")).toMatchObject({
+      bindings : [
+        { pattern: { patternType: { name: "number" }}},
+        { pattern: { patternType: { name: "string" }}}
+      ]
+    });
+  });
+
   it("Binds strongly to the left", () => {
     expect(expr("x + y: 123")).toMatchObject({
       left: { name: "x" },
-      right: { bindings: [{ symbol: "y" }]}
+      right: { bindings: [{ pattern: { value: { name: "y"}}}]}
     });
   });
 
@@ -753,7 +778,7 @@ describe("binding", () => {
     expect(expr("x: y + z")).toMatchObject({
       type: "binding",
       bindings: [{ 
-        symbol: "x",
+        pattern: { value: { name: "x"}},
         value: {
           left: { name: "y" },
           right: { name: "z" }
@@ -766,13 +791,13 @@ describe("binding", () => {
     expect(expr("x: y + z, y: z")).toMatchObject({
       type: "binding",
       bindings: [{ 
-        symbol: "x",
+        pattern: { value: { name: "x"}},
         value: {
           left: { name: "y" },
           right: { name: "z" }
         }
        }, {
-        symbol: "y",
+        pattern: { value: { name: "y"}},
         value: { name: "z" }
        }]      
     });
@@ -1013,6 +1038,10 @@ describe("union", () => {
   });
 
   it("constructor symbols are bound", () => {
-    expect(() => stmts("union foo:\n con1\n con2\ncon1\ncon2")).not.toThrow();
+    expect(() => stmts("union foo:\n con1\n con2 a, b\ncon1\ncon2 1 2")).not.toThrow();
+  });
+
+  it("constructors can be used in expressions", () => {
+    expect(() => stmts("union foo:\n con1 a, b\nx + (con1 4 5)")).not.toThrow();
   });
 });

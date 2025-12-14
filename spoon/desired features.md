@@ -5,3 +5,4 @@
 - Perhaps a rule engine of some sort.
 - Radical generics.
 - Bags and sets like in Maude, so you can apply a function to "whatever's in here". Could get the state-like features of Maude?
+- Gradual typing and type refinement as often and in as many places as possible.

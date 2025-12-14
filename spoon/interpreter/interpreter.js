@@ -402,7 +402,8 @@ function evalBindingExpression(node, env) {
   let result;
   for (const bindingSpec of node.bindings) {
     const value = evalExpression(bindingSpec.value, env);
-    bind(env, bindingSpec.symbol, value);
+    // TODO: edit this when supporting patterns properly
+    bind(env, bindingSpec.pattern.value.name, value);
     result = value;
   }
   return result;
