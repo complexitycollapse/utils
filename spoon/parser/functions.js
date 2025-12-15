@@ -1,5 +1,6 @@
 import { parseExpression } from "./expressions.js";
 import { parseStatementBlock, parseStatement } from "./statements.js";
+import { ensureTypedPattern, parseTypeAnnotation } from "./types.js";
 
 export function parseFunctionDefinition(p, t) {
   if (!p.at("IDENT")) {
@@ -44,23 +45,37 @@ function parseParameter(p) {
   }
 
   const positional = !!p.at("IDENT");
-  const name = p.advance().value;
-  let type = p.at("IDENT") ? p.advance().value : undefined;
+  const nameIdentifier = p.makeNode("identifier", { name: p.current.value }, p.advance());
+  let pattern, enumMembers;
 
-  if (p.at("{")) {
+  if (p.at("(")) {
+    enumMembers = [];
     p.advance();
-    type = [];
     while(true) {
-      if (p.at("}")) {
+      if (p.at(")")) {
         p.advance();
         break;
       }
       if (!p.at("IDENT")) {
         throw p.syntaxError(p.current, "enum member expected");
       }
-      type.push(p.advance().value);
+      enumMembers.push(p.advance().value);
+      if (!p.at(")") && !p.at("|")) {
+        throw p.syntaxError(p.current, "Expected | to separate enum values");
+      }
+      if (p.at("|")) { p.advance(); }
     }
+
+    // TODO: set the type of the parameter
+
+    if (enumMembers.length === 0) {
+      throw p.syntaxError(p.current, "Empty enum");
+    }
+  } else if (p.at("{")) {
+    pattern = parseTypeAnnotation(p, nameIdentifier, p.advance());
   }
+
+  pattern = pattern ?? ensureTypedPattern(p, nameIdentifier);
 
   let defaultValueExpression;
 
@@ -71,10 +86,10 @@ function parseParameter(p) {
     defaultValueExpression = parseExpression(p, 0);
     p.popDelimiters();
 
-    if (Array.isArray(type) && type.indexOf(defaultValueExpression.name) == -1) {
+    if (enumMembers && enumMembers.indexOf(defaultValueExpression.name) == -1) {
       throw p.syntaxError(defToken, "default is not valid for enum");
     }
   }
 
-  return p.makeNode("parameter", { name, type, defaultValueExpression, positional }, t);
+  return p.makeNode("parameter", { pattern, defaultValueExpression, positional }, t);
 }

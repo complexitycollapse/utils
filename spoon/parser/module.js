@@ -3,7 +3,7 @@ import { parseExpression } from "./expressions.js";
 import { parseStatementLine, parseStatementBlock } from "./statements.js"
 import { parseFunctionExpression } from "./functions.js";
 import Bindings from "./bindings.js";
-import { anyType, Type } from "./types.js";
+import { ensureTypedPattern, parseTypeAnnotation, Type } from "./types.js";
 
 /**
  * 
@@ -59,26 +59,6 @@ export function parseModule(source, globals = []) {
     throw p.syntaxError(t, "() is not in valid function call position.");
   });
 
-  function ensurePattern(p, node) {
-    if (node.type === "identifier") {
-      return p.makeNode("pattern", { value: node }, node);
-    } else if (node.type != "pattern" && node.type != "typed pattern") {
-      throw p.syntaxError(node, "Pattern expected");
-    }
-    return node;
-  }
-
-  function ensureTypedPattern(p, node) {
-    if (node.type === "typed pattern") { return node; }
-    else {
-      const pattern = ensurePattern(p, node);
-      return p.makeNode(
-        "typed pattern",
-        { value: pattern.value, patternType: anyType },
-        pattern);
-    }
-  }
-
   infix(p, ":", 100, (p, l, t, rbp) => {
     const bindings = [];
     l = ensureTypedPattern(p, l);
@@ -99,18 +79,7 @@ export function parseModule(source, globals = []) {
     return p.makeNode("binding", { bindings }, t);
   });
 
-  suffix(p, "{", 110, (p, l, t, rbp) => {
-    const pattern = ensurePattern(p, l);
-    const typeName = p.expect("IDENT").value;
-    const typeArgs = [];
-    while (!p.at("}")) { typeArgs.push(p.expect("IDENT").value); }
-    p.expect("}");
-
-    return p.makeNode(
-      "typed pattern",
-      { value: pattern.value, patternType: { name: typeName, typeArgs }},
-      t);
-  });
+  suffix(p, "{", 110, (p, l, t, rbp) => parseTypeAnnotation(p, l, t));
 
   const stmts = [];
   const rootEnv = Bindings(Bindings(undefined, globals.map(g => [g, { name: g }])));
@@ -147,7 +116,8 @@ function bindVariables(p, node, env) {
     addVar(p, env, node.fn, node.name);
     bindVariables(p, node.fn, env);
   } else if (node.type === "function") {
-    node.env = Bindings(env, node.parameters.map(p => [p.name, p]));
+    // TODO: this only handles single-variable patterns
+    node.env = Bindings(env, node.parameters.map(p => [p.pattern.value.name, p]));
     if (node.body) { bindVariables(p, node.body, node.env); }
   } else if (node.type === "union") {
     bindUnion(p, env, node);

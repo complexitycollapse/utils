@@ -3,6 +3,39 @@ export const stringType = Type("string");
 export const numberType = Type("number");
 export const anyType = Type("any");
 
+export function parseTypeAnnotation(p, l, t) {
+  const pattern = ensurePattern(p, l);
+  const typeName = p.expect("IDENT").value;
+  const typeArgs = [];
+  while (!p.at("}")) { typeArgs.push(p.expect("IDENT").value); }
+  p.expect("}");
+
+  return p.makeNode(
+    "typed pattern",
+    { value: pattern.value, patternType: { name: typeName, typeArgs }},
+    t);
+}
+
+export function ensurePattern(p, node) {
+  if (node.type === "identifier") {
+    return p.makeNode("pattern", { value: node }, node);
+  } else if (node.type != "pattern" && node.type != "typed pattern") {
+    throw p.syntaxError(node, "Pattern expected");
+  }
+  return node;
+}
+
+export function ensureTypedPattern(p, node) {
+  if (node.type === "typed pattern") { return node; }
+  else {
+    const pattern = ensurePattern(p, node);
+    return p.makeNode(
+      "typed pattern",
+      { value: pattern.value, patternType: anyType },
+      pattern);
+  }
+}
+
 export function Type(name, parameters) {
   const obj = new typeType({
     name,

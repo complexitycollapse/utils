@@ -823,7 +823,7 @@ describe("anonymous functions", () => {
   it("simple argument inline", () => {
     expect(fn("fn x => x + y")).toMatchObject({
       type: "function",
-      parameters: [{ name: "x" }],
+      parameters: [{ type: "parameter", pattern: { type: "typed pattern", value: { name: "x" }}}],
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
     });
   });
@@ -831,49 +831,53 @@ describe("anonymous functions", () => {
   it("two simple arguments inline", () => {
     expect(fn("fn x, y => x + y")).toMatchObject({
       type: "function",
-      parameters: [{ name: "x" }, { name: "y" }],
+      parameters: [{ pattern: { value: { name: "x" }}}, { pattern: { value: { name: "y" }}}],
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
     });
   });
 
   it("typed arg inline", () => {
-    expect(fn("fn x number:\n x + y")).toMatchObject({
+    expect(fn("fn x {number}:\n x + y")).toMatchObject({
       type: "function",
-      parameters: [{ name: "x", type: "number" }]
+      parameters: [{ pattern: { value: { name: "x" }}}]
     });
   });
 
   it("arg with default inline", () => {
     expect(fn("fn x = 10:\n x + y")).toMatchObject({
       type: "function",
-      parameters: [{ name: "x", defaultValueExpression: { type: "number", value: 10} }]
+      parameters: [{
+        pattern: { value: { name: "x" }},
+        defaultValueExpression: { type: "number", value: 10}
+      }]
     });
   });
 
   it("arg with default and type inline", () => {
-    expect(fn("fn x number = 10:\n x + y")).toMatchObject({
+    expect(fn("fn x {number} = 10:\n x + y")).toMatchObject({
       type: "function",
       parameters: [{
-        name: "x",
-        type: "number",
+        pattern: { value: { name: "x" }, patternType: { name: "number", typeArgs: [] }},
         defaultValueExpression: { type: "number", value: 10} }]
     });
   });
 
   it("anonymous enum typed arg inline", () => {
-    expect(fn("fn x { a b c }:\n x + y")).toMatchObject({
-      parameters: [{ name: "x", type: ["a", "b", "c"] }]
+    expect(fn("fn x (a|b|c):\n x + y")).toMatchObject({
+      // TODO: need to check the type of the pattern
+      parameters: [{ pattern: { value: { name: "x" }}}]
     });
   });
 
   it("anonymous enum typed arg with default inline", () => {
-    expect(fn("fn x { a b c } = a:\n x + y")).toMatchObject({
-      parameters: [{ name: "x", type: ["a", "b", "c"], defaultValueExpression: { name: "a" } }]
+    expect(fn("fn x (a|b|c) = a:\n x + y")).toMatchObject({
+      // TODO: same as above
+      parameters: [{ pattern: { value: { name: "x" }}, defaultValueExpression: { name: "a" } }]
     });
   });
 
   it("anonymous enum typed arg with invalid default inline", () => {
-    expect(() => fn("fn x { a b c } = d:\n x + y")).toThrow();
+    expect(() => fn("fn x (a|b|c) = d:\n x + y")).toThrow();
   });
 
   it("zero-argument block", () => {
@@ -890,7 +894,7 @@ describe("anonymous functions", () => {
   it("simple argument block", () => {
     expect(fn("fn x:\n x + y\n z")).toMatchObject({
       type: "function",
-      parameters: [{ name: "x" }],
+      parameters: [{ pattern: { value: { name: "x" }}}],
       body: { type: "statement block", stmts: [{
         type: "expression statement" },
         { type: "expression statement" }
@@ -957,7 +961,7 @@ describe("function definition statements", () => {
   it("simple argument inline", () => {
     expect(fn("def quux x => x + y")).toMatchObject({
       type: "function",
-      parameters: [{ name: "x" }],
+      parameters: [{ pattern: {value: { name: "x" }}}],
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
     });
   });
@@ -965,7 +969,7 @@ describe("function definition statements", () => {
   it("two simple arguments inline", () => {
     expect(fn("def quux x, y => x + y")).toMatchObject({
       type: "function",
-      parameters: [{ name: "x" }, { name: "y" }],
+      parameters: [{ pattern: {value: { name: "x" }}}, { pattern: {value: { name: "y" }}}],
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
     });
   });
@@ -982,7 +986,7 @@ describe("function definition statements", () => {
 
   it("simple argument block", () => {
     expect(fn("def quux x:\n x + y\n z")).toMatchObject({
-      parameters: [{ name: "x" }],
+      parameters: [{ pattern: {value: { name: "x" }}}],
       body: { type: "statement block", stmts: [{
         type: "expression statement" },
         { type: "expression statement" }

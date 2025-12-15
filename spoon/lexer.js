@@ -204,6 +204,12 @@ export function tokenize(source) {
         column += 1;
         continue;
       }
+      if (ch === "|") {
+        tokens.push(makeToken("|", "|", lineNumber, column, 1));
+        i += 1;
+        column += 1;
+        continue;
+      }
       if (ch === "{") {
         tokens.push(makeToken("{", "{", lineNumber, column, 1));
         i += 1;
