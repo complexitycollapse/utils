@@ -3,16 +3,20 @@ export const stringType = Type("string");
 export const numberType = Type("number");
 export const anyType = Type("any");
 
-export function parseTypeAnnotation(p, l, t) {
-  const pattern = ensurePattern(p, l);
+export function parseTypeAnnotation(p) {
   const typeName = p.expect("IDENT").value;
   const typeArgs = [];
   while (!p.at("}")) { typeArgs.push(p.expect("IDENT").value); }
   p.expect("}");
+  return { name: typeName, typeArgs };
+}
 
+export function parseTypeAnnotationSuffix(p, l, t) {
+  const pattern = ensurePattern(p, l);
+  const patternType = parseTypeAnnotation(p);
   return p.makeNode(
     "typed pattern",
-    { value: pattern.value, patternType: { name: typeName, typeArgs }},
+    { value: pattern.value, patternType },
     t);
 }
 

@@ -1,6 +1,6 @@
 import { parseExpression } from "./expressions.js";
 import { parseStatementBlock, parseStatement } from "./statements.js";
-import { ensureTypedPattern, parseTypeAnnotation } from "./types.js";
+import { anyType, ensureTypedPattern, parseTypeAnnotation, parseTypeAnnotationSuffix } from "./types.js";
 
 export function parseFunctionDefinition(p, t) {
   if (!p.at("IDENT")) {
@@ -14,6 +14,13 @@ export function parseFunctionDefinition(p, t) {
 
 export function parseFunctionExpression(p, t) {
   const parameters = [];
+
+  let returnType = anyType;
+  if (p.at("{")) {
+    p.advance();
+    returnType = parseTypeAnnotation(p);
+  }
+
   while(!p.at(":") && !p.at("NEWLINE") && !p.at("RIGHT ARROW") && !p.isDelimiter(p.current)) {
     parameters.push(parseParameter(p));
     if (!p.at(",")) {
@@ -34,7 +41,7 @@ export function parseFunctionExpression(p, t) {
   }
 
   // TODO: also needs an environment
-  return p.makeNode("function", { parameters, body }, t);
+  return p.makeNode("function", { parameters, body, returnType }, t);
 }
 
 function parseParameter(p) {
@@ -72,7 +79,7 @@ function parseParameter(p) {
       throw p.syntaxError(p.current, "Empty enum");
     }
   } else if (p.at("{")) {
-    pattern = parseTypeAnnotation(p, nameIdentifier, p.advance());
+    pattern = parseTypeAnnotationSuffix(p, nameIdentifier, p.advance());
   }
 
   pattern = pattern ?? ensureTypedPattern(p, nameIdentifier);

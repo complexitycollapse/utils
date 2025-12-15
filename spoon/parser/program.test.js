@@ -929,6 +929,12 @@ describe("anonymous functions", () => {
   it("params must be followed by arrow or colon", () => {
     expect(() => fn("fn -x x")).toThrow();
   });
+
+  it("function with return type", () => {
+    expect(fn("fn {string} x =>\n x")).toMatchObject({
+      returnType: { name: "string", typeArgs: [] }
+    });
+  });
 });
 
 describe("function definition statements", () => {
@@ -1000,6 +1006,12 @@ describe("function definition statements", () => {
 
   it("can't use undeclared symbol in fn body", () => {
     expect(() => fn("def quux p:\n undec")).toThrow();
+  });
+
+  it("function definition with return type", () => {
+    expect(fn("def quux {string} x =>\n x")).toMatchObject({
+      returnType: { name: "string", typeArgs: [] }
+    });
   });
 });
 

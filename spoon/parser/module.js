@@ -3,7 +3,7 @@ import { parseExpression } from "./expressions.js";
 import { parseStatementLine, parseStatementBlock } from "./statements.js"
 import { parseFunctionExpression } from "./functions.js";
 import Bindings from "./bindings.js";
-import { ensureTypedPattern, parseTypeAnnotation, Type } from "./types.js";
+import { ensureTypedPattern, parseTypeAnnotationSuffix, Type } from "./types.js";
 
 /**
  * 
@@ -79,7 +79,7 @@ export function parseModule(source, globals = []) {
     return p.makeNode("binding", { bindings }, t);
   });
 
-  suffix(p, "{", 110, (p, l, t, rbp) => parseTypeAnnotation(p, l, t));
+  suffix(p, "{", 110, (p, l, t, rbp) => parseTypeAnnotationSuffix(p, l, t));
 
   const stmts = [];
   const rootEnv = Bindings(Bindings(undefined, globals.map(g => [g, { name: g }])));
