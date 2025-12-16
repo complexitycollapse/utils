@@ -44,7 +44,7 @@ export function parseFunctionExpression(p, t) {
   return p.makeNode("function", { parameters, body, returnType }, t);
 }
 
-function parseParameter(p) {
+export function parseParameter(p) {
   const t = p.current;
 
   if (!p.at("IDENT") && !p.at("FLAG")) {

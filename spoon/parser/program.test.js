@@ -839,7 +839,9 @@ describe("anonymous functions", () => {
   it("typed arg inline", () => {
     expect(fn("fn x {number}:\n x + y")).toMatchObject({
       type: "function",
-      parameters: [{ pattern: { value: { name: "x" }}}]
+      parameters: [
+        { pattern: { value: { name: "x" }, patternType: { name: "number", typeArgs: [] }}}
+      ]
     });
   });
 
@@ -1041,15 +1043,19 @@ describe("union", () => {
 
   it("union with parameterised constructor", () => {
     expect(stmt("union foo:\n con1 x, y")).toMatchObject({
-      constructors: [{ name: "con1", params: [{ name: "x"}, { name: "y"}]}]
+      constructors: [{ name: "con1", params: [
+        { pattern: { value: { name: "x"}}},
+        { pattern: { value: { name: "y"}}}]
+      }]
     });
   });
 
   it("union with typed parameterised constructor", () => {
-    expect(stmt("union foo:\n con1 x string, y number")).toMatchObject({
+    expect(stmt("union foo:\n con1 x {string}, y {number}")).toMatchObject({
       constructors: [{ name: "con1", params: [
-        { name: "x", paramType: "string"},
-        { name: "y", paramType: "number" }]}]
+        { pattern: { value: { name: "x"}, patternType: { name: "string", typeArgs: [] }}},
+        { pattern: { value: { name: "y"}, patternType: { name: "number", typeArgs: [] }}}]
+      }]
     });
   });
 

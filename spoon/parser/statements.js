@@ -1,5 +1,5 @@
 import { parseExpression } from "./expressions.js";
-import { parseFunctionDefinition } from "./functions.js";
+import { parseFunctionDefinition, parseParameter } from "./functions.js";
 
 export function parseStatementLine(p) {
   const stmt = parseStatement(p);
@@ -98,11 +98,10 @@ function parseConstructor(p, t) {
 
   const params = [];
   while (!p.at("NEWLINE") && !p.isDelimiter()) {
-    const t = p.current;
-    const paramName = p.expect("IDENT").value;
-    const paramType = p.at("IDENT") ? p.advance().value : undefined;
-    params.push(p.makeNode("parameter", { name: paramName, paramType }, t));
-    if (!p.at(",")) { break; }
+    params.push(parseParameter(p));
+    if (!p.at(",")) {
+      break;
+    }
     p.advance();
   }
 
