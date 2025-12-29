@@ -82,7 +82,7 @@ export function parseModule(source, globals = []) {
     }
     
     p.popDelimiters();
-    return p.makeNode("binding", { bindings }, t);
+    return p.makeNode("binding", { bindings, returnType: l.patternType }, t);
   });
 
   suffix(p, "{", 110, (p, l, t, rbp) => parseTypeAnnotationSuffix(p, l, t));
