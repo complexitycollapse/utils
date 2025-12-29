@@ -1,7 +1,7 @@
 import { Signature } from "../functions/signature.js";
 import { parseExpression } from "./expressions.js";
 import { parseStatementBlock, parseStatement } from "./statements.js";
-import { anyType, ensureTypedPattern, parseTypeAnnotation, parseTypeAnnotationSuffix } from "./types.js";
+import { anyType, ensureTypedPattern, parseTypeAnnotation, parseTypeAnnotationSuffix } from "../types.js";
 
 export function parseFunctionDefinition(p, t) {
   if (!p.at("IDENT")) {

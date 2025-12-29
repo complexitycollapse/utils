@@ -1,4 +1,4 @@
-import { tokenize } from "../lexer.js";
+import { tokenize } from "./lexer.js";
 
 export function parse(source) {
   const tokens = tokenize(source);

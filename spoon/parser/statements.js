@@ -1,7 +1,7 @@
 import { Signature } from "../functions/signature.js";
 import { parseExpression } from "./expressions.js";
 import { parseFunctionDefinition, parseParameter } from "./functions.js";
-import { Type } from "./types.js";
+import { ParameterizedType, UnionType } from "../types.js";
 
 export function parseStatementLine(p) {
   const stmt = parseStatement(p);
@@ -75,7 +75,7 @@ function parseUnion(p, t) {
     p.advance();
   }
 
-  const type = Type(name, typeParams);
+  const type = ParameterizedType(UnionType(name), typeParams);
   const constructors = [];
 
   if (p.tryEnterBlock()) {

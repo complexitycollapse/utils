@@ -73,5 +73,5 @@ export function SpoonFunction(signature, env, body) {
 }
 
 export function Constructor(type, tag, signature) {
-  return NativeFunction(tag, signature, (args) => type.createInstance(tag, args));
+  return NativeFunction(tag, signature, (args) => type.createInstance({ tag, args }));
 }

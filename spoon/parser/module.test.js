@@ -1,6 +1,6 @@
 import { it, describe, expect } from "vitest";
 import { parseModule } from "./module.js";
-import { anyType } from "./types.js";
+import { anyType } from "../types.js";
 
 function parse(source) {
   const parsed = parseModule(source, [
@@ -1066,7 +1066,7 @@ describe("union", () => {
     expect(stmt("union foo x, y, z:\n con1")).toMatchObject({
       spoonType: {
         name: "foo",
-        parameters: [{ name: "x" }, { name: "y" }, { name: "z" }]
+        typeParameters: [{ name: "x" }, { name: "y" }, { name: "z" }]
     }});
   });
 

@@ -3,7 +3,7 @@ import { parseExpression } from "./expressions.js";
 import { parseStatementLine, parseStatementBlock } from "./statements.js"
 import { parseFunctionExpression } from "./functions.js";
 import Bindings from "./bindings.js";
-import { anyType, booleanType, ensureTypedPattern, numberType, parseTypeAnnotationSuffix, Type } from "./types.js";
+import { anyType, booleanType, ensureTypedPattern, numberType, parseTypeAnnotationSuffix } from "../types.js";
 
 /**
  * 

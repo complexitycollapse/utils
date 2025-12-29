@@ -2,7 +2,7 @@ import { readFile } from "fs/promises";
 import { parseModule } from "./parser/module.js";
 import { SyntaxError } from "./parser/parser.js";
 import { evaluate, createEnv } from "./interpreter/interpreter.js";
-import { numberType, stringType } from "./parser/types.js";
+import { numberType, stringType } from "./types.js";
 
 function printSourceWithErrorUnderline(source, err) {
   const lines = source.split("\n");
