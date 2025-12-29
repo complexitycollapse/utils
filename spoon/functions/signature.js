@@ -2,10 +2,12 @@
  * 
  * @returns {any}
  */
-export function Signature(parametersList) {
+export function Signature(parameterList, returnType) {
   let obj = {
+    parameterList,
     parameters: new Map(),
     positional: [],
+    returnType,
     match(args, instance) {
       const namesUsed = new Set();
       const matchedArgs = [];
@@ -20,7 +22,7 @@ export function Signature(parametersList) {
           if (namesUsed.has(a.name)) {
             return { failure: "Duplicate argument name " + a.name };
           }
-          matchedArgs.push({ type: a.type, name: a.name, value: a.value });
+          matchedArgs.push(a);
           namesUsed.add(a.name);
         } else {
           const arg = { type: "named", value: a.value };
@@ -40,7 +42,7 @@ export function Signature(parametersList) {
           return { failure: "Too many positional args." };
         }
 
-        p.name = obj.positional[positionalIndex].name;
+        p.name = obj.positional[positionalIndex].pattern.value.name;
         ++positionalIndex;
       };
 
@@ -48,8 +50,8 @@ export function Signature(parametersList) {
     }
   };
 
-  obj.positional = parametersList.filter(p => p.positional);
-  obj.parameters = new Map(parametersList.map(p => ([p.name, p])));
+  obj.positional = parameterList.filter(p => p.positional);
+  obj.parameters = new Map(parameterList.map(p => ([p.pattern.value.name, p])));
 
   return obj;
 }

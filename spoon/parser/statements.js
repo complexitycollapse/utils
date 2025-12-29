@@ -1,5 +1,7 @@
+import { Signature } from "../functions/signature.js";
 import { parseExpression } from "./expressions.js";
 import { parseFunctionDefinition, parseParameter } from "./functions.js";
+import { Type } from "./types.js";
 
 export function parseStatementLine(p) {
   const stmt = parseStatement(p);
@@ -73,10 +75,11 @@ function parseUnion(p, t) {
     p.advance();
   }
 
+  const type = Type(name, typeParams);
   const constructors = [];
 
   if (p.tryEnterBlock()) {
-    constructors.push(parseConstructor(p));
+    constructors.push(parseConstructor(p, p.current, type));
 
     while (true) {
       if (p.currentLineIsDedented || p.isDelimiter(p.current)) {
@@ -84,16 +87,16 @@ function parseUnion(p, t) {
         break;
       }
       p.expect("NEWLINE");
-      constructors.push(parseConstructor(p, p.current));
+      constructors.push(parseConstructor(p, p.current, type));
     }
   } else {
     throw p.syntaxError(p.current, "Expected constructor block");
   }
 
-  return p.makeNode("union", { name, typeParams, constructors }, t);
+  return p.makeNode("union", { name, spoonType: type, constructors }, t);
 }
 
-function parseConstructor(p, t) {
+function parseConstructor(p, t, returnType) {
   const name = p.expect("IDENT").value;
 
   const params = [];
@@ -105,5 +108,5 @@ function parseConstructor(p, t) {
     p.advance();
   }
 
-  return p.makeNode("constructor", { name, params }, t);
+  return p.makeNode("constructor", { name, signature: Signature(params, returnType) }, t);
 }

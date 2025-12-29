@@ -1,3 +1,4 @@
+import { Signature } from "../functions/signature.js";
 import { parseExpression } from "./expressions.js";
 import { parseStatementBlock, parseStatement } from "./statements.js";
 import { anyType, ensureTypedPattern, parseTypeAnnotation, parseTypeAnnotationSuffix } from "./types.js";
@@ -41,7 +42,7 @@ export function parseFunctionExpression(p, t) {
   }
 
   // TODO: also needs an environment
-  return p.makeNode("function", { parameters, body, returnType }, t);
+  return p.makeNode("function", { signature: Signature(parameters, returnType), body }, t);
 }
 
 export function parseParameter(p) {

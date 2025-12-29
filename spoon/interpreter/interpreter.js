@@ -22,26 +22,6 @@ export function createEnv(parent = undefined, initial = {}, signaturesArg = {}) 
 }
 
 /**
- * Look up a variable in an environment chain.
- * Throws if the variable is not found. This assumes the static
- * binder in module.js has already guaranteed that names are valid. :contentReference[oaicite:2]{index=2}
- *
- * @param {SpoonEnv} env
- * @param {string} name
- * @returns {any}
- */
-function lookup(env, name) {
-  let e = env;
-  while (e) {
-    if (e.bindings.has(name)) {
-      return e.bindings.get(name);
-    }
-    e = e.parent;
-  }
-  throw new ReferenceError(`Unbound variable ${name}`);
-}
-
-/**
  * Bind a variable in the current environment. Assumes the static
  * binder has already enforced "no rebinding in same scope". 
  *
@@ -157,7 +137,7 @@ export function evalExpression(node, env) {
       return node.value;
 
     case "identifier":
-      return lookup(env, node.name);
+      return env.bindings.get(node.name);
 
     case "binary operator":
       return evalBinary(node, env);

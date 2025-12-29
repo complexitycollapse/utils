@@ -1,8 +1,18 @@
 import { it, describe, expect } from "vitest";
 import { parseModule } from "./module.js";
+import { anyType } from "./types.js";
 
 function parse(source) {
-  const parsed = parseModule(source, ["x", "y", "z" , "foo", "bar", "baz", "a", "b", "c"]);
+  const parsed = parseModule(source, [
+    ["x", 1],
+    ["y", 2],
+    ["z", 3],
+    ["foo", "function"],
+    ["bar", "function"],
+    ["baz", "function"],
+    ["a", 4],
+    ["b", 5],
+    ["c", 6]]);
   expect(parsed).toBeTruthy();
   expect(parsed).toHaveProperty("type", "module");
   return parsed;
@@ -707,6 +717,10 @@ describe("binding", () => {
       }]});
   });
 
+  it("If no type is specified then the any type is assumed", () => {
+    expect(expr("x: 123").bindings[0].pattern.patternType).toBe(anyType);
+  });
+
   it("x: y: 123 associates to the right", () => {
     expect(expr("x: y: 123")).toMatchObject({
       type: "binding",
@@ -815,7 +829,7 @@ describe("anonymous functions", () => {
   it("zero-argument inline", () => {
     expect(fn("fn => x + y")).toMatchObject({
       type: "function",
-      parameters: [],
+      signature: { parameterList: [] },
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
     });
   });
@@ -823,7 +837,8 @@ describe("anonymous functions", () => {
   it("simple argument inline", () => {
     expect(fn("fn x => x + y")).toMatchObject({
       type: "function",
-      parameters: [{ type: "parameter", pattern: { type: "typed pattern", value: { name: "x" }}}],
+      signature: { parameterList: [
+        { type: "parameter", pattern: { type: "typed pattern", value: { name: "x" }}}]},
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
     });
   });
@@ -831,51 +846,58 @@ describe("anonymous functions", () => {
   it("two simple arguments inline", () => {
     expect(fn("fn x, y => x + y")).toMatchObject({
       type: "function",
-      parameters: [{ pattern: { value: { name: "x" }}}, { pattern: { value: { name: "y" }}}],
+      signature: { parameterList: [
+        { pattern: { value: { name: "x" }}}, { pattern: { value: { name: "y" }}}]},
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
     });
   });
 
-  it("typed arg inline", () => {
+  it("typed arg", () => {
     expect(fn("fn x {number}:\n x + y")).toMatchObject({
       type: "function",
-      parameters: [
+      signature: { parameterList: [
         { pattern: { value: { name: "x" }, patternType: { name: "number", typeArgs: [] }}}
-      ]
+      ]}
     });
+  });
+
+  it("untyped arg has any type", () => {
+    const x = fn("fn x:\n x + y");
+    expect(x.signature.parameterList[0].pattern.patternType).toBe(anyType);
   });
 
   it("arg with default inline", () => {
     expect(fn("fn x = 10:\n x + y")).toMatchObject({
       type: "function",
-      parameters: [{
+      signature: { parameterList: [{
         pattern: { value: { name: "x" }},
         defaultValueExpression: { type: "number", value: 10}
-      }]
+      }]}
     });
   });
 
   it("arg with default and type inline", () => {
     expect(fn("fn x {number} = 10:\n x + y")).toMatchObject({
       type: "function",
-      parameters: [{
+      signature: { parameterList: [{
         pattern: { value: { name: "x" }, patternType: { name: "number", typeArgs: [] }},
         defaultValueExpression: { type: "number", value: 10} }]
-    });
+    }});
   });
 
   it("anonymous enum typed arg inline", () => {
     expect(fn("fn x (a|b|c):\n x + y")).toMatchObject({
       // TODO: need to check the type of the pattern
-      parameters: [{ pattern: { value: { name: "x" }}}]
+      signature: { parameterList: [{ pattern: { value: { name: "x" }}}]}
     });
   });
 
   it("anonymous enum typed arg with default inline", () => {
     expect(fn("fn x (a|b|c) = a:\n x + y")).toMatchObject({
       // TODO: same as above
-      parameters: [{ pattern: { value: { name: "x" }}, defaultValueExpression: { name: "a" } }]
-    });
+      signature: { parameterList: [
+        { pattern: { value: { name: "x" }}, defaultValueExpression: { name: "a" } }]
+    }});
   });
 
   it("anonymous enum typed arg with invalid default inline", () => {
@@ -885,7 +907,7 @@ describe("anonymous functions", () => {
   it("zero-argument block", () => {
     expect(fn("fn :\n x + y\n z")).toMatchObject({
       type: "function",
-      parameters: [],
+      signature: { parameterList: [] },
       body: { type: "statement block", stmts: [{
         type: "expression statement" },
         { type: "expression statement" }
@@ -896,7 +918,7 @@ describe("anonymous functions", () => {
   it("simple argument block", () => {
     expect(fn("fn x:\n x + y\n z")).toMatchObject({
       type: "function",
-      parameters: [{ pattern: { value: { name: "x" }}}],
+      signature: { parameterList: [{ pattern: { value: { name: "x" }}}]},
       body: { type: "statement block", stmts: [{
         type: "expression statement" },
         { type: "expression statement" }
@@ -913,19 +935,19 @@ describe("anonymous functions", () => {
   });
 
   it("positional argument", () => {
-    expect(fn("fn x:\n x")).toMatchObject({ parameters: [{ positional: true }]});
+    expect(fn("fn x:\n x")).toMatchObject({ signature: { parameterList: [{ positional: true }]}});
   });
 
   it("named argument", () => {
-    expect(fn("fn -x:\n x")).toMatchObject({ parameters: [{ positional: false }]});
+    expect(fn("fn -x:\n x")).toMatchObject({ signature: { parameterList: [{ positional: false }]}});
   });
 
   it("arrow function", () => {
-    expect(fn("fn -x => x")).toMatchObject({ parameters: [{ positional: false }]});
+    expect(fn("fn -x => x")).toMatchObject({ signature: { parameterList: [{ positional: false }]}});
   });
 
   it("arrow function with newline", () => {
-    expect(fn("fn -x =>\n x")).toMatchObject({ parameters: [{ positional: false }]});
+    expect(fn("fn -x =>\n x")).toMatchObject({ signature: { parameterList: [{ positional: false }]}});
   });
 
   it("params must be followed by arrow or colon", () => {
@@ -934,8 +956,13 @@ describe("anonymous functions", () => {
 
   it("function with return type", () => {
     expect(fn("fn {string} x =>\n x")).toMatchObject({
-      returnType: { name: "string", typeArgs: [] }
+      signature: { returnType: { name: "string", typeArgs: [] }}
     });
+  });
+
+  it("function without return type has any type", () => {
+    expect(fn("fn x =>\n x")).toMatchObject({
+      signature: { returnType: anyType }});
   });
 });
 
@@ -958,10 +985,14 @@ describe("function definition statements", () => {
     expect(() => stmts("def quux:\n x\nquux")).not.toThrow();
   });
 
+  it("binds the signature to the name", () => {
+    expect(() => stmts("def quux x, y:\n x\nquux 1 2")).not.toThrow();
+  });
+
   it("zero-argument inline", () => {
     expect(fn("def quux => x + y")).toMatchObject({
       type: "function",
-      parameters: [],
+      signature: { parameterList: [] },
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
     });
   });
@@ -969,7 +1000,7 @@ describe("function definition statements", () => {
   it("simple argument inline", () => {
     expect(fn("def quux x => x + y")).toMatchObject({
       type: "function",
-      parameters: [{ pattern: {value: { name: "x" }}}],
+      signature: { parameterList: [{ pattern: {value: { name: "x" }}}]},
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
     });
   });
@@ -977,14 +1008,16 @@ describe("function definition statements", () => {
   it("two simple arguments inline", () => {
     expect(fn("def quux x, y => x + y")).toMatchObject({
       type: "function",
-      parameters: [{ pattern: {value: { name: "x" }}}, { pattern: {value: { name: "y" }}}],
+      signature: { parameterList: [
+        { pattern: {value: { name: "x" }}},
+        { pattern: {value: { name: "y" }}}]},
       body: { expression: { left: { name: "x" }, right: { name: "y" }}}
     });
   });
 
   it("zero-argument block", () => {
     expect(fn("def quux:\n x + y\n z")).toMatchObject({
-      parameters: [],
+      signature: { parameterList: [] },
       body: { type: "statement block", stmts: [{
         type: "expression statement" },
         { type: "expression statement" }
@@ -994,7 +1027,7 @@ describe("function definition statements", () => {
 
   it("simple argument block", () => {
     expect(fn("def quux x:\n x + y\n z")).toMatchObject({
-      parameters: [{ pattern: {value: { name: "x" }}}],
+      signature: { parameterList: [{ pattern: {value: { name: "x" }}}]},
       body: { type: "statement block", stmts: [{
         type: "expression statement" },
         { type: "expression statement" }
@@ -1012,7 +1045,7 @@ describe("function definition statements", () => {
 
   it("function definition with return type", () => {
     expect(fn("def quux {string} x =>\n x")).toMatchObject({
-      returnType: { name: "string", typeArgs: [] }
+      signature: { returnType: { name: "string", typeArgs: [] }}
     });
   });
 });
@@ -1031,8 +1064,10 @@ describe("union", () => {
 
   it("union with type parameters", () => {
     expect(stmt("union foo x, y, z:\n con1")).toMatchObject({
-      typeParams: [{ name: "x" }, { name: "y" }, { name: "z" }]
-    });
+      spoonType: {
+        name: "foo",
+        parameters: [{ name: "x" }, { name: "y" }, { name: "z" }]
+    }});
   });
 
   it("union with multiple constructors", () => {
@@ -1043,19 +1078,19 @@ describe("union", () => {
 
   it("union with parameterised constructor", () => {
     expect(stmt("union foo:\n con1 x, y")).toMatchObject({
-      constructors: [{ name: "con1", params: [
+      constructors: [{ name: "con1", signature: { parameterList: [
         { pattern: { value: { name: "x"}}},
         { pattern: { value: { name: "y"}}}]
-      }]
+      }}]
     });
   });
 
   it("union with typed parameterised constructor", () => {
     expect(stmt("union foo:\n con1 x {string}, y {number}")).toMatchObject({
-      constructors: [{ name: "con1", params: [
+      constructors: [{ name: "con1", signature: { parameterList: [
         { pattern: { value: { name: "x"}, patternType: { name: "string", typeArgs: [] }}},
         { pattern: { value: { name: "y"}, patternType: { name: "number", typeArgs: [] }}}]
-      }]
+      }}]
     });
   });
 
@@ -1065,5 +1100,21 @@ describe("union", () => {
 
   it("constructors can be used in expressions", () => {
     expect(() => stmts("union foo:\n con1 a, b\nx + (con1 4 5)")).not.toThrow();
+  });
+
+  it("constructor application is function application", () => {
+    expect(stmts("union foo:\n con1 a, b\ncon1 4 5")[1].expression).toMatchObject({
+      type: "call",
+      head: { name: "con1" },
+      args: [
+        { type: "positional", value: { value: 4 }},
+        { type: "positional", value: { value: 5 }}
+      ]
+    });
+  });
+
+  it("constructor expressions have the union type", () => {
+    const [union, instance] = stmts("union foo:\n con1 a, b\ncon1 4 5");
+    expect(instance.expression.returnType).toBe(union.spoonType);
   });
 });

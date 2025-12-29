@@ -82,7 +82,7 @@ export function parseModule(source, globals = []) {
   suffix(p, "{", 110, (p, l, t, rbp) => parseTypeAnnotationSuffix(p, l, t));
 
   const stmts = [];
-  const rootEnv = Bindings(Bindings(undefined, globals.map(g => [g, { name: g }])));
+  const rootEnv = Bindings(Bindings(undefined, globals));
 
   while (true) {
     if (p.at("EOF")) {
@@ -101,7 +101,7 @@ function bindVariables(p, node, env) {
   if (Array.isArray(node)) {
     node.forEach(item => bindVariables(p, item, env));
   } else if (node.type === "identifier") {
-    bindIdentifier(p, env, node);
+    bindIdentifier(env, node);
   } else if (node.type === "binding") {
     node.bindings.forEach(binding => {
       bindVariables(p, binding.value, env);
@@ -113,48 +113,67 @@ function bindVariables(p, node, env) {
     const newEnv = Bindings(env);
     node.stmts.forEach(s => bindVariables(p, s, newEnv));
   } else if (node.type === "function definition") {
-    addVar(p, env, node.fn, node.name);
+    env.addSignature(node.name, node.fn.signature);
     bindVariables(p, node.fn, env);
   } else if (node.type === "function") {
     // TODO: this only handles single-variable patterns
-    node.env = Bindings(env, node.parameters.map(p => [p.pattern.value.name, p]));
+    node.env = Bindings(env, node.signature.parameterList.map(p => [p.pattern.value.name, p]));
     if (node.body) { bindVariables(p, node.body, node.env); }
   } else if (node.type === "union") {
     bindUnion(p, env, node);
+  } else if (node.type === "call") {
+    bindCall(p, env, node);
   } else if (node.children) {
     node.children.forEach(childProp => bindVariables(p, node[childProp], env));
   }
 }
 
+function bindCall(p, env, node) {
+  const head = node.head;
+  let signatures;
+  if (head.type === "identifier") {
+    signatures = env.getSignatures(head.name);
+  } else if (head.type === "member access") {
+    // TODO
+  } else {
+    // Two cases: the result may be a function or it may not.
+    // The signature may be known statically or it may not.
+  }
+
+  if (signatures) {
+    for (const sig of signatures) {
+      // TODO: need an actual precedence rule
+      if (sig.match(sig.parameterList).success) {
+        node.returnType = sig.returnType;
+        return;
+      }
+    }
+  }
+
+  // TODO: do what in this situation?
+}
+
 function bindUnion(p, env, node) {
-  const type = Type(node.name, node.typeParams);
-  env.bindings.set(type.name, type);
-  node.spoonType = type;
+  env.bind(node.name, node.spoonType);
   node.constructors.forEach(c => {
-    addVar(p, env, c, c.name); // TODO: should automatically assign return type to constrs.
+    env.addSignature(c.name, c.signature);
   });
 }
 
 function addPatternVars(p, env, node, pattern) {
   // TODO: this will eventually need to support patterns properly
-  addVar(p, env, node, pattern.value.name);
+  addVar(p, env, node, pattern.value.name, pattern.patternType);
 }
 
-function bindIdentifier(p, env, node) {
-  if (!env) {
-    throw p.syntaxError(node, "Undeclared variable: " + node.name);
-  } else if (env.has(node.name)) {
-    node.env = env;
-  } else {
-    bindIdentifier(p, env.parent, node);
-  }
+function bindIdentifier(env, node) {
+  node.spoonType = env.getType(node.name);
 }
 
-function addVar(p, env, node, symbol) {
+function addVar(p, env, node, symbol, type) {
   if (env.has(symbol)) {
     throw p.syntaxError(node, symbol + " is already bound in this context.");
   }
-  env.bind(symbol, { name: symbol });
+  env.bind(symbol, { name: symbol }, type);
 }
 
 function prefix(parser, type, nud) {
