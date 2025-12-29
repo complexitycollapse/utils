@@ -7,10 +7,10 @@ const KEYWORDS = new Map([
   ["and", "AND"],
   ["or", "OR"],
   ["true", "TRUE"],
-  ["false", "FALSE"],
   ["fn", "FN"],
   ["def", "DEF"],
-  ["union", "UNION"]
+  ["union", "UNION"],
+  ["nil", "NIL"]
 ]);
 
 export function tokenize(source) {

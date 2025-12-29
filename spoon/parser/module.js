@@ -16,7 +16,7 @@ export function parseModule(source, globals = []) {
   prefix(p, "NUMBER", (p, t) => p.makeNode("number", { value: t.value }, t));
   prefix(p, "STRING", (p, t) => p.makeNode("string", { value: t.value }, t));
   prefix(p, "TRUE", (p, t) => p.makeNode("boolean", { value: true }, t));
-  prefix(p, "FALSE", (p, t) => p.makeNode("boolean", { value: false }, t));
+  prefix(p, "NIL", (p, t) => p.makeNode("boolean", { value: undefined }, t));
   binaryOperator(p, "+", 40);
   binaryOperator(p, "-", 40);
   binaryOperator(p, "*", 50);

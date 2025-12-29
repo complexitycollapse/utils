@@ -196,15 +196,15 @@ describe("Logical expressions", () => {
     expect(expr("true")).toMatchObject({ type: "boolean", value: true });
   });
 
-  it("false", () => {
-    expect(expr("false")).toMatchObject({ type: "boolean", value: false });
+  it("nil", () => {
+    expect(expr("nil")).toMatchObject({ type: "boolean", value: undefined });
   });
 
-  it("false or true", () => {
-    expect(expr("false or true")).toMatchObject({
+  it("nil or true", () => {
+    expect(expr("nil or true")).toMatchObject({
       type: "binary operator",
       operator: "or",
-      left: { value: false },
+      left: { value: undefined },
       right: { value: true }
     });
   });
