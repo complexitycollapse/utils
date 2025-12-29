@@ -2,6 +2,7 @@ export const typeType = defineType("type");
 export const stringType = Type("string");
 export const numberType = Type("number");
 export const anyType = Type("any");
+export const booleanType = Type("boolean");
 
 export function parseTypeAnnotation(p) {
   const typeName = p.expect("IDENT").value;

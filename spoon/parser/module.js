@@ -3,7 +3,7 @@ import { parseExpression } from "./expressions.js";
 import { parseStatementLine, parseStatementBlock } from "./statements.js"
 import { parseFunctionExpression } from "./functions.js";
 import Bindings from "./bindings.js";
-import { ensureTypedPattern, parseTypeAnnotationSuffix, Type } from "./types.js";
+import { anyType, booleanType, ensureTypedPattern, numberType, parseTypeAnnotationSuffix, Type } from "./types.js";
 
 /**
  * 
@@ -17,18 +17,24 @@ export function parseModule(source, globals = []) {
   prefix(p, "STRING", (p, t) => p.makeNode("string", { value: t.value }, t));
   prefix(p, "TRUE", (p, t) => p.makeNode("boolean", { value: true }, t));
   prefix(p, "NIL", (p, t) => p.makeNode("boolean", { value: undefined }, t));
-  binaryOperator(p, "+", 40);
-  binaryOperator(p, "-", 40);
-  binaryOperator(p, "*", 50);
-  binaryOperator(p, "/", 50); // TODO: which way should this associate with *?
+  binaryOperator(p, "+", 40, numberType);
+  binaryOperator(p, "-", 40, numberType);
+  binaryOperator(p, "*", 50, numberType);
+  binaryOperator(p, "/", 50, numberType); // TODO: which way should this associate with *?
   binaryOperator(p, "OR", 20);
   binaryOperator(p, "AND", 20);
-  binaryOperator(p, "<", 30);
-  binaryOperator(p, ">", 30);
-  binaryOperator(p, "=", 30);
-  binaryOperator(p, "!=", 30);
+  binaryOperator(p, "<", 30, booleanType, numberType);
+  binaryOperator(p, ">", 30, booleanType, numberType);
+  binaryOperator(p, "=", 30, booleanType, anyType);
+  binaryOperator(p, "!=", 30, booleanType, anyType);
   prefix(p, "NOT", (p, t) =>
-    p.makeNode("prefix", { operator: "not", right: parseExpression(p, 0), children: ["right"]}));
+    p.makeNode("prefix", {
+      operator: "not",
+      right: parseExpression(p, 0),
+      children: ["right"],
+      returnType: booleanType,
+      rightType: anyType
+    }));
   infix(p, ".", 80, (p, l, t, rbp) => {
     const member = p.expect("IDENT");
     return p.makeNode("member access", { left: l, right: member.value }, t);
@@ -188,10 +194,13 @@ function suffix(parser, type, lbp, led) {
   parser.leds.set(type, { lbp, rbp: 0, led });
 }
 
-function binaryOperator(p, type, lbp) {
- infix(p, type, lbp, (p, l, t, rbp) => p.makeNode("binary operator", { 
+function binaryOperator(p, type, lbp, spoonType, argType = spoonType) {
+ infix(p, type, lbp, (p, l, t, rbp) => p.makeNode("binary operator", {
     operator: t.value,
     left: l,
     right: parseExpression(p, rbp),
-    children: ["left", "right"] }, t)); 
+    children: ["left", "right"],
+    returnType: spoonType,
+    leftType: argType,
+    rightType: argType }, t));
 }
