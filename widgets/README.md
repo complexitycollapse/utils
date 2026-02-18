@@ -104,5 +104,5 @@ the state. Each component in the widget is in turn described by a "component spe
 event is automatically included in `events`; explicit `events` entries are merged and deduplicated.
 - `WidgetSpec` model: immutable, append-only, and fluent via `withComponent` and `withChild`.
 `WidgetSpec()` returns a singleton empty spec.
-- `widgetInstanceFromSpec(spec)`: creates retained widget instances by ordering components by
-ascending `priority` and then by append order.
+- `Widget(spec)`: creates retained widgets by ordering components by
+  ascending `priority` and then by append order.

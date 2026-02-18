@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { WidgetSpec } from "./widget-spec.js";
-import { widgetInstanceFromSpec } from "./widget-instance.js";
+import { Widget } from "./widget-instance.js";
 
-describe("widgetInstanceFromSpec", () => {
+describe("Widget", () => {
   it("orders components by priority, then append order", () => {
     const spec = WidgetSpec()
       .withComponent({ id: "p2-a", priority: 2 })
@@ -11,9 +11,9 @@ describe("widgetInstanceFromSpec", () => {
       .withComponent({ id: "p2-b", priority: 2 })
       .withComponent({ id: "p0-a" });
 
-    const instance = widgetInstanceFromSpec(spec);
+    const widget = Widget(spec);
 
-    expect(instance.components.map((component) => component.id)).toEqual([
+    expect(widget.components.map((component) => component.id)).toEqual([
       "p0-a",
       "p1-a",
       "p2-a",
@@ -21,14 +21,14 @@ describe("widgetInstanceFromSpec", () => {
     ]);
   });
 
-  it("creates child instances recursively", () => {
+  it("creates child widgets recursively", () => {
     const child = WidgetSpec().withComponent({ id: "child-component", priority: 5 });
     const parent = WidgetSpec().withChild(child);
 
-    const instance = widgetInstanceFromSpec(parent);
+    const widget = Widget(parent);
 
-    expect(instance.children).toHaveLength(1);
-    const firstChild = instance.children[0];
+    expect(widget.children).toHaveLength(1);
+    const firstChild = widget.children[0];
     if (!firstChild) {
       throw new Error("expected one child");
     }
@@ -37,11 +37,11 @@ describe("widgetInstanceFromSpec", () => {
     ]);
   });
 
-  it("returns frozen instance objects", () => {
-    const instance = widgetInstanceFromSpec(WidgetSpec());
+  it("returns frozen widget objects", () => {
+    const widget = Widget(WidgetSpec());
 
-    expect(Object.isFrozen(instance)).toBe(true);
-    expect(Object.isFrozen(instance.components)).toBe(true);
-    expect(Object.isFrozen(instance.children)).toBe(true);
+    expect(Object.isFrozen(widget)).toBe(true);
+    expect(Object.isFrozen(widget.components)).toBe(true);
+    expect(Object.isFrozen(widget.children)).toBe(true);
   });
 });

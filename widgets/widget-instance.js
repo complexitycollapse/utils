@@ -3,17 +3,17 @@
 /**
  * @typedef {import("./type.js").ComponentSpec} ComponentSpec
  * @typedef {import("./type.js").WidgetSpec} WidgetSpecType
- * @typedef {import("./type.js").Widget} Widget
+ * @typedef {import("./type.js").Widget} WidgetType
  */
 
 /**
- * Creates a retained widget instance from an immutable `WidgetSpec`.
+ * Creates a retained widget from an immutable `WidgetSpec`.
  * Components are ordered by priority (ascending), then by append order.
  *
  * @param {WidgetSpecType} spec
- * @returns {Widget}
+ * @returns {WidgetType}
  */
-export function widgetInstanceFromSpec(spec) {
+export function Widget(spec) {
   const orderedComponents = Object.freeze(
     spec.components
       .map((component, index) => ({ component, index }))
@@ -26,7 +26,7 @@ export function widgetInstanceFromSpec(spec) {
       .map((entry) => entry.component)
   );
 
-  const children = Object.freeze(spec.children.map((child) => widgetInstanceFromSpec(child)));
+  const children = Object.freeze(spec.children.map((child) => Widget(child)));
 
   return Object.freeze({
     components: orderedComponents,
