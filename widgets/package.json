@@ -1,0 +1,13 @@
+{
+  "name": "widgets",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "type-check": "tsc -p jsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "vitest": "^2.1.8"
+  }
+}
