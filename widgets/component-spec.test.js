@@ -6,8 +6,8 @@ describe("ComponentSpec", () => {
   it("normalizes omitted hooks to no-op functions", () => {
     const spec = ComponentSpec();
 
-    expect(typeof spec.onAttach).toBe("function");
-    expect(typeof spec.onDetach).toBe("function");
+    expect(typeof spec.create).toBe("function");
+    expect(typeof spec.destroy).toBe("function");
     expect(typeof spec.buildChildren).toBe("function");
     expect(typeof spec.measure).toBe("function");
     expect(typeof spec.layout).toBe("function");

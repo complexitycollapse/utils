@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { WidgetSpec } from "./widget-spec.js";
-import { Widget } from "./widget-instance.js";
+import { Widget } from "./widget.js";
 
 describe("Widget", () => {
   it("orders components by priority, then append order", () => {
@@ -37,11 +37,103 @@ describe("Widget", () => {
     ]);
   });
 
-  it("returns frozen widget objects", () => {
+  it("returns a frozen widget object with mutable children list", () => {
     const widget = Widget(WidgetSpec());
 
     expect(Object.isFrozen(widget)).toBe(true);
     expect(Object.isFrozen(widget.components)).toBe(true);
-    expect(Object.isFrozen(widget.children)).toBe(true);
+    expect(Object.isFrozen(widget.children)).toBe(false);
+  });
+
+  it("supports addChild, removeChild and clear", () => {
+    const parent = Widget(WidgetSpec());
+    const childA = Widget(WidgetSpec().withComponent({ id: "a" }));
+    const childB = Widget(WidgetSpec().withComponent({ id: "b" }));
+
+    parent.addChild(childA);
+    parent.addChild(childB);
+    expect(parent.children).toHaveLength(2);
+
+    expect(parent.removeChild(childA)).toBe(true);
+    expect(parent.children).toEqual([childB]);
+    expect(parent.removeChild(childA)).toBe(false);
+
+    parent.clear();
+    expect(parent.children).toHaveLength(0);
+  });
+
+  it("dispatches lifecycle and render/focus methods to components", () => {
+    /** @type {Array<string>} */
+    const calls = [];
+    const component = {
+      id: "c",
+      priority: 0,
+      events: [],
+      capabilities: [],
+      create: () => calls.push("create"),
+      destroy: () => calls.push("destroy"),
+      buildChildren: () => {},
+      measure: () => {},
+      layout: () => {},
+      render: () => calls.push("render"),
+      applyStyle: () => {},
+      onPointerDown: () => {},
+      onPointerUp: () => {},
+      onClick: () => {},
+      onKeyDown: () => {},
+      onKeyUp: () => {},
+      onFocus: () => calls.push("focus"),
+      onBlur: () => {},
+      onEvent: () => {},
+    };
+    const widget = Widget(WidgetSpec().withComponent(component));
+
+    widget.create();
+    widget.render();
+    widget.focus();
+    widget.destroy();
+
+    expect(calls).toEqual(["create", "render", "focus", "destroy"]);
+  });
+
+  it("uses an internal context per widget instance", () => {
+    /** @type {Array<string>} */
+    const seenIds = [];
+    const childComponent = {
+      id: "child",
+      priority: 0,
+      events: [],
+      capabilities: [],
+      create: (/** @type {import("./type.js").WidgetContext} */ ctx) =>
+        seenIds.push(ctx.widgetId),
+      destroy: () => {},
+      buildChildren: () => {},
+      measure: () => {},
+      layout: () => {},
+      render: () => {},
+      applyStyle: () => {},
+      onPointerDown: () => {},
+      onPointerUp: () => {},
+      onClick: () => {},
+      onKeyDown: () => {},
+      onKeyUp: () => {},
+      onFocus: () => {},
+      onBlur: () => {},
+      onEvent: () => {},
+    };
+    const parentComponent = {
+      ...childComponent,
+      id: "parent",
+      create: (/** @type {import("./type.js").WidgetContext} */ ctx) =>
+        seenIds.push(ctx.widgetId),
+    };
+    const childSpec = WidgetSpec().withComponent(childComponent);
+    const parentSpec = WidgetSpec().withComponent(parentComponent).withChild(childSpec);
+    const parent = Widget(parentSpec);
+
+    parent.create();
+
+    expect(seenIds).toHaveLength(2);
+    expect(seenIds[0]).not.toBe(seenIds[1]);
   });
 });

@@ -69,8 +69,8 @@
  * @property {number} [priority]
  * @property {ReadonlyArray<string>} [events]
  * @property {ReadonlyArray<string>} [capabilities]
- * @property {(ctx: WidgetContext) => void} [onAttach]
- * @property {(ctx: WidgetContext) => void} [onDetach]
+ * @property {(ctx: WidgetContext) => void} [create]
+ * @property {(ctx: WidgetContext) => void} [destroy]
  * @property {(ctx: WidgetContext, api: BuildChildrenApi) => void} [buildChildren]
  * @property {(ctx: WidgetContext, input: MeasureInput) => MeasureOutput | void} [measure]
  * @property {(ctx: WidgetContext, input: LayoutInput) => LayoutOutput | void} [layout]
@@ -95,8 +95,8 @@
  * @property {number} priority
  * @property {ReadonlyArray<string>} events
  * @property {ReadonlyArray<string>} capabilities
- * @property {(ctx: WidgetContext) => void} onAttach
- * @property {(ctx: WidgetContext) => void} onDetach
+ * @property {(ctx: WidgetContext) => void} create
+ * @property {(ctx: WidgetContext) => void} destroy
  * @property {(ctx: WidgetContext, api: BuildChildrenApi) => void} buildChildren
  * @property {(ctx: WidgetContext, input: MeasureInput) => MeasureOutput | void} measure
  * @property {(ctx: WidgetContext, input: LayoutInput) => LayoutOutput | void} layout
@@ -128,6 +128,13 @@
  * @typedef {Object} Widget
  * @property {ReadonlyArray<ComponentSpec>} components
  * @property {ReadonlyArray<Widget>} children
+ * @property {() => void} create
+ * @property {() => void} destroy
+ * @property {(child: Widget) => void} addChild
+ * @property {(child: Widget) => boolean} removeChild
+ * @property {() => void} clear
+ * @property {() => void} render
+ * @property {() => void} focus
  */
 
 export {};
