@@ -32,6 +32,7 @@
  *   mouseleave?: WidgetEventHandler,
  *   pointerdown?: WidgetEventHandler,
  *   pointerup?: WidgetEventHandler,
+ *   pointercancel?: WidgetEventHandler,
  *   pointermove?: WidgetEventHandler,
  *   [key: string]: unknown
  * }} WidgetComponent
@@ -57,4 +58,3 @@
  */
 
 export {};
-

@@ -19,6 +19,7 @@ const UI_EVENT_TYPES = [
   "mouseleave",
   "pointerdown",
   "pointerup",
+  "pointercancel",
   "pointermove"
 ];
 

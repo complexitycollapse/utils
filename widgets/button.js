@@ -59,6 +59,11 @@ function buttonBehaviorComponent(message, options = {}) {
   };
 
   /** @type {(widget: import("./types.js").Widget) => void} */
+  const pointercancel = (widget) => {
+    setPressed(widget, false);
+  };
+
+  /** @type {(widget: import("./types.js").Widget) => void} */
   const mouseleave = (widget) => {
     setPressed(widget, false);
   };
@@ -68,7 +73,7 @@ function buttonBehaviorComponent(message, options = {}) {
     setPressed(widget, false);
   };
 
-  return { click, pointerdown, pointerup, mouseleave, blur };
+  return { click, pointerdown, pointerup, pointercancel, mouseleave, blur };
 }
 
 /**
