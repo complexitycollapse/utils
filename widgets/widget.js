@@ -1,6 +1,7 @@
 /** @typedef {import("./types.js").Widget} Widget */
 /** @typedef {import("./types.js").WidgetComponent} WidgetComponent */
 /** @typedef {import("./types.js").WidgetEventHandler} WidgetEventHandler */
+/** @typedef {import("./types.js").WidgetCatchAllEventHandler} WidgetCatchAllEventHandler */
 
 const UI_EVENT_TYPES = [
   "click",
@@ -77,15 +78,32 @@ export function createWidget() {
       return;
     }
 
+    /** @type {Set<string>} */
+    const subscribedEventTypes = new Set();
+
+    for (const component of components) {
+      if (!Array.isArray(component.eventTypes)) {
+        continue;
+      }
+      for (const eventType of component.eventTypes) {
+        if (typeof eventType === "string" && eventType.length > 0) {
+          subscribedEventTypes.add(eventType);
+        }
+      }
+    }
+
     for (const eventType of UI_EVENT_TYPES) {
-      const hasComponentHandler = components.some(
+      const hasSpecificHandler = components.some(
         (component) =>
           typeof /** @type {unknown} */ (component[eventType]) === "function"
       );
 
-      if (!hasComponentHandler) {
-        continue;
+      if (hasSpecificHandler) {
+        subscribedEventTypes.add(eventType);
       }
+    }
+
+    for (const eventType of subscribedEventTypes) {
 
       /** @param {Event} event */
       const handler = (event) => {
@@ -94,6 +112,10 @@ export function createWidget() {
             component[eventType]
           );
           componentHandler?.(widget, event);
+          const onEvent = /** @type {WidgetCatchAllEventHandler | undefined} */ (
+            component.onEvent
+          );
+          onEvent?.(widget, eventType, event);
         }
       };
 

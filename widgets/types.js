@@ -7,6 +7,10 @@
  */
 
 /**
+ * @typedef {(widget: Widget, eventType: string, event: Event) => void} WidgetCatchAllEventHandler
+ */
+
+/**
  * @typedef {{
  *   create?: (widget: Widget) => void,
  *   destroy?: (widget: Widget) => void,
@@ -16,6 +20,8 @@
  *   unmountChild?: (widget: Widget, child: Widget) => void,
  *   hide?: (widget: Widget) => void,
  *   receive?: (widget: Widget, data: unknown) => void,
+ *   eventTypes?: string[],
+ *   onEvent?: WidgetCatchAllEventHandler,
  *   click?: WidgetEventHandler,
  *   dblclick?: WidgetEventHandler,
  *   input?: WidgetEventHandler,
