@@ -123,3 +123,40 @@ and then calls SendUp on the parent).
   methods. This avoid having to use conditional calls everywhere.
 - The contract for components is completely inappropriate for HTML. Need a new one.
 - Need to handle the fact that there will be a parallel DOM tree as well as the widget tree.
+
+## Final Implementation and Conclusion
+The createButton method shows an implementation of a button. A widget must be passed in that
+implements a visual button (e.g. a textual element) and createButton will wrap it in a widget that
+adds button behavour. The button behaviour is itself implemented in buttonBehaviorComponent.
+
+The whole system relies on two kinds of object. There are components, which expose optional methods
+that are called on certain events (both UI and lifecycle events). Then there are widgets, which have
+a collection of components, a collection of children and a DOM element (possibly shared with a
+child to avoid unnecessary wrapping). The widget composes the components together by calling their
+methods as appropriate. Every widget needs a component that creates and manages the DOM element
+(e.g. creating it, attaching children). Other components can style it etc.
+
+There is also a communication system between widgets. They can send messages up or down the tree, or
+to siblings. This is how buttons implement being clicked (they send a message up the tree).
+
+Although the management of the DOM element is a little awkward, the system seems to work. It's easy
+to add components that add some visual functionality through styling, events are also handled
+cleanly. The button widget is nice because it allows the visual widget to be passed in, so button
+behaviour can be added to anything.
+
+Generally speaking, this was a success and I would much prefer to work in a system like this to
+handle creating widgets than dealing with raw DOM/CSS.
+### Some Possible Improvements
+- Creating the element is probably not best managed with a generic component. It would make more
+sense to either handle this at the widget level, or have a special component added that owns the
+element (which means the creation and destruction of the element would still be customizable).
+- It may also be nice to explicitly distinguish widgets that create elements (i.e. are adding to the
+visual tree) from those that are purely decorating other widgets (such as the button behavour
+widget.)
+- Slot-based composition, where child widgets can be added to named slots on a parent, rather than
+being genetic children.
+- Separate widget construction into an immutable, declarative layer (in which the required
+components are specified) and the final creation of the widget from the spec. This would make
+widgets more immutable.
+- Perhaps components should be able to add shared state to a widget (this is similar to, possibly
+a generalization of, slot-based composition).
