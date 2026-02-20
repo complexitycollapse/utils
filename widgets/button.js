@@ -77,6 +77,44 @@ function buttonBehaviorComponent(message, options = {}) {
 }
 
 /**
+ * @param {{
+ *   hoverClassName?: string
+ * }} [options]
+ */
+function buttonHoverComponent(options = {}) {
+  const { hoverClassName = "is-hovered" } = options;
+
+  /**
+   * @param {import("./types.js").Widget} widget
+   * @param {boolean} hovered
+   */
+  function setHovered(widget, hovered) {
+    const element = widget.element;
+    if (!element) {
+      return;
+    }
+    element.classList.toggle(hoverClassName, hovered);
+  }
+
+  /** @type {(widget: import("./types.js").Widget) => void} */
+  const mouseenter = (widget) => {
+    setHovered(widget, true);
+  };
+
+  /** @type {(widget: import("./types.js").Widget) => void} */
+  const mouseleave = (widget) => {
+    setHovered(widget, false);
+  };
+
+  /** @type {(widget: import("./types.js").Widget) => void} */
+  const hide = (widget) => {
+    setHovered(widget, false);
+  };
+
+  return { mouseenter, mouseleave, hide };
+}
+
+/**
  * Creates a button with separate behavior and visual widgets.
  * The parent widget owns behavior and delegates its element to the visual child.
  *
@@ -85,7 +123,8 @@ function buttonBehaviorComponent(message, options = {}) {
  *   message: unknown,
  *   pressedBackground?: string,
  *   defaultBackground?: string,
- *   pressedClassName?: string
+ *   pressedClassName?: string,
+ *   hoverClassName?: string
  * }} options
  */
 export function createButton(options) {
@@ -100,6 +139,7 @@ export function createButton(options) {
   const behaviorWidget = createWidget();
 
   behaviorWidget.components.push(delegateComponent());
+  behaviorWidget.components.push(buttonHoverComponent(options));
   behaviorWidget.components.push(buttonBehaviorComponent(message, options));
 
   behaviorWidget.addChild(visualWidget);

@@ -36,6 +36,7 @@ function createButtonVisual(label, colors) {
   visual.components.push(paddingComponent("8px 10px"));
   visual.components.push(alignComponent("center", "center"));
   visual.components.push(backgroundComponent({ color: colors.background }));
+  visual.components.push(styleComponent({ "--glow-color": colors.border }));
   visual.components.push(
     boxComponent({
       width: 1,
@@ -81,12 +82,15 @@ listWidget.components.push(styleComponent({ gap: "14px" }));
 const titleWidget = createTextWidget("Widget Grid Demo", {
   margin: 0,
   fontSize: "20px",
-  fontWeight: 700
+  fontWeight: 700,
+  letterSpacing: "0.06em",
+  color: "#b8fbff",
+  textShadow: "0 0 10px rgba(71, 255, 248, 0.5)"
 });
 
 const subtitleWidget = createTextWidget(
   "Single grid containing 40 composed buttons.",
-  { margin: 0, color: "#475569" }
+  { margin: 0, color: "rgba(153, 236, 255, 0.8)" }
 );
 
 const grid = createWidget();
@@ -105,12 +109,13 @@ grid.components.push(styleComponent({ margin: "0 auto" }));
 const logWidget = createWidget();
 logWidget.components.push(divComponent());
 logWidget.components.push(styleComponent({
-  border: "1px solid #e2e8f0",
-  background: "#f8fafc",
+  border: "1px solid rgba(0, 255, 245, 0.38)",
+  background: "rgba(8, 28, 36, 0.55)",
   borderRadius: "10px",
   padding: "10px 12px",
   minHeight: "22px",
-  color: "#334155"
+  color: "#c6f9ff",
+  boxShadow: "inset 0 0 16px rgba(0, 255, 245, 0.12)"
 }));
 logWidget.components.push(textComponent("Click a button."));
 
@@ -124,10 +129,30 @@ boxWidget.components.push({
 });
 
 const palette = [
-  { background: "#e2fbe8", border: "#5aa772", text: "#14532d", pressed: "#c8efd4" },
-  { background: "#dbeafe", border: "#5b87d9", text: "#1e3a8a", pressed: "#bfdfff" },
-  { background: "#fee2e2", border: "#d07171", text: "#7f1d1d", pressed: "#ffcaca" },
-  { background: "#fef3c7", border: "#c59c2c", text: "#713f12", pressed: "#fde68a" }
+  {
+    background: "rgba(0, 255, 245, 0.19)",
+    border: "rgba(75, 255, 249, 0.8)",
+    text: "#bffcff",
+    pressed: "rgba(0, 255, 245, 0.33)"
+  },
+  {
+    background: "rgba(94, 255, 115, 0.17)",
+    border: "rgba(113, 255, 132, 0.82)",
+    text: "#d4ffd9",
+    pressed: "rgba(94, 255, 115, 0.31)"
+  },
+  {
+    background: "rgba(255, 215, 70, 0.17)",
+    border: "rgba(255, 224, 120, 0.82)",
+    text: "#fff7d1",
+    pressed: "rgba(255, 215, 70, 0.31)"
+  },
+  {
+    background: "rgba(255, 95, 95, 0.17)",
+    border: "rgba(255, 140, 140, 0.82)",
+    text: "#ffd9d9",
+    pressed: "rgba(255, 95, 95, 0.31)"
+  }
 ];
 
 for (let i = 1; i <= 40; i += 1) {
