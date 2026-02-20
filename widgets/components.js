@@ -1,23 +1,6 @@
-/**
- * @typedef {{
- *   element: HTMLElement | undefined,
- *   children: Widget[],
- *   parent?: Widget | undefined
- * }} Widget
- */
-
-/**
- * @typedef {{
- *   beforeShow?: (widget: Widget) => void,
- *   afterShow?: (widget: Widget) => void,
- *   mountChildren?: (widget: Widget) => void,
- *   hide?: (widget: Widget) => void
- * }} WidgetComponent
- */
-
-/**
- * @typedef {string | number} SizeValue
- */
+/** @typedef {import("./types.js").Widget} Widget */
+/** @typedef {import("./types.js").WidgetComponent} WidgetComponent */
+/** @typedef {import("./types.js").SizeValue} SizeValue */
 
 /**
  * @typedef {Record<string, string | number | undefined>} StyleMap
@@ -86,13 +69,21 @@ export function divComponent() {
       const element = document.createElement("div");
       widget.element = element;
     },
-    mountChildren(widget) {
+    mountChild(widget, child) {
       withElement(widget, (element) => {
-        for (const child of widget.children) {
-          if (!child.element) {
-            continue;
-          }
-          element.appendChild(child.element);
+        if (!child.element) {
+          return;
+        }
+        element.appendChild(child.element);
+      });
+    },
+    unmountChild(widget, child) {
+      withElement(widget, (element) => {
+        if (!child.element) {
+          return;
+        }
+        if (child.element.parentElement === element) {
+          element.removeChild(child.element);
         }
       });
     }

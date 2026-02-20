@@ -17,7 +17,7 @@ function buttonBehaviorComponent(message, options = {}) {
   } = options;
 
   /**
-   * @param {import("./widget.js").Widget} widget
+   * @param {import("./types.js").Widget} widget
    * @param {boolean} pressed
    */
   function setPressed(widget, pressed) {
@@ -43,27 +43,27 @@ function buttonBehaviorComponent(message, options = {}) {
     }
   }
 
-  /** @type {(widget: import("./widget.js").Widget) => void} */
+  /** @type {(widget: import("./types.js").Widget) => void} */
   const click = (widget) => {
     widget.sendUp(message);
   };
 
-  /** @type {(widget: import("./widget.js").Widget) => void} */
+  /** @type {(widget: import("./types.js").Widget) => void} */
   const pointerdown = (widget) => {
     setPressed(widget, true);
   };
 
-  /** @type {(widget: import("./widget.js").Widget) => void} */
+  /** @type {(widget: import("./types.js").Widget) => void} */
   const pointerup = (widget) => {
     setPressed(widget, false);
   };
 
-  /** @type {(widget: import("./widget.js").Widget) => void} */
+  /** @type {(widget: import("./types.js").Widget) => void} */
   const mouseleave = (widget) => {
     setPressed(widget, false);
   };
 
-  /** @type {(widget: import("./widget.js").Widget) => void} */
+  /** @type {(widget: import("./types.js").Widget) => void} */
   const blur = (widget) => {
     setPressed(widget, false);
   };
@@ -76,7 +76,7 @@ function buttonBehaviorComponent(message, options = {}) {
  * The parent widget owns behavior and delegates its element to the visual child.
  *
  * @param {{
- *   visualWidget: import("./widget.js").Widget,
+ *   visualWidget: import("./types.js").Widget,
  *   message: unknown,
  *   pressedBackground?: string,
  *   defaultBackground?: string,

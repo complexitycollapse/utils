@@ -1,55 +1,6 @@
-/**
- * @typedef {(widget: Widget, event: Event) => void} WidgetEventHandler
- */
-
-/**
- * @typedef {{
- *   readonly components: WidgetComponent[],
- *   readonly children: Widget[],
-  *   parent: Widget | undefined,
- *   element: HTMLElement | undefined,
- *   create: () => void,
- *   destroy: () => void,
- *   addChild: (child: Widget) => void,
- *   removeChild: (child: Widget) => void,
- *   show: () => void,
- *   hide: () => void,
- *   send: (data: unknown) => void,
- *   sendDown: (data: unknown) => void,
- *   sendUp: (data: unknown) => void,
- *   sendSiblings: (data: unknown) => void
- * }} Widget
- */
-
-/**
- * @typedef {{
- *   create?: (widget: Widget) => void,
- *   destroy?: (widget: Widget) => void,
- *   beforeShow?: (widget: Widget) => void,
- *   afterShow?: (widget: Widget) => void,
- *   mountChildren?: (widget: Widget) => void,
- *   hide?: (widget: Widget) => void,
- *   receive?: (widget: Widget, data: unknown) => void,
- *   click?: WidgetEventHandler,
- *   dblclick?: WidgetEventHandler,
- *   input?: WidgetEventHandler,
- *   change?: WidgetEventHandler,
- *   submit?: WidgetEventHandler,
- *   focus?: WidgetEventHandler,
- *   blur?: WidgetEventHandler,
- *   keydown?: WidgetEventHandler,
- *   keyup?: WidgetEventHandler,
- *   mousedown?: WidgetEventHandler,
- *   mouseup?: WidgetEventHandler,
- *   mousemove?: WidgetEventHandler,
- *   mouseenter?: WidgetEventHandler,
- *   mouseleave?: WidgetEventHandler,
- *   pointerdown?: WidgetEventHandler,
- *   pointerup?: WidgetEventHandler,
- *   pointermove?: WidgetEventHandler,
- *   [key: string]: unknown
- * }} WidgetComponent
- */
+/** @typedef {import("./types.js").Widget} Widget */
+/** @typedef {import("./types.js").WidgetComponent} WidgetComponent */
+/** @typedef {import("./types.js").WidgetEventHandler} WidgetEventHandler */
 
 const UI_EVENT_TYPES = [
   "click",
@@ -89,6 +40,24 @@ export function createWidget() {
   /** @type {Map<string, (event: Event) => void>} */
   const registeredHandlers = new Map();
   let isShown = false;
+
+  /**
+   * @param {Widget} child
+   */
+  function mountChild(child) {
+    for (const component of components) {
+      component.mountChild?.(widget, child);
+    }
+  }
+
+  /**
+   * @param {Widget} child
+   */
+  function unmountChild(child) {
+    for (const component of components) {
+      component.unmountChild?.(widget, child);
+    }
+  }
 
   function unregisterEventHandlers() {
     if (!eventElement) {
@@ -169,6 +138,10 @@ export function createWidget() {
     },
 
     destroy() {
+      if (isShown) {
+        widget.hide();
+      }
+
       for (const component of components) {
         component.destroy?.(widget);
       }
@@ -183,6 +156,10 @@ export function createWidget() {
       children.push(child);
       child.parent = widget;
       child.create();
+      if (isShown) {
+        child.show();
+        mountChild(child);
+      }
     },
 
     /** @param {Widget} child */
@@ -190,6 +167,11 @@ export function createWidget() {
       const index = children.indexOf(child);
       if (index === -1) {
         return;
+      }
+
+      if (isShown) {
+        unmountChild(child);
+        child.hide();
       }
 
       children.splice(index, 1);
@@ -212,8 +194,8 @@ export function createWidget() {
       for (const component of components) {
         component.afterShow?.(widget);
       }
-      for (const component of components) {
-        component.mountChildren?.(widget);
+      for (const child of children) {
+        mountChild(child);
       }
       registerEventHandlers();
     },
@@ -225,6 +207,9 @@ export function createWidget() {
 
       isShown = false;
       unregisterEventHandlers();
+      for (const child of children) {
+        unmountChild(child);
+      }
       for (const component of components) {
         component.hide?.(widget);
       }
