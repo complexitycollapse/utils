@@ -1,4 +1,4 @@
-import { WidgetSpec } from "./widget.js";
+import { ComponentSpec, childComponentSpec } from "./widget.js";
 import { delegateComponent } from "./components.js";
 
 /**
@@ -73,7 +73,14 @@ function buttonBehaviorComponent(message, options = {}) {
     setPressed(widget, false);
   };
 
-  return { click, pointerdown, pointerup, pointercancel, mouseleave, blur };
+  return ComponentSpec(() => ({
+    click,
+    pointerdown,
+    pointerup,
+    pointercancel,
+    mouseleave,
+    blur
+  }));
 }
 
 /**
@@ -111,7 +118,7 @@ function buttonHoverComponent(options = {}) {
     setHovered(widget, false);
   };
 
-  return { mouseenter, mouseleave, hide };
+  return ComponentSpec(() => ({ mouseenter, mouseleave, hide }));
 }
 
 /**
@@ -119,7 +126,7 @@ function buttonHoverComponent(options = {}) {
  * The parent widget owns behavior and delegates its element to the visual child.
  *
  * @param {{
- *   visualWidgetSpec: import("./types.js").WidgetSpec,
+ *   visualComponentSpec: import("./types.js").ComponentSpec,
  *   message: unknown,
  *   pressedBackground?: string,
  *   defaultBackground?: string,
@@ -129,13 +136,12 @@ function buttonHoverComponent(options = {}) {
  */
 export function createButton(options) {
   const {
-    visualWidgetSpec,
+    visualComponentSpec,
     message,
   } = options;
 
-  return WidgetSpec()
-    .with(delegateComponent())
+  return delegateComponent()
     .with(buttonHoverComponent(options))
     .with(buttonBehaviorComponent(message, options))
-    .withChild(visualWidgetSpec);
+    .with(childComponentSpec(visualComponentSpec));
 }

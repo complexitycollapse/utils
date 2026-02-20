@@ -1,5 +1,6 @@
 /** @typedef {import("./types.js").Widget} Widget */
-/** @typedef {import("./types.js").WidgetComponent} WidgetComponent */
+/** @typedef {import("./types.js").ComponentSpec} ComponentSpecType */
+import { ComponentSpec } from "./widget.js";
 
 /**
  * @param {number} value
@@ -69,7 +70,7 @@ function applyGridLayout(widget, config, excludedChild) {
  * @param {number} [widgetHeight]
  * @param {number} [spacingX]
  * @param {number} [spacingY]
- * @returns {WidgetComponent}
+ * @returns {ComponentSpecType}
  */
 export function gridComponent(
   width,
@@ -80,7 +81,7 @@ export function gridComponent(
 ) {
   const config = { width, widgetWidth, widgetHeight, spacingX, spacingY };
 
-  return {
+  return ComponentSpec(() => ({
     afterShow(widget) {
       applyGridLayout(widget, config);
     },
@@ -90,5 +91,5 @@ export function gridComponent(
     unmountChild(widget, child) {
       applyGridLayout(widget, config, child);
     }
-  };
+  }));
 }

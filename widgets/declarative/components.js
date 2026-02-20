@@ -1,6 +1,7 @@
 /** @typedef {import("./types.js").Widget} Widget */
-/** @typedef {import("./types.js").WidgetComponent} WidgetComponent */
+/** @typedef {import("./types.js").ComponentSpec} ComponentSpecType */
 /** @typedef {import("./types.js").SizeValue} SizeValue */
+import { ComponentSpec } from "./widget.js";
 
 /**
  * @typedef {Record<string, string | number | undefined>} StyleMap
@@ -49,22 +50,22 @@ function applyStyles(element, styles) {
 
 /**
  * @param {(element: HTMLElement) => void} apply
- * @returns {WidgetComponent}
+ * @returns {ComponentSpecType}
  */
 function styleLifecycleComponent(apply) {
-  return {
+  return ComponentSpec(() => ({
     afterShow(widget) {
       withElement(widget, apply);
     }
-  };
+  }));
 }
 
 /**
  * Creates and assigns a div as the widget element.
- * @returns {WidgetComponent}
+ * @returns {ComponentSpecType}
  */
 export function divComponent() {
-  return {
+  return ComponentSpec(() => ({
     beforeShow(widget) {
       const element = document.createElement("div");
       widget.element = element;
@@ -87,19 +88,19 @@ export function divComponent() {
         }
       });
     }
-  };
+  }));
 }
 
 /**
  * Reuses the first child's element as this widget's element.
- * @returns {WidgetComponent}
+ * @returns {ComponentSpecType}
  */
 export function delegateComponent() {
-  return {
+  return ComponentSpec(() => ({
     afterShow(widget) {
       widget.element = widget.children[0]?.element;
     }
-  };
+  }));
 }
 
 /**
@@ -112,7 +113,7 @@ export function delegateComponent() {
  *   lineHeight?: SizeValue,
  *   color?: string
  * }} [fontOptions]
- * @returns {WidgetComponent}
+ * @returns {ComponentSpecType}
  */
 export function textComponent(text, fontOptions = {}) {
   const {
@@ -139,7 +140,7 @@ export function textComponent(text, fontOptions = {}) {
 
 /**
  * @param {SizeValue} padding
- * @returns {WidgetComponent}
+ * @returns {ComponentSpecType}
  */
 export function paddingComponent(padding) {
   return styleComponent({
@@ -155,7 +156,7 @@ export function paddingComponent(padding) {
  *   position?: string,
  *   repeat?: string
  * }} options
- * @returns {WidgetComponent}
+ * @returns {ComponentSpecType}
  */
 export function backgroundComponent(options) {
   return styleComponent({
@@ -175,7 +176,7 @@ export function backgroundComponent(options) {
  *   radius?: SizeValue,
  *   shadow?: string
  * }} [options]
- * @returns {WidgetComponent}
+ * @returns {ComponentSpecType}
  */
 export function boxComponent(options = {}) {
   const width = toCssSize(options.width);
@@ -193,12 +194,12 @@ export function boxComponent(options = {}) {
 
 /**
  * @param {string | string[]} classNames
- * @returns {WidgetComponent}
+ * @returns {ComponentSpecType}
  */
 export function classComponent(classNames) {
   const names = Array.isArray(classNames) ? classNames : [classNames];
 
-  return {
+  return ComponentSpec(() => ({
     afterShow(widget) {
       withElement(widget, (element) => {
         element.classList.add(...names);
@@ -209,12 +210,12 @@ export function classComponent(classNames) {
         element.classList.remove(...names);
       });
     }
-  };
+  }));
 }
 
 /**
  * @param {StyleMap} styles
- * @returns {WidgetComponent}
+ * @returns {ComponentSpecType}
  */
 export function styleComponent(styles) {
   return styleLifecycleComponent((element) => {
@@ -224,7 +225,7 @@ export function styleComponent(styles) {
 
 /**
  * @param {string} color
- * @returns {WidgetComponent}
+ * @returns {ComponentSpecType}
  */
 export function colorComponent(color) {
   return styleComponent({ color });
@@ -233,7 +234,7 @@ export function colorComponent(color) {
 /**
  * @param {"start" | "center" | "end"} [horizontal]
  * @param {"start" | "center" | "end"} [vertical]
- * @returns {WidgetComponent}
+ * @returns {ComponentSpecType}
  */
 export function alignComponent(horizontal = "center", vertical = "center") {
   const justifyMap = {
@@ -259,7 +260,7 @@ export function alignComponent(horizontal = "center", vertical = "center") {
 /**
  * @param {SizeValue | undefined} width
  * @param {SizeValue | undefined} height
- * @returns {WidgetComponent}
+ * @returns {ComponentSpecType}
  */
 export function sizeComponent(width, height) {
   return styleComponent({
@@ -271,7 +272,7 @@ export function sizeComponent(width, height) {
 /**
  * @param {SizeValue | undefined} width
  * @param {SizeValue | undefined} height
- * @returns {WidgetComponent}
+ * @returns {ComponentSpecType}
  */
 export function minSizeComponent(width, height) {
   return styleComponent({
@@ -283,7 +284,7 @@ export function minSizeComponent(width, height) {
 /**
  * @param {SizeValue | undefined} width
  * @param {SizeValue | undefined} height
- * @returns {WidgetComponent}
+ * @returns {ComponentSpecType}
  */
 export function maxSizeComponent(width, height) {
   return styleComponent({

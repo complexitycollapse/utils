@@ -1,4 +1,4 @@
-import { WidgetSpec, createWidget } from "./widget.js";
+import { ComponentSpec, childComponentSpec, createWidget } from "./widget.js";
 import { createButton } from "./button.js";
 import { gridComponent } from "./grid.js";
 import { listComponent } from "./list.js";
@@ -27,12 +27,9 @@ const GRID_SPACING_Y = 10;
  *   text: string
  * }} colors
  */
-function createButtonVisualSpec(label, colors) {
-  return WidgetSpec()
-    .with(divComponent())
-    .with(
-      textComponent(label, { fontSize: 15, fontWeight: 600, color: colors.text })
-    )
+function createButtonVisualComponentSpec(label, colors) {
+  return divComponent()
+    .with(textComponent(label, { fontSize: 15, fontWeight: 600, color: colors.text }))
     .with(paddingComponent("8px 10px"))
     .with(alignComponent("center", "center"))
     .with(backgroundComponent({ color: colors.background }))
@@ -52,9 +49,8 @@ function createButtonVisualSpec(label, colors) {
  * @param {string} text
  * @param {import("./components.js").StyleMap} styles
  */
-function createTextWidgetSpec(text, styles) {
-  return WidgetSpec()
-    .with(divComponent())
+function createTextWidgetComponentSpec(text, styles) {
+  return divComponent()
     .with(textComponent(text))
     .with(styleComponent(styles));
 }
@@ -64,7 +60,7 @@ if (!app) {
   throw new Error("Missing #app container");
 }
 
-const titleWidgetSpec = createTextWidgetSpec("Widget Grid Demo", {
+const titleComponentSpec = createTextWidgetComponentSpec("Widget Grid Demo", {
   margin: 0,
   fontSize: "20px",
   fontWeight: 700,
@@ -73,13 +69,12 @@ const titleWidgetSpec = createTextWidgetSpec("Widget Grid Demo", {
   textShadow: "0 0 10px rgba(71, 255, 248, 0.5)"
 });
 
-const subtitleWidgetSpec = createTextWidgetSpec(
+const subtitleComponentSpec = createTextWidgetComponentSpec(
   "Single grid containing 40 composed buttons.",
   { margin: 0, color: "rgba(153, 236, 255, 0.8)" }
 );
 
-let gridWidgetSpec = WidgetSpec()
-  .with(divComponent())
+let gridComponentSpec = divComponent()
   .with(
     gridComponent(
       GRID_WIDTH,
@@ -91,8 +86,7 @@ let gridWidgetSpec = WidgetSpec()
   )
   .with(styleComponent({ margin: "0 auto" }));
 
-const logWidgetSpec = WidgetSpec()
-  .with(divComponent())
+const logComponentSpec = divComponent()
   .with(styleComponent({
     border: "1px solid rgba(0, 255, 245, 0.38)",
     background: "rgba(8, 28, 36, 0.55)",
@@ -103,14 +97,16 @@ const logWidgetSpec = WidgetSpec()
     boxShadow: "inset 0 0 16px rgba(0, 255, 245, 0.12)"
   }))
   .with(textComponent("Click a button."))
-  .with({
-    receive(widget, data) {
-      if (!widget.element) {
-        return;
+  .with(
+    ComponentSpec(() => ({
+      receive(widget, data) {
+        if (!widget.element) {
+          return;
+        }
+        widget.element.textContent = `Received: ${String(data)}`;
       }
-      widget.element.textContent = `Received: ${String(data)}`;
-    }
-  });
+    }))
+  );
 
 const palette = [
   {
@@ -147,40 +143,40 @@ for (let i = 1; i <= 40; i += 1) {
 
   const label = `Button ${i}`;
   const buttonSpec = createButton({
-    visualWidgetSpec: createButtonVisualSpec(label, tone),
+    visualComponentSpec: createButtonVisualComponentSpec(label, tone),
     message: `button-${i}`,
     defaultBackground: tone.background,
     pressedBackground: tone.pressed,
     pressedClassName: "is-pressed"
   });
 
-  gridWidgetSpec = gridWidgetSpec.withChild(buttonSpec);
+  gridComponentSpec = gridComponentSpec.with(childComponentSpec(buttonSpec));
 }
 
-const listWidgetSpec = WidgetSpec()
-  .with({
-    beforeShow(widget) {
-      widget.element = document.createElement("div");
-    }
-  })
+const listComponentSpec = ComponentSpec(() => ({
+  beforeShow(widget) {
+    widget.element = document.createElement("div");
+  }
+}))
   .with(listComponent("vertical"))
   .with(styleComponent({ gap: "14px" }))
-  .withChild(titleWidgetSpec)
-  .withChild(subtitleWidgetSpec)
-  .withChild(gridWidgetSpec)
-  .withChild(logWidgetSpec);
+  .with(childComponentSpec(titleComponentSpec))
+  .with(childComponentSpec(subtitleComponentSpec))
+  .with(childComponentSpec(gridComponentSpec))
+  .with(childComponentSpec(logComponentSpec));
 
-const boxWidgetSpec = WidgetSpec()
-  .with(divComponent())
+const boxComponentSpec = divComponent()
   .with(classComponent("demo-shell"))
-  .with({
-    receive(widget, data) {
-      widget.sendDown(data);
-    }
-  })
-  .withChild(listWidgetSpec);
+  .with(
+    ComponentSpec(() => ({
+      receive(widget, data) {
+        widget.sendDown(data);
+      }
+    }))
+  )
+  .with(childComponentSpec(listComponentSpec));
 
-const boxWidget = createWidget(boxWidgetSpec);
+const boxWidget = createWidget(boxComponentSpec);
 boxWidget.create();
 boxWidget.show();
 

@@ -1,7 +1,6 @@
 /** @typedef {import("./types.js").Widget} Widget */
 /** @typedef {import("./types.js").WidgetComponent} WidgetComponent */
-/** @typedef {import("./types.js").WidgetComponentSpec} WidgetComponentSpec */
-/** @typedef {import("./types.js").WidgetSpec} WidgetSpec */
+/** @typedef {import("./types.js").ComponentSpec} ComponentSpec */
 /** @typedef {import("./types.js").WidgetEventHandler} WidgetEventHandler */
 /** @typedef {import("./types.js").WidgetCatchAllEventHandler} WidgetCatchAllEventHandler */
 
@@ -27,63 +26,79 @@ const UI_EVENT_TYPES = [
 ];
 
 /**
- * @param {WidgetComponentSpec[]} componentSpecs
- * @returns {WidgetSpec}
+ * @param {ComponentSpec} left
+ * @param {ComponentSpec} right
+ * @returns {ComponentSpec}
  */
-function createWidgetSpecFrom(componentSpecs) {
-  const frozenSpecs = Object.freeze([...componentSpecs]);
-
-  /** @type {WidgetSpec} */
-  const widgetSpec = {
-    get componentSpecs() {
-      return frozenSpecs;
+function combineComponentSpecs(left, right) {
+  /** @type {ComponentSpec} */
+  const componentSpec = {
+    instantiate() {
+      return left.instantiate();
     },
 
-    /** @param {WidgetComponentSpec} componentSpec */
-    with(componentSpec) {
-      return createWidgetSpecFrom([...frozenSpecs, componentSpec]);
+    /** @param {ComponentSpec} other */
+    with(other) {
+      return combineComponentSpecs(componentSpec, other);
     },
 
-    /** @param {WidgetSpec} childSpec */
-    withChild(childSpec) {
-      return widgetSpec.with(childComponentSpec(childSpec));
+    instantiateAll() {
+      return Object.freeze([...left.instantiateAll(), ...right.instantiateAll()]);
     }
   };
 
-  return Object.freeze(widgetSpec);
+  return Object.freeze(componentSpec);
 }
 
 /**
- * @param {WidgetSpec} childSpec
- * @returns {WidgetComponentSpec}
+ * @param {() => WidgetComponent} instantiate
+ * @returns {ComponentSpec}
+ */
+export function ComponentSpec(instantiate) {
+  /** @type {ComponentSpec} */
+  const componentSpec = {
+    instantiate,
+
+    /** @param {ComponentSpec} other */
+    with(other) {
+      return combineComponentSpecs(componentSpec, other);
+    },
+
+    instantiateAll() {
+      return Object.freeze([instantiate()]);
+    }
+  };
+
+  return Object.freeze(componentSpec);
+}
+
+/**
+ * @param {ComponentSpec} childSpec
+ * @returns {ComponentSpec}
  */
 export function childComponentSpec(childSpec) {
-  return () => {
+  return ComponentSpec(() => {
+    let hasCreatedChild = false;
+
     return {
       createChildren(widget) {
+        if (hasCreatedChild) {
+          return;
+        }
+
+        hasCreatedChild = true;
         widget.addChild(childSpec);
       }
     };
-  };
+  });
 }
 
 /**
- * @returns {WidgetSpec}
- */
-export function WidgetSpec() {
-  return createWidgetSpecFrom([]);
-}
-
-/**
- * @param {WidgetSpec} [widgetSpec]
+ * @param {ComponentSpec} componentSpec
  * @returns {Widget}
  */
-export function createWidget(widgetSpec = WidgetSpec()) {
-  const components = Object.freeze(
-    widgetSpec.componentSpecs.map((componentSpec) =>
-      typeof componentSpec === "function" ? componentSpec() : componentSpec
-    )
-  );
+export function createWidget(componentSpec) {
+  const components = componentSpec.instantiateAll();
   /** @type {Widget[]} */
   const children = [];
 
@@ -158,7 +173,6 @@ export function createWidget(widgetSpec = WidgetSpec()) {
     }
 
     for (const eventType of subscribedEventTypes) {
-
       /** @param {Event} event */
       const handler = (event) => {
         for (const component of components) {
@@ -224,19 +238,18 @@ export function createWidget(widgetSpec = WidgetSpec()) {
       }
     },
 
-    /** @param {WidgetSpec} childSpec */
+    /** @param {ComponentSpec} childSpec */
     addChild(childSpec) {
       const child = createWidget(childSpec);
       children.push(child);
       child.parent = widget;
-      if (isShown) {
-        child.create();
-        child.show();
-        mountChild(child);
-        return child;
-      }
 
       child.create();
+      if (isShown) {
+        child.show();
+        mountChild(child);
+      }
+
       return child;
     },
 

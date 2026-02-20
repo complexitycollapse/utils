@@ -1,9 +1,10 @@
 /** @typedef {import("./types.js").Widget} Widget */
-/** @typedef {import("./types.js").WidgetComponent} WidgetComponent */
+/** @typedef {import("./types.js").ComponentSpec} ComponentSpecType */
+import { ComponentSpec } from "./widget.js";
 
 /**
  * @param {"vertical" | "horizontal"} orientation
- * @returns {WidgetComponent}
+ * @returns {ComponentSpecType}
  */
 export function listComponent(orientation) {
   const isVertical = orientation === "vertical";
@@ -41,7 +42,7 @@ export function listComponent(orientation) {
     }
   }
 
-  return {
+  return ComponentSpec(() => ({
     afterShow(widget) {
       applyContainerLayout(widget);
       mountAll(widget);
@@ -59,6 +60,5 @@ export function listComponent(orientation) {
         element.removeChild(child.element);
       }
     }
-  };
+  }));
 }
-

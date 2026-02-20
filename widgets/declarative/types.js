@@ -11,10 +11,6 @@
  */
 
 /**
- * @typedef {WidgetComponent | (() => WidgetComponent)} WidgetComponentSpec
- */
-
-/**
  * @typedef {{
  *   create?: (widget: Widget) => void,
  *   destroy?: (widget: Widget) => void,
@@ -51,10 +47,10 @@
 
 /**
  * @typedef {{
- *   readonly componentSpecs: readonly WidgetComponentSpec[],
- *   with: (componentSpec: WidgetComponentSpec) => WidgetSpec,
- *   withChild: (childSpec: WidgetSpec) => WidgetSpec
- * }} WidgetSpec
+ *   readonly instantiate: () => WidgetComponent,
+ *   readonly with: (other: ComponentSpec) => ComponentSpec,
+ *   readonly instantiateAll: () => readonly WidgetComponent[]
+ * }} ComponentSpec
  */
 
 /**
@@ -63,14 +59,14 @@
  *   readonly children: Widget[],
  *   parent: Widget | undefined,
  *   element: HTMLElement | undefined,
-  *   create: () => void,
-  *   destroy: () => void,
- *   addChild: (childSpec: WidgetSpec) => Widget,
-  *   removeChild: (child: Widget) => void,
-  *   show: () => void,
-  *   hide: () => void,
-  *   send: (data: unknown) => void,
-  *   sendDown: (data: unknown) => void,
+ *   create: () => void,
+ *   destroy: () => void,
+ *   addChild: (childSpec: ComponentSpec) => Widget,
+ *   removeChild: (child: Widget) => void,
+ *   show: () => void,
+ *   hide: () => void,
+ *   send: (data: unknown) => void,
+ *   sendDown: (data: unknown) => void,
  *   sendUp: (data: unknown) => void,
  *   sendSiblings: (data: unknown) => void
  * }} Widget
