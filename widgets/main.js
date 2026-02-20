@@ -1,5 +1,6 @@
 import { createWidget } from "./widget.js";
 import { createButton } from "./button.js";
+import { gridComponent } from "./grid.js";
 import {
   alignComponent,
   backgroundComponent,
@@ -26,9 +27,9 @@ function createButtonVisual(label, colors) {
   visual.components.push(
     textComponent(label, { fontSize: 15, fontWeight: 600, color: colors.text })
   );
-  visual.components.push(paddingComponent("10px 16px"));
+  visual.components.push(paddingComponent("8px 10px"));
   visual.components.push(alignComponent("center", "center"));
-  visual.components.push(minSizeComponent(140, 42));
+  visual.components.push(minSizeComponent(100, 100));
   visual.components.push(backgroundComponent({ color: colors.background }));
   visual.components.push(
     boxComponent({
@@ -50,8 +51,8 @@ if (!app) {
 const shell = document.createElement("section");
 shell.className = "demo-shell";
 shell.innerHTML = `
-  <h1 class="demo-title">Widget Button Demo</h1>
-  <p class="demo-subtitle">Buttons are behavior widgets delegating to visual child widgets.</p>
+  <h1 class="demo-title">Widget Grid Demo</h1>
+  <p class="demo-subtitle">Single grid containing 40 composed buttons.</p>
   <div class="button-row" id="button-row"></div>
   <div class="event-log" id="event-log"></div>
 `;
@@ -70,45 +71,35 @@ root.components.push({
   }
 });
 
-const saveButton = createButton({
-  visualWidget: createButtonVisual("Save", {
-    background: "#e2fbe8",
-    border: "#5aa772",
-    text: "#14532d"
-  }),
-  message: "save",
-  defaultBackground: "#e2fbe8",
-  pressedBackground: "#c8efd4",
-  pressedClassName: "is-pressed"
-});
+const grid = createWidget();
+grid.components.push(divComponent());
+grid.components.push(gridComponent(700, 100, 12));
+grid.components.push(styleComponent({ margin: "0 auto" }));
 
-const publishButton = createButton({
-  visualWidget: createButtonVisual("Publish", {
-    background: "#dbeafe",
-    border: "#5b87d9",
-    text: "#1e3a8a"
-  }),
-  message: "publish",
-  defaultBackground: "#dbeafe",
-  pressedBackground: "#bfdfff",
-  pressedClassName: "is-pressed"
-});
+const palette = [
+  { background: "#e2fbe8", border: "#5aa772", text: "#14532d", pressed: "#c8efd4" },
+  { background: "#dbeafe", border: "#5b87d9", text: "#1e3a8a", pressed: "#bfdfff" },
+  { background: "#fee2e2", border: "#d07171", text: "#7f1d1d", pressed: "#ffcaca" },
+  { background: "#fef3c7", border: "#c59c2c", text: "#713f12", pressed: "#fde68a" }
+];
 
-const deleteButton = createButton({
-  visualWidget: createButtonVisual("Delete", {
-    background: "#fee2e2",
-    border: "#d07171",
-    text: "#7f1d1d"
-  }),
-  message: "delete",
-  defaultBackground: "#fee2e2",
-  pressedBackground: "#ffcaca",
-  pressedClassName: "is-pressed"
-});
+for (let i = 1; i <= 40; i += 1) {
+  const tone = palette[(i - 1) % palette.length];
+  if (!tone) {
+    continue;
+  }
+  const label = `Button ${i}`;
+  const button = createButton({
+    visualWidget: createButtonVisual(label, tone),
+    message: `button-${i}`,
+    defaultBackground: tone.background,
+    pressedBackground: tone.pressed,
+    pressedClassName: "is-pressed"
+  });
+  grid.addChild(button);
+}
 
-root.addChild(saveButton);
-root.addChild(publishButton);
-root.addChild(deleteButton);
+root.addChild(grid);
 root.show();
 
 if (root.element) {

@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Widget Buttons</title>
     <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
       :root {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       }
@@ -20,7 +26,6 @@
         display: grid;
         place-items: center;
         padding: 24px;
-        box-sizing: border-box;
       }
 
       .demo-shell {
@@ -30,7 +35,6 @@
         box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
         width: min(780px, 100%);
         padding: 20px;
-        box-sizing: border-box;
       }
 
       .demo-title {
@@ -77,4 +81,3 @@
     <script type="module" src="/main.js"></script>
   </body>
 </html>
-
