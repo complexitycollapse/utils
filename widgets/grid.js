@@ -13,8 +13,10 @@ function toPx(value) {
  * @param {Widget} widget
  * @param {{
  *   width: number,
- *   widgetSize: number,
- *   spacing: number
+ *   widgetWidth: number,
+ *   widgetHeight: number,
+ *   spacingX: number,
+ *   spacingY: number
  * }} config
  * @param {Widget | undefined} [excludedChild]
  */
@@ -24,8 +26,9 @@ function applyGridLayout(widget, config, excludedChild) {
     return;
   }
 
-  const cellSize = config.widgetSize + config.spacing;
-  const columns = Math.max(1, Math.floor(config.width / cellSize));
+  const cellWidth = config.widgetWidth + config.spacingX;
+  const cellHeight = config.widgetHeight + config.spacingY;
+  const columns = Math.max(1, Math.floor(config.width / cellWidth));
   const layoutChildren = widget.children.filter((child) => child !== excludedChild);
 
   element.style.position = "relative";
@@ -39,21 +42,21 @@ function applyGridLayout(widget, config, excludedChild) {
 
     const row = Math.floor(itemIndex / columns);
     const column = itemIndex % columns;
-    const left = column * cellSize;
-    const top = row * cellSize;
+    const left = column * cellWidth;
+    const top = row * cellHeight;
 
     child.element.style.position = "absolute";
     child.element.style.left = toPx(left);
     child.element.style.top = toPx(top);
-    child.element.style.width = toPx(config.widgetSize);
-    child.element.style.height = toPx(config.widgetSize);
+    child.element.style.width = toPx(config.widgetWidth);
+    child.element.style.height = toPx(config.widgetHeight);
     itemIndex += 1;
   }
 
   const rows = itemIndex === 0 ? 0 : Math.ceil(itemIndex / columns);
   const height = rows === 0
     ? 0
-    : (rows * config.widgetSize) + ((rows - 1) * config.spacing);
+    : (rows * config.widgetHeight) + ((rows - 1) * config.spacingY);
   element.style.height = toPx(height);
 }
 
@@ -62,12 +65,20 @@ function applyGridLayout(widget, config, excludedChild) {
  * The grid fills rows left-to-right, then top-to-bottom.
  *
  * @param {number} width
- * @param {number} widgetSize
- * @param {number} spacing
+ * @param {number} widgetWidth
+ * @param {number} [widgetHeight]
+ * @param {number} [spacingX]
+ * @param {number} [spacingY]
  * @returns {WidgetComponent}
  */
-export function gridComponent(width, widgetSize, spacing) {
-  const config = { width, widgetSize, spacing };
+export function gridComponent(
+  width,
+  widgetWidth,
+  widgetHeight = widgetWidth,
+  spacingX = 0,
+  spacingY = spacingX
+) {
+  const config = { width, widgetWidth, widgetHeight, spacingX, spacingY };
 
   return {
     afterShow(widget) {

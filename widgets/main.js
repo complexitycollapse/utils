@@ -8,11 +8,16 @@ import {
   boxComponent,
   classComponent,
   divComponent,
-  minSizeComponent,
   paddingComponent,
   styleComponent,
   textComponent
 } from "./components.js";
+
+const GRID_WIDTH = 700;
+const GRID_WIDGET_WIDTH = 130;
+const GRID_WIDGET_HEIGHT = 80;
+const GRID_SPACING_X = 18;
+const GRID_SPACING_Y = 10;
 
 /**
  * @param {string} label
@@ -30,7 +35,6 @@ function createButtonVisual(label, colors) {
   );
   visual.components.push(paddingComponent("8px 10px"));
   visual.components.push(alignComponent("center", "center"));
-  visual.components.push(minSizeComponent(100, 100));
   visual.components.push(backgroundComponent({ color: colors.background }));
   visual.components.push(
     boxComponent({
@@ -87,7 +91,15 @@ const subtitleWidget = createTextWidget(
 
 const grid = createWidget();
 grid.components.push(divComponent());
-grid.components.push(gridComponent(700, 100, 12));
+grid.components.push(
+  gridComponent(
+    GRID_WIDTH,
+    GRID_WIDGET_WIDTH,
+    GRID_WIDGET_HEIGHT,
+    GRID_SPACING_X,
+    GRID_SPACING_Y
+  )
+);
 grid.components.push(styleComponent({ margin: "0 auto" }));
 
 const logWidget = createWidget();
