@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "vite",
     "test": "vitest run",
     "type-check": "tsc -p jsconfig.json --noEmit"
   },

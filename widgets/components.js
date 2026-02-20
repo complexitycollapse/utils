@@ -223,6 +223,14 @@ export function styleComponent(styles) {
 }
 
 /**
+ * @param {string} color
+ * @returns {WidgetComponent}
+ */
+export function colorComponent(color) {
+  return styleComponent({ color });
+}
+
+/**
  * @param {"start" | "center" | "end"} [horizontal]
  * @param {"start" | "center" | "end"} [vertical]
  * @returns {WidgetComponent}
