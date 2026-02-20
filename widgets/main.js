@@ -1,6 +1,7 @@
 import { createWidget } from "./widget.js";
 import { createButton } from "./button.js";
 import { gridComponent } from "./grid.js";
+import { listComponent } from "./list.js";
 import {
   alignComponent,
   backgroundComponent,
@@ -43,38 +44,72 @@ function createButtonVisual(label, colors) {
   return visual;
 }
 
+/**
+ * @param {string} text
+ * @param {import("./components.js").StyleMap} styles
+ */
+function createTextWidget(text, styles) {
+  const widget = createWidget();
+  widget.components.push(divComponent());
+  widget.components.push(textComponent(text));
+  widget.components.push(styleComponent(styles));
+  return widget;
+}
+
 const app = document.getElementById("app");
 if (!app) {
   throw new Error("Missing #app container");
 }
 
-const shell = document.createElement("section");
-shell.className = "demo-shell";
-shell.innerHTML = `
-  <h1 class="demo-title">Widget Grid Demo</h1>
-  <p class="demo-subtitle">Single grid containing 40 composed buttons.</p>
-  <div class="button-row" id="button-row"></div>
-  <div class="event-log" id="event-log"></div>
-`;
-app.appendChild(shell);
+const boxWidget = createWidget();
+boxWidget.components.push(divComponent());
+boxWidget.components.push(classComponent("demo-shell"));
 
-const row = /** @type {HTMLElement} */ (document.getElementById("button-row"));
-const log = /** @type {HTMLElement} */ (document.getElementById("event-log"));
-log.textContent = "Click a button.";
-
-const root = createWidget();
-root.components.push(divComponent());
-root.components.push(styleComponent({ display: "contents" }));
-root.components.push({
-  receive(_widget, data) {
-    log.textContent = `Received: ${String(data)}`;
+const listWidget = createWidget();
+listWidget.components.push({
+  beforeShow(widget) {
+    widget.element = document.createElement("div");
   }
 });
+listWidget.components.push(listComponent("vertical"));
+listWidget.components.push(styleComponent({ gap: "14px" }));
+
+const titleWidget = createTextWidget("Widget Grid Demo", {
+  margin: 0,
+  fontSize: "20px",
+  fontWeight: 700
+});
+
+const subtitleWidget = createTextWidget(
+  "Single grid containing 40 composed buttons.",
+  { margin: 0, color: "#475569" }
+);
 
 const grid = createWidget();
 grid.components.push(divComponent());
 grid.components.push(gridComponent(700, 100, 12));
 grid.components.push(styleComponent({ margin: "0 auto" }));
+
+const logWidget = createWidget();
+logWidget.components.push(divComponent());
+logWidget.components.push(styleComponent({
+  border: "1px solid #e2e8f0",
+  background: "#f8fafc",
+  borderRadius: "10px",
+  padding: "10px 12px",
+  minHeight: "22px",
+  color: "#334155"
+}));
+logWidget.components.push(textComponent("Click a button."));
+
+boxWidget.components.push({
+  receive(_widget, data) {
+    if (!logWidget.element) {
+      return;
+    }
+    logWidget.element.textContent = `Received: ${String(data)}`;
+  }
+});
 
 const palette = [
   { background: "#e2fbe8", border: "#5aa772", text: "#14532d", pressed: "#c8efd4" },
@@ -99,9 +134,14 @@ for (let i = 1; i <= 40; i += 1) {
   grid.addChild(button);
 }
 
-root.addChild(grid);
-root.show();
+listWidget.addChild(titleWidget);
+listWidget.addChild(subtitleWidget);
+listWidget.addChild(grid);
+listWidget.addChild(logWidget);
+boxWidget.addChild(listWidget);
+boxWidget.create();
+boxWidget.show();
 
-if (root.element) {
-  row.appendChild(root.element);
+if (boxWidget.element) {
+  app.appendChild(boxWidget.element);
 }
