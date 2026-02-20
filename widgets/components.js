@@ -10,6 +10,7 @@
  * @typedef {{
  *   beforeShow?: (widget: Widget) => void,
  *   afterShow?: (widget: Widget) => void,
+ *   mountChildren?: (widget: Widget) => void,
  *   hide?: (widget: Widget) => void
  * }} WidgetComponent
  */
@@ -84,6 +85,16 @@ export function divComponent() {
     beforeShow(widget) {
       const element = document.createElement("div");
       widget.element = element;
+    },
+    mountChildren(widget) {
+      withElement(widget, (element) => {
+        for (const child of widget.children) {
+          if (!child.element) {
+            continue;
+          }
+          element.appendChild(child.element);
+        }
+      });
     }
   };
 }
@@ -281,4 +292,3 @@ export function maxSizeComponent(width, height) {
     maxHeight: toCssSize(height)
   });
 }
-

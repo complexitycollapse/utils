@@ -27,6 +27,7 @@
  *   destroy?: (widget: Widget) => void,
  *   beforeShow?: (widget: Widget) => void,
  *   afterShow?: (widget: Widget) => void,
+ *   mountChildren?: (widget: Widget) => void,
  *   hide?: (widget: Widget) => void,
  *   receive?: (widget: Widget, data: unknown) => void,
  *   click?: WidgetEventHandler,
@@ -210,6 +211,9 @@ export function createWidget() {
       }
       for (const component of components) {
         component.afterShow?.(widget);
+      }
+      for (const component of components) {
+        component.mountChildren?.(widget);
       }
       registerEventHandlers();
     },
