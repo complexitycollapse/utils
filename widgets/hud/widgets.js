@@ -137,15 +137,35 @@ export function createHudList(options = {}) {
 
 /**
  * @param {string} title
+ * @param {import("../declarative/types.js").ComponentSpec} contentComponentSpec
+ * @returns {import("../declarative/types.js").ComponentSpec}
+ */
+export function createHudModalWindow(title, contentComponentSpec) {
+  const titleSpec = divComponent()
+    .with(classComponent("hud-modal-title"))
+    .with(textComponent(title, { fontSize: 18, fontWeight: 700, color: "#d8f7ff" }));
+
+  const panelSpec = createHudList({
+    orientation: "vertical",
+    gap: "12px",
+    padding: "16px",
+    className: "hud-modal-panel"
+  })
+    .with(childComponentSpec(titleSpec))
+    .with(childComponentSpec(contentComponentSpec));
+
+  return divComponent()
+    .with(classComponent("hud-modal-overlay"))
+    .with(childComponentSpec(panelSpec));
+}
+
+/**
+ * @param {string} title
  * @param {string} text
  * @param {string[]} buttonCaptions
  * @returns {import("../declarative/types.js").ComponentSpec}
  */
 export function createHudModalDialog(title, text, buttonCaptions) {
-  const titleSpec = divComponent()
-    .with(classComponent("hud-modal-title"))
-    .with(textComponent(title, { fontSize: 18, fontWeight: 700, color: "#d8f7ff" }));
-
   const textSpec = divComponent()
     .with(classComponent("hud-modal-text"))
     .with(textComponent(text, { fontSize: 14, lineHeight: "1.5", color: "#c6f9ff" }));
@@ -168,17 +188,14 @@ export function createHudModalDialog(title, text, buttonCaptions) {
     );
   }
 
-  const panelSpec = createHudList({
+  const dialogContentSpec = createHudList({
     orientation: "vertical",
     gap: "12px",
-    padding: "16px",
-    className: "hud-modal-panel"
+    padding: 0,
+    className: "hud-modal-dialog-content"
   })
-    .with(childComponentSpec(titleSpec))
     .with(childComponentSpec(textSpec))
     .with(childComponentSpec(actionsSpec));
 
-  return divComponent()
-    .with(classComponent("hud-modal-overlay"))
-    .with(childComponentSpec(panelSpec));
+  return createHudModalWindow(title, dialogContentSpec);
 }
