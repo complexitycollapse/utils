@@ -5,10 +5,6 @@
 body {
   margin: 0;
   min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 24px;
   background:
     radial-gradient(circle at 20% 10%, rgba(0, 255, 245, 0.12), transparent 35%),
     radial-gradient(circle at 80% 80%, rgba(125, 255, 84, 0.1), transparent 40%),
@@ -19,6 +15,5 @@ body {
 
 #app {
   width: 100%;
-  display: flex;
-  justify-content: center;
+  min-height: 100vh;
 }

@@ -1,5 +1,6 @@
-import { childComponentSpec, createWidget } from "../declarative/widget.js";
-import { createHudList, createHudTextButton } from "./widgets.js";
+import { ComponentSpec, childComponentSpec, createWidget } from "../declarative/widget.js";
+import { divComponent, styleComponent } from "../declarative/components.js";
+import { createHudList, createHudModalDialog, createHudTextButton } from "./widgets.js";
 
 const app = document.getElementById("app");
 if (!app) {
@@ -18,10 +19,39 @@ for (const label of labels) {
   actionsSpec = actionsSpec.with(childComponentSpec(createHudTextButton(label)));
 }
 
-const actionsWidget = createWidget(actionsSpec);
-actionsWidget.create();
-actionsWidget.show();
+const rootSpec = divComponent()
+  .with(styleComponent({
+    width: "100vw",
+    height: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "flex-start",
+    padding: "24px",
+    position: "relative"
+  }))
+  .with(
+    ComponentSpec(() => ({
+      receive(widget, data) {
+        if (data !== "Dialog") {
+          return;
+        }
 
-if (actionsWidget.element) {
-  app.appendChild(actionsWidget.element);
+        widget.addChild(
+          createHudModalDialog(
+            "Open Dialog",
+            "This is a demo HUD modal dialog.\nChoose one of the actions below.",
+            ["Confirm", "Remind Me Later", "Cancel"]
+          )
+        );
+      }
+    }))
+  )
+  .with(childComponentSpec(actionsSpec));
+
+const rootWidget = createWidget(rootSpec);
+rootWidget.create();
+rootWidget.show();
+
+if (rootWidget.element) {
+  app.appendChild(rootWidget.element);
 }

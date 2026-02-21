@@ -48,7 +48,6 @@ export function listComponent(orientation) {
       mountAll(widget);
     },
     mountChild(widget) {
-      applyContainerLayout(widget);
       mountAll(widget);
     },
     unmountChild(widget, child) {

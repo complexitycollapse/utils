@@ -1,4 +1,5 @@
 import { createButton } from "../declarative/button.js";
+import { childComponentSpec } from "../declarative/widget.js";
 import { listComponent } from "../declarative/list.js";
 import {
   alignComponent,
@@ -132,4 +133,52 @@ export function createHudList(options = {}) {
     .with(listComponent(orientation))
     .with(styleComponent({ gap, padding }))
     .with(classComponent(className));
+}
+
+/**
+ * @param {string} title
+ * @param {string} text
+ * @param {string[]} buttonCaptions
+ * @returns {import("../declarative/types.js").ComponentSpec}
+ */
+export function createHudModalDialog(title, text, buttonCaptions) {
+  const titleSpec = divComponent()
+    .with(classComponent("hud-modal-title"))
+    .with(textComponent(title, { fontSize: 18, fontWeight: 700, color: "#d8f7ff" }));
+
+  const textSpec = divComponent()
+    .with(classComponent("hud-modal-text"))
+    .with(textComponent(text, { fontSize: 14, lineHeight: "1.5", color: "#c6f9ff" }));
+
+  let actionsSpec = createHudList({
+    orientation: "horizontal",
+    gap: "10px",
+    padding: 0,
+    className: "hud-modal-actions"
+  }).with(styleComponent({ justifyContent: "flex-end" }));
+
+  for (const caption of buttonCaptions) {
+    actionsSpec = actionsSpec.with(
+      childComponentSpec(
+        createHudTextButton(caption, {
+          borderColor: "rgba(75, 255, 249, 0.72)",
+          pressedBackground: "rgba(0, 255, 245, 0.24)"
+        })
+      )
+    );
+  }
+
+  const panelSpec = createHudList({
+    orientation: "vertical",
+    gap: "12px",
+    padding: "16px",
+    className: "hud-modal-panel"
+  })
+    .with(childComponentSpec(titleSpec))
+    .with(childComponentSpec(textSpec))
+    .with(childComponentSpec(actionsSpec));
+
+  return divComponent()
+    .with(classComponent("hud-modal-overlay"))
+    .with(childComponentSpec(panelSpec));
 }
