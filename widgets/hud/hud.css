@@ -55,6 +55,11 @@
   padding: 24px;
   background: rgba(1, 6, 12, 0.72);
   z-index: 1000;
+  opacity: 0;
+  background: rgba(1, 6, 12, 0);
+  transition:
+    opacity 260ms ease-out,
+    background 260ms ease-out;
 }
 
 .hud-modal-panel {
@@ -69,6 +74,11 @@
   backdrop-filter: blur(5px);
   padding: 16px;
   text-align: left;
+  opacity: 0;
+  transform: translateY(22px) scale(0.955);
+  transition:
+    opacity 340ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 340ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .hud-modal-panel.hud-modal-panel-wide {
@@ -89,6 +99,33 @@
 .hud-modal-actions {
   justify-content: flex-end;
   align-items: center;
+}
+
+.hud-modal-overlay.is-open {
+  opacity: 1;
+  background: rgba(1, 6, 12, 0.72);
+}
+
+.hud-modal-overlay.is-open .hud-modal-panel {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.hud-modal-overlay.is-closing {
+  opacity: 0;
+  background: rgba(1, 6, 12, 0);
+}
+
+.hud-modal-overlay.is-closing .hud-modal-panel {
+  opacity: 0;
+  transform: translateY(10px) scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-modal-overlay,
+  .hud-modal-panel {
+    transition: none;
+  }
 }
 
 .hud-colour-grid {

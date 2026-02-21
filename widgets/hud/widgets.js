@@ -1,5 +1,5 @@
 import { createButton } from "../declarative/button.js";
-import { childComponentSpec } from "../declarative/widget.js";
+import { ComponentSpec, childComponentSpec } from "../declarative/widget.js";
 import { listComponent } from "../declarative/list.js";
 import { gridComponent } from "../declarative/grid.js";
 import {
@@ -152,6 +152,39 @@ export function createHudModalWindow(title, contentComponentSpec, options = {}) 
     ? ["hud-modal-panel", panelClassName]
     : "hud-modal-panel";
 
+  const modalMotionSpec = ComponentSpec(() => {
+    /** @type {ReturnType<typeof setTimeout> | undefined} */
+    let timerHandle = undefined;
+
+    return {
+      afterShow(widget) {
+        if (!widget.element) {
+          return;
+        }
+
+        widget.element.classList.add("is-entering");
+        timerHandle = setTimeout(() => {
+          if (!widget.element) {
+            return;
+          }
+          widget.element.classList.remove("is-entering");
+          widget.element.classList.add("is-open");
+        }, 40);
+      },
+      hide(widget) {
+        if (timerHandle !== undefined) {
+          clearTimeout(timerHandle);
+          timerHandle = undefined;
+        }
+        if (!widget.element) {
+          return;
+        }
+        widget.element.classList.remove("is-entering");
+        widget.element.classList.remove("is-open");
+      }
+    };
+  });
+
   const titleSpec = divComponent()
     .with(classComponent("hud-modal-title"))
     .with(textComponent(title, { fontSize: 18, fontWeight: 700, color: "#d8f7ff" }));
@@ -167,6 +200,7 @@ export function createHudModalWindow(title, contentComponentSpec, options = {}) 
 
   return divComponent()
     .with(classComponent("hud-modal-overlay"))
+    .with(modalMotionSpec)
     .with(childComponentSpec(panelSpec));
 }
 

@@ -38,12 +38,28 @@ const rootSpec = divComponent()
     ComponentSpec(() => {
       /** @type {import("../declarative/types.js").Widget | undefined} */
       let dialogChild = undefined;
+      let isClosing = false;
 
       return {
         receive(widget, data) {
           if (dialogChild) {
-            widget.removeChild(dialogChild);
-            dialogChild = undefined;
+            if (isClosing) {
+              return;
+            }
+
+            isClosing = true;
+            dialogChild.element?.classList.remove("is-open");
+            dialogChild.element?.classList.add("is-closing");
+
+            setTimeout(() => {
+              if (!dialogChild) {
+                isClosing = false;
+                return;
+              }
+              widget.removeChild(dialogChild);
+              dialogChild = undefined;
+              isClosing = false;
+            }, 220);
             return;
           }
 
