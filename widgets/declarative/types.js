@@ -3,24 +3,31 @@
  */
 
 /**
- * @typedef {(widget: Widget, event: Event) => void} WidgetEventHandler
+ * @typedef {void | Promise<void>} LifecycleResult
  */
 
 /**
- * @typedef {(widget: Widget, eventType: string, event: Event) => void} WidgetCatchAllEventHandler
+ * @typedef {(widget: Widget, event: Event) => LifecycleResult} WidgetEventHandler
+ */
+
+/**
+ * @typedef {(widget: Widget, eventType: string, event: Event) => LifecycleResult} WidgetCatchAllEventHandler
  */
 
 /**
  * @typedef {{
- *   create?: (widget: Widget) => void,
- *   destroy?: (widget: Widget) => void,
- *   createChildren?: (widget: Widget) => void,
- *   beforeShow?: (widget: Widget) => void,
- *   afterShow?: (widget: Widget) => void,
- *   mountChild?: (widget: Widget, child: Widget) => void,
- *   unmountChild?: (widget: Widget, child: Widget) => void,
- *   hide?: (widget: Widget) => void,
- *   receive?: (widget: Widget, data: unknown) => void,
+ *   create?: (widget: Widget) => LifecycleResult,
+ *   createChildren?: (widget: Widget) => LifecycleResult,
+ *   mount?: (widget: Widget) => LifecycleResult,
+ *   activate?: (widget: Widget) => LifecycleResult,
+ *   enter?: (widget: Widget) => LifecycleResult,
+ *   exit?: (widget: Widget) => LifecycleResult,
+ *   deactivate?: (widget: Widget) => LifecycleResult,
+ *   unmount?: (widget: Widget) => LifecycleResult,
+ *   destroy?: (widget: Widget) => LifecycleResult,
+ *   mountChild?: (widget: Widget, child: Widget) => LifecycleResult,
+ *   unmountChild?: (widget: Widget, child: Widget) => LifecycleResult,
+ *   receive?: (widget: Widget, data: unknown) => LifecycleResult,
  *   eventTypes?: string[],
  *   onEvent?: WidgetCatchAllEventHandler,
  *   click?: WidgetEventHandler,
@@ -59,12 +66,12 @@
  *   readonly children: Widget[],
  *   parent: Widget | undefined,
  *   element: HTMLElement | undefined,
- *   create: () => void,
- *   destroy: () => void,
+ *   create: () => Promise<void>,
+ *   destroy: () => Promise<void>,
  *   addChild: (childSpec: ComponentSpec) => Widget,
- *   removeChild: (child: Widget) => void,
- *   show: () => void,
- *   hide: () => void,
+ *   removeChild: (child: Widget) => Promise<void>,
+ *   show: () => Promise<void>,
+ *   hide: () => Promise<void>,
  *   send: (data: unknown) => void,
  *   sendDown: (data: unknown) => void,
  *   sendUp: (data: unknown) => void,

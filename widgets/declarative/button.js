@@ -113,11 +113,11 @@ function buttonHoverComponent(options = {}) {
   };
 
   /** @type {(widget: import("./types.js").Widget) => void} */
-  const hide = (widget) => {
+  const deactivate = (widget) => {
     setHovered(widget, false);
   };
 
-  return ComponentSpec(() => ({ mouseenter, mouseleave, hide }));
+  return ComponentSpec(() => ({ mouseenter, mouseleave, deactivate }));
 }
 
 /**

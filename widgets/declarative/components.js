@@ -54,7 +54,7 @@ function applyStyles(element, styles) {
  */
 function styleLifecycleComponent(apply) {
   return ComponentSpec(() => ({
-    afterShow(widget) {
+    mount(widget) {
       withElement(widget, apply);
     }
   }));
@@ -66,9 +66,11 @@ function styleLifecycleComponent(apply) {
  */
 export function divComponent() {
   return ComponentSpec(() => ({
-    beforeShow(widget) {
-      const element = document.createElement("div");
-      widget.element = element;
+    mount(widget) {
+      if (widget.element) {
+        return;
+      }
+      widget.element = document.createElement("div");
     },
     mountChild(widget, child) {
       withElement(widget, (element) => {
@@ -97,8 +99,10 @@ export function divComponent() {
  */
 export function delegateComponent() {
   return ComponentSpec(() => ({
-    afterShow(widget) {
-      widget.element = widget.children[0]?.element;
+    mountChild(widget, child) {
+      if (!widget.element && child.element) {
+        widget.element = child.element;
+      }
     }
   }));
 }
@@ -200,12 +204,12 @@ export function classComponent(classNames) {
   const names = Array.isArray(classNames) ? classNames : [classNames];
 
   return ComponentSpec(() => ({
-    afterShow(widget) {
+    mount(widget) {
       withElement(widget, (element) => {
         element.classList.add(...names);
       });
     },
-    hide(widget) {
+    unmount(widget) {
       withElement(widget, (element) => {
         element.classList.remove(...names);
       });

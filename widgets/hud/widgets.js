@@ -14,6 +14,25 @@ import {
 } from "../declarative/components.js";
 
 /**
+ * @param {number} ms
+ * @returns {Promise<void>}
+ */
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+/**
+ * @returns {Promise<void>}
+ */
+function nextFrame() {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => resolve());
+  });
+}
+
+/**
  * @param {{
  *   visualComponentSpec: import("../declarative/types.js").ComponentSpec,
  *   message: unknown,
@@ -153,34 +172,48 @@ export function createHudModalWindow(title, contentComponentSpec, options = {}) 
     : "hud-modal-panel";
 
   const modalMotionSpec = ComponentSpec(() => {
-    /** @type {ReturnType<typeof setTimeout> | undefined} */
-    let timerHandle = undefined;
-
     return {
-      afterShow(widget) {
+      mount(widget) {
+        if (!widget.element) {
+          return;
+        }
+        widget.element.classList.remove("is-entering", "is-open", "is-closing");
+      },
+      async enter(widget) {
         if (!widget.element) {
           return;
         }
 
+        widget.element.classList.remove("is-closing");
         widget.element.classList.add("is-entering");
-        timerHandle = setTimeout(() => {
-          if (!widget.element) {
-            return;
-          }
-          widget.element.classList.remove("is-entering");
-          widget.element.classList.add("is-open");
-        }, 40);
-      },
-      hide(widget) {
-        if (timerHandle !== undefined) {
-          clearTimeout(timerHandle);
-          timerHandle = undefined;
+        await nextFrame();
+        if (!widget.element) {
+          return;
         }
+        widget.element.classList.add("is-open");
+        widget.element.classList.remove("is-entering");
+        await delay(360);
+      },
+      async exit(widget) {
+        if (!widget.element) {
+          return;
+        }
+
+        widget.element.classList.remove("is-entering", "is-open");
+        widget.element.classList.add("is-closing");
+        await delay(240);
+        if (!widget.element) {
+          return;
+        }
+        widget.element.classList.remove("is-closing");
+      },
+      unmount(widget) {
         if (!widget.element) {
           return;
         }
         widget.element.classList.remove("is-entering");
         widget.element.classList.remove("is-open");
+        widget.element.classList.remove("is-closing");
       }
     };
   });

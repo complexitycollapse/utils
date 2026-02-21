@@ -85,7 +85,7 @@ export function gridComponent(
   const config = { width, widgetWidth, widgetHeight, spacingX, spacingY };
 
   return ComponentSpec(() => ({
-    afterShow(widget) {
+    mount(widget) {
       applyGridLayout(widget, config);
     },
     mountChild(widget) {

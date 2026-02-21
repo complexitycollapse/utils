@@ -55,10 +55,11 @@ function createTextWidgetComponentSpec(text, styles) {
     .with(styleComponent(styles));
 }
 
-const app = document.getElementById("app");
-if (!app) {
+const appElement = /** @type {HTMLElement | null} */ (document.getElementById("app"));
+if (!appElement) {
   throw new Error("Missing #app container");
 }
+const app = /** @type {HTMLElement} */ (appElement);
 
 const titleComponentSpec = createTextWidgetComponentSpec("Widget Grid Demo", {
   margin: 0,
@@ -154,7 +155,10 @@ for (let i = 1; i <= 40; i += 1) {
 }
 
 const listComponentSpec = ComponentSpec(() => ({
-  beforeShow(widget) {
+  mount(widget) {
+    if (widget.element) {
+      return;
+    }
     widget.element = document.createElement("div");
   }
 }))
@@ -176,10 +180,14 @@ const boxComponentSpec = divComponent()
   )
   .with(childComponentSpec(listComponentSpec));
 
-const boxWidget = createWidget(boxComponentSpec);
-boxWidget.create();
-boxWidget.show();
+async function run() {
+  const boxWidget = createWidget(boxComponentSpec);
+  await boxWidget.create();
+  await boxWidget.show();
 
-if (boxWidget.element) {
-  app.appendChild(boxWidget.element);
+  if (boxWidget.element) {
+    app.appendChild(boxWidget.element);
+  }
 }
+
+void run();

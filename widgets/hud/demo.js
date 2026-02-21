@@ -38,28 +38,13 @@ const rootSpec = divComponent()
     ComponentSpec(() => {
       /** @type {import("../declarative/types.js").Widget | undefined} */
       let dialogChild = undefined;
-      let isClosing = false;
 
       return {
-        receive(widget, data) {
+        async receive(widget, data) {
           if (dialogChild) {
-            if (isClosing) {
-              return;
-            }
-
-            isClosing = true;
-            dialogChild.element?.classList.remove("is-open");
-            dialogChild.element?.classList.add("is-closing");
-
-            setTimeout(() => {
-              if (!dialogChild) {
-                isClosing = false;
-                return;
-              }
-              widget.removeChild(dialogChild);
-              dialogChild = undefined;
-              isClosing = false;
-            }, 220);
+            const currentDialog = dialogChild;
+            dialogChild = undefined;
+            await widget.removeChild(currentDialog);
             return;
           }
 
@@ -93,10 +78,14 @@ const rootSpec = divComponent()
   )
   .with(childComponentSpec(actionsSpec));
 
-const rootWidget = createWidget(rootSpec);
-rootWidget.create();
-rootWidget.show();
+async function run() {
+  const rootWidget = createWidget(rootSpec);
+  await rootWidget.create();
+  await rootWidget.show();
 
-if (rootWidget.element) {
-  app.appendChild(rootWidget.element);
+  if (rootWidget.element) {
+    app.appendChild(rootWidget.element);
+  }
 }
+
+void run();

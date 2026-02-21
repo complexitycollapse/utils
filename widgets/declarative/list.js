@@ -43,7 +43,7 @@ export function listComponent(orientation) {
   }
 
   return ComponentSpec(() => ({
-    afterShow(widget) {
+    mount(widget) {
       applyContainerLayout(widget);
       mountAll(widget);
     },
