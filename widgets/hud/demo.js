@@ -30,21 +30,32 @@ const rootSpec = divComponent()
     position: "relative"
   }))
   .with(
-    ComponentSpec(() => ({
-      receive(widget, data) {
-        if (data !== "Dialog") {
-          return;
-        }
+    ComponentSpec(() => {
+      /** @type {import("../declarative/types.js").Widget | undefined} */
+      let dialogChild = undefined;
 
-        widget.addChild(
-          createHudModalDialog(
-            "Open Dialog",
-            "This is a demo HUD modal dialog.\nChoose one of the actions below.",
-            ["Confirm", "Remind Me Later", "Cancel"]
-          )
-        );
-      }
-    }))
+      return {
+        receive(widget, data) {
+          if (dialogChild) {
+            widget.removeChild(dialogChild);
+            dialogChild = undefined;
+            return;
+          }
+
+          if (data !== "Dialog") {
+            return;
+          }
+
+          dialogChild = widget.addChild(
+            createHudModalDialog(
+              "Open Dialog",
+              "This is a demo HUD modal dialog.\nChoose one of the actions below.",
+              ["Confirm", "Remind Me Later", "Cancel"]
+            )
+          );
+        }
+      };
+    })
   )
   .with(childComponentSpec(actionsSpec));
 
