@@ -1,6 +1,11 @@
 import { ComponentSpec, childComponentSpec, createWidget } from "../declarative/widget.js";
 import { divComponent, styleComponent } from "../declarative/components.js";
-import { createHudList, createHudModalDialog, createHudTextButton } from "./widgets.js";
+import {
+  createHudColourPicker,
+  createHudList,
+  createHudModalDialog,
+  createHudTextButton
+} from "./widgets.js";
 
 const app = document.getElementById("app");
 if (!app) {
@@ -42,17 +47,30 @@ const rootSpec = divComponent()
             return;
           }
 
-          if (data !== "Dialog") {
-            return;
+          switch (data) {
+            case "Dialog":
+              dialogChild = widget.addChild(
+                createHudModalDialog(
+                  "Open Dialog",
+                  "This is a demo HUD modal dialog.\nChoose one of the actions below.",
+                  ["Confirm", "Remind Me Later", "Cancel"]
+                )
+              );
+              return;
+            case "Colour Picker":
+              dialogChild = widget.addChild(
+                createHudColourPicker({
+                  title: "Colour Picker",
+                  columns: 32,
+                  rows: 16,
+                  swatchSize: 28,
+                  spacing: 8
+                })
+              );
+              return;
+            default:
+              return;
           }
-
-          dialogChild = widget.addChild(
-            createHudModalDialog(
-              "Open Dialog",
-              "This is a demo HUD modal dialog.\nChoose one of the actions below.",
-              ["Confirm", "Remind Me Later", "Cancel"]
-            )
-          );
         }
       };
     })

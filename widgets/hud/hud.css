@@ -71,6 +71,12 @@
   text-align: left;
 }
 
+.hud-modal-panel.hud-modal-panel-wide {
+  width: min(1200px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+}
+
 .hud-modal-title {
   text-align: left;
 }
@@ -83,4 +89,28 @@
 .hud-modal-actions {
   justify-content: flex-end;
   align-items: center;
+}
+
+.hud-colour-grid {
+  margin-top: 4px;
+}
+
+.hud-colour-swatch {
+  width: 100%;
+  height: 100%;
+}
+
+.hud-colour-swatch-btn {
+  box-shadow: none;
+  filter: none;
+}
+
+.hud-colour-swatch-btn.is-hovered {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+  filter: brightness(1.08);
+}
+
+.hud-colour-swatch-btn.is-pressed {
+  transform: scale(0.96);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.45);
 }

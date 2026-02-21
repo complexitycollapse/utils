@@ -29,7 +29,10 @@ function applyGridLayout(widget, config, excludedChild) {
 
   const cellWidth = config.widgetWidth + config.spacingX;
   const cellHeight = config.widgetHeight + config.spacingY;
-  const columns = Math.max(1, Math.floor(config.width / cellWidth));
+  const columns = Math.max(
+    1,
+    Math.floor((config.width + config.spacingX) / cellWidth)
+  );
   const layoutChildren = widget.children.filter((child) => child !== excludedChild);
 
   element.style.position = "relative";
