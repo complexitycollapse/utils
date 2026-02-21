@@ -47,8 +47,12 @@ export function listComponent(orientation) {
       applyContainerLayout(widget);
       mountAll(widget);
     },
-    mountChild(widget) {
-      mountAll(widget);
+    mountChild(widget, child) {
+      const element = widget.element;
+      if (!element || !child.element) {
+        return;
+      }
+      element.appendChild(child.element);
     },
     unmountChild(widget, child) {
       const element = widget.element;
