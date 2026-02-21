@@ -7,6 +7,22 @@
  */
 
 /**
+ * @typedef {unknown} ChildChannel
+ */
+
+/**
+ * @typedef {unknown} CapabilityToken
+ */
+
+/**
+ * @typedef {{
+ *   channel: ChildChannel,
+ *   payload: unknown,
+ *   child: Widget
+ * }} ChildChannelMessage
+ */
+
+/**
  * @typedef {(widget: Widget, event: Event) => LifecycleResult} WidgetEventHandler
  */
 
@@ -68,14 +84,17 @@
  *   element: HTMLElement | undefined,
  *   create: () => Promise<void>,
  *   destroy: () => Promise<void>,
- *   addChild: (childSpec: ComponentSpec) => Widget,
+ *   addChild: (childSpec: ComponentSpec, options?: { channel?: ChildChannel }) => Widget,
  *   removeChild: (child: Widget) => Promise<void>,
  *   show: () => Promise<void>,
  *   hide: () => Promise<void>,
  *   send: (data: unknown) => void,
  *   sendDown: (data: unknown) => void,
  *   sendUp: (data: unknown) => void,
- *   sendSiblings: (data: unknown) => void
+ *   sendSiblings: (data: unknown) => void,
+ *   provideCapability: (token: CapabilityToken, capability: unknown) => void,
+ *   revokeCapability: (token: CapabilityToken) => void,
+ *   getCapability: (token: CapabilityToken) => unknown
  * }} Widget
  */
 

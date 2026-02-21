@@ -1,6 +1,9 @@
 /** @typedef {import("./types.js").Widget} Widget */
 /** @typedef {import("./types.js").WidgetComponent} WidgetComponent */
 /** @typedef {import("./types.js").ComponentSpec} ComponentSpec */
+/** @typedef {import("./types.js").ChildChannel} ChildChannel */
+/** @typedef {import("./types.js").ChildChannelMessage} ChildChannelMessage */
+/** @typedef {import("./types.js").CapabilityToken} CapabilityToken */
 /** @typedef {import("./types.js").WidgetEventHandler} WidgetEventHandler */
 /** @typedef {import("./types.js").WidgetCatchAllEventHandler} WidgetCatchAllEventHandler */
 
@@ -35,7 +38,8 @@ const INTERNAL = Symbol("widgetInternal");
  *   exitTree: () => Promise<void>,
  *   deactivateTree: () => Promise<void>,
  *   unmountTree: (detachedByAncestor: boolean) => Promise<void>,
- *   destroyTree: (detachedByAncestor: boolean) => Promise<void>
+ *   destroyTree: (detachedByAncestor: boolean) => Promise<void>,
+ *   getChildChannel: (child: Widget) => ChildChannel | undefined
  * }} WidgetInternal
  */
 
@@ -116,6 +120,15 @@ export function ComponentSpec(instantiate) {
  * @returns {ComponentSpec}
  */
 export function childComponentSpec(childSpec) {
+  return childComponentSpecWithOptions(childSpec);
+}
+
+/**
+ * @param {ComponentSpec} childSpec
+ * @param {{ channel?: ChildChannel }} [options]
+ * @returns {ComponentSpec}
+ */
+export function childComponentSpecWithOptions(childSpec, options = {}) {
   return ComponentSpec(() => {
     let hasCreatedChild = false;
 
@@ -126,7 +139,7 @@ export function childComponentSpec(childSpec) {
         }
 
         hasCreatedChild = true;
-        widget.addChild(childSpec);
+        widget.addChild(childSpec, options);
       }
     };
   });
@@ -140,6 +153,10 @@ export function createWidget(componentSpec) {
   const components = componentSpec.instantiateAll();
   /** @type {Widget[]} */
   const children = [];
+  /** @type {Map<Widget, ChildChannel>} */
+  const childChannels = new Map();
+  /** @type {Map<CapabilityToken, unknown>} */
+  const capabilities = new Map();
 
   /** @type {Widget | undefined} */
   let parent = undefined;
@@ -366,6 +383,7 @@ export function createWidget(componentSpec) {
 
     for (const child of [...children]) {
       await getInternal(child).destroyTree(true);
+      childChannels.delete(child);
       child.parent = undefined;
     }
     children.length = 0;
@@ -374,6 +392,7 @@ export function createWidget(componentSpec) {
 
     isCreated = false;
     isDestroyed = true;
+    capabilities.clear();
     element = undefined;
   }
 
@@ -427,10 +446,16 @@ export function createWidget(componentSpec) {
       });
     },
 
-    /** @param {ComponentSpec} childSpec */
-    addChild(childSpec) {
+    /**
+     * @param {ComponentSpec} childSpec
+     * @param {{ channel?: ChildChannel }} [options]
+     */
+    addChild(childSpec, options = {}) {
       const child = createWidget(childSpec);
       children.push(child);
+      if (options.channel !== undefined) {
+        childChannels.set(child, options.channel);
+      }
       child.parent = widget;
 
       if (isMounted || isActive || isShown) {
@@ -472,6 +497,7 @@ export function createWidget(componentSpec) {
         await childInternal.unmountTree(true);
 
         children.splice(index, 1);
+        childChannels.delete(child);
         child.parent = undefined;
         await childInternal.destroyTree(true);
       });
@@ -514,8 +540,22 @@ export function createWidget(componentSpec) {
         return;
       }
 
-      parent.send(data);
-      parent.sendUp(data);
+      const parentInternal = getInternal(parent);
+      const channel = parentInternal.getChildChannel(widget);
+      if (channel === undefined) {
+        parent.send(data);
+        parent.sendUp(data);
+        return;
+      }
+
+      /** @type {ChildChannelMessage} */
+      const channelMessage = {
+        channel,
+        payload: data,
+        child: widget
+      };
+      parent.send(channelMessage);
+      parent.sendUp(channelMessage);
     },
 
     /** @param {unknown} data */
@@ -530,6 +570,18 @@ export function createWidget(componentSpec) {
         }
         sibling.send(data);
       }
+    },
+
+    provideCapability(token, capability) {
+      capabilities.set(token, capability);
+    },
+
+    revokeCapability(token) {
+      capabilities.delete(token);
+    },
+
+    getCapability(token) {
+      return capabilities.get(token);
     }
   };
 
@@ -541,7 +593,10 @@ export function createWidget(componentSpec) {
     exitTree,
     deactivateTree,
     unmountTree,
-    destroyTree
+    destroyTree,
+    getChildChannel(child) {
+      return childChannels.get(child);
+    }
   };
 
   Object.defineProperty(widget, INTERNAL, {

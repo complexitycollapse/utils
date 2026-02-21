@@ -60,10 +60,13 @@ A component is a POJO with optional hooks. Hooks may return `void` or `Promise<v
 - `create(): Promise<void>`
 - `show(): Promise<void>`
 - `hide(): Promise<void>`
-- `addChild(childSpec): Widget`
+- `addChild(childSpec, { channel? }): Widget`
 - `removeChild(child): Promise<void>`
 - `destroy(): Promise<void>`
 - `send`, `sendDown`, `sendUp`, `sendSiblings`
+- `provideCapability(token, capability)`
+- `getCapability(token)`
+- `revokeCapability(token)`
 
 ## Lifecycle Semantics
 
@@ -95,6 +98,39 @@ Runs phases in order:
 When parent is mounted, the detach boundary happens once at the parent via `unmountChild(parent,
 child)`. The removed subtree still gets full recursive cleanup (`exit`, `deactivate`, `unmount`,
 `destroy`).
+
+## Parent-Assigned Child Channels
+
+Parents can assign a distinct channel per child:
+
+```js
+parent.addChild(childSpec, { channel: Symbol("childA") });
+```
+
+When that child (or its subtree) calls `sendUp(payload)`, the parent receives:
+
+```js
+{
+  channel,   // assigned by parent
+  payload,   // original child payload
+  child      // child widget instance
+}
+```
+
+If no channel is assigned, `sendUp` forwards the raw payload.
+
+## Capabilities
+
+Components can publish explicit APIs on a widget without exposing DOM internals.
+
+Typical pattern:
+
+1. In a component `create` hook, call `widget.provideCapability(TOKEN, api)`.
+2. In `destroy`, call `widget.revokeCapability(TOKEN)`.
+3. External code with a widget reference can call `widget.getCapability(TOKEN)`.
+
+This is useful for opt-in behaviors like `setColor`, `setValue`, `open`, `close`, etc., while
+keeping component internals encapsulated.
 
 ## Design Notes
 

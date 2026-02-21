@@ -69,6 +69,7 @@ export function createHudButton(options) {
  *   glowColor?: string,
  *   textColor?: string,
  *   borderColor?: string,
+ *   defaultBackground?: string,
  *   pressedBackground?: string,
  *   hoverClassName?: string,
  *   pressedClassName?: string,
@@ -81,6 +82,7 @@ export function createHudTextButton(text, options = {}) {
     glowColor = "rgba(0, 255, 245, 0.72)",
     textColor = "#c6f9ff",
     borderColor = "rgba(75, 255, 249, 0.78)",
+    defaultBackground = "transparent",
     pressedBackground = "rgba(0, 255, 245, 0.2)",
     hoverClassName,
     pressedClassName,
@@ -117,7 +119,7 @@ export function createHudTextButton(text, options = {}) {
     visualComponentSpec,
     message: text,
     glowColor,
-    defaultBackground: "transparent",
+    defaultBackground,
     pressedBackground
   };
 
