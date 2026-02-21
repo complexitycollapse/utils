@@ -1,0 +1,47 @@
+:root {
+  --hud-bg: rgba(8, 20, 26, 0.62);
+  --hud-border: rgba(0, 255, 245, 0.36);
+  --hud-text: #d8f7ff;
+  --hud-glow: rgba(0, 255, 245, 0.72);
+}
+
+.hud-list {
+  background: var(--hud-bg);
+  border: 1px solid var(--hud-border);
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 1px rgba(0, 255, 245, 0.15) inset,
+    0 0 30px rgba(0, 255, 245, 0.16),
+    0 0 60px rgba(84, 255, 197, 0.08);
+  backdrop-filter: blur(3px);
+}
+
+.hud-btn {
+  user-select: none;
+  cursor: pointer;
+  transition:
+    transform 160ms ease-in-out,
+    box-shadow 220ms ease-in-out,
+    filter 220ms ease-in-out;
+  --glow-color: var(--hud-glow);
+  box-shadow:
+    0 0 10px color-mix(in srgb, var(--glow-color) 28%, transparent),
+    0 0 22px color-mix(in srgb, var(--glow-color) 20%, transparent);
+  filter: saturate(1.08) brightness(1);
+}
+
+.hud-btn.is-hovered {
+  box-shadow:
+    0 0 14px color-mix(in srgb, var(--glow-color) 40%, transparent),
+    0 0 30px color-mix(in srgb, var(--glow-color) 32%, transparent),
+    0 0 48px rgba(255, 255, 255, 0.08);
+  filter: saturate(1.22) brightness(1.12);
+}
+
+.hud-btn.is-pressed {
+  transform: translateY(1px) scale(0.99);
+  box-shadow:
+    0 0 5px color-mix(in srgb, var(--glow-color) 30%, transparent),
+    0 0 10px color-mix(in srgb, var(--glow-color) 24%, transparent);
+  filter: saturate(1.25) brightness(1.08);
+}
