@@ -1,5 +1,4 @@
-import { ComponentSpec, childComponentSpec } from "./widget.js";
-import { delegateComponent } from "./components.js";
+import { ComponentSpec } from "./widget.js";
 
 /**
  * @param {unknown} message
@@ -140,8 +139,7 @@ export function createButton(options) {
     message,
   } = options;
 
-  return delegateComponent()
+  return visualComponentSpec
     .with(buttonHoverComponent(options))
-    .with(buttonBehaviorComponent(message, options))
-    .with(childComponentSpec(visualComponentSpec));
+    .with(buttonBehaviorComponent(message, options));
 }
