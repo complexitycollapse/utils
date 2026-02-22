@@ -141,7 +141,7 @@ export function createHudTextButton(text, options = {}) {
  *   orientation?: "vertical" | "horizontal",
  *   gap?: string | number,
  *   padding?: string | number,
- *   className?: string
+ *   className?: string | string[]
  * }} [options]
  * @returns {import("../declarative/types.js").ComponentSpec}
  */
@@ -234,7 +234,7 @@ export function createHudModalWindow(title, contentComponentSpec, options = {}) 
     .with(childComponentSpec(contentComponentSpec));
 
   return divComponent()
-    .with(classComponent("hud-modal-overlay"))
+    .with(classComponent("hud-modal-window"))
     .with(modalMotionSpec)
     .with(childComponentSpec(panelSpec));
 }

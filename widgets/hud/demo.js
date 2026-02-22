@@ -17,6 +17,7 @@ if (!app) {
   throw new Error("Missing #app container");
 }
 
+/** @type {[string, string, string]} */
 const labels = ["Dialog", "Colour Picker", "Modal"];
 const DIALOG_BUTTON_CHANNEL = Symbol("dialogButton");
 const COLOUR_PICKER_BUTTON_CHANNEL = Symbol("colourPickerButton");
@@ -185,7 +186,7 @@ async function run() {
   await rootWidget.create();
   await rootWidget.show();
 
-  if (rootWidget.element) {
+  if (rootWidget.element && app) {
     app.appendChild(rootWidget.element);
   }
 }
