@@ -4,7 +4,12 @@ import {
   childComponentSpecWithOptions,
   createWidget
 } from "../declarative/widget.js";
-import { divComponent, styleComponent } from "../declarative/components.js";
+import {
+  DIMMABLE_CAPABILITY,
+  dimmableComponent,
+  divComponent,
+  styleComponent
+} from "../declarative/components.js";
 import {
   createHudColourPicker,
   createHudList,
@@ -49,6 +54,9 @@ function isColourMessage(data) {
  *   setColor: (widget: import("../declarative/types.js").Widget, color: string) => void,
  *   getColor: (widget: import("../declarative/types.js").Widget) => string
  * }} ColourTargetCapability
+ */
+/**
+ * @typedef {import("../declarative/components.js").DimmableCapability} DimmableCapability
  */
 
 /**
@@ -124,6 +132,16 @@ const rootSpec = divComponent()
     position: "relative"
   }))
   .with(
+    dimmableComponent({
+      className: "hud-widget-dim-layer",
+      color: "rgba(1, 6, 12, 0.50)",
+      enterDurationMs: 0,
+      exitDurationMs: 50,
+      easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+      zIndex: 500
+    })
+  )
+  .with(
     ComponentSpec(() => {
       /** @type {import("../declarative/types.js").Widget | undefined} */
       let dialogChild = undefined;
@@ -146,12 +164,18 @@ const rootSpec = divComponent()
 
             const currentDialog = dialogChild;
             dialogChild = undefined;
+            const dimmable = /** @type {DimmableCapability | undefined} */ (
+              widget.getCapability(DIMMABLE_CAPABILITY)
+            );
+            dimmable?.undim(widget);
             await widget.removeChild(currentDialog);
             return;
           }
 
           switch (messageChannel) {
             case DIALOG_BUTTON_CHANNEL:
+              /** @type {DimmableCapability | undefined} */
+              (widget.getCapability(DIMMABLE_CAPABILITY))?.dim(widget);
               dialogChild = widget.addChild(
                 createHudModalDialog(
                   "Open Dialog",
@@ -161,6 +185,8 @@ const rootSpec = divComponent()
               );
               return;
             case COLOUR_PICKER_BUTTON_CHANNEL:
+              /** @type {DimmableCapability | undefined} */
+              (widget.getCapability(DIMMABLE_CAPABILITY))?.dim(widget);
               colourPickerButtonWidget = message?.child;
               dialogChild = widget.addChild(
                 createHudColourPicker({

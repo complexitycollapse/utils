@@ -132,6 +132,20 @@ Typical pattern:
 This is useful for opt-in behaviors like `setColor`, `setValue`, `open`, `close`, etc., while
 keeping component internals encapsulated.
 
+### Built-in dimmable capability
+
+`dimmableComponent(options?)` in `declarative/components.js` publishes
+`DIMMABLE_CAPABILITY` with methods:
+
+- `dim(widget)`
+- `undim(widget)`
+- `setDimmed(widget, boolean)`
+- `toggle(widget)`
+- `isDimmed()`
+
+The component adds a dim layer to the widget element and eases opacity changes via CSS transition.
+Theme details (color, blur, class styling) can stay in app-level CSS.
+
 ## Design Notes
 
 - Components should implement behavior declaratively via hooks.

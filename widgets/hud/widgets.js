@@ -318,6 +318,9 @@ export function createHudColourPicker(options = {}) {
   const gridWidth =
     (columns * effectiveSwatchSize) + ((columns - 1) * effectiveSpacing);
 
+  /** @type {import("../declarative/types.js").ComponentSpec[]} */
+  const swatchSpecs = [];
+
   let swatchGridSpec = divComponent()
     .with(classComponent("hud-colour-grid"))
     .with(styleComponent({ margin: "0 auto" }))
@@ -329,6 +332,15 @@ export function createHudColourPicker(options = {}) {
         effectiveSpacing,
         effectiveSpacing
       )
+    )
+    .with(
+      ComponentSpec(() => ({
+        createChildren(widget) {
+          for (const swatchSpec of swatchSpecs) {
+            widget.addChild(swatchSpec);
+          }
+        }
+      }))
     );
 
   for (let row = 0; row < rows; row += 1) {
@@ -348,16 +360,14 @@ export function createHudColourPicker(options = {}) {
           radius: 7
         }));
 
-      swatchGridSpec = swatchGridSpec.with(
-        childComponentSpec(
-          createHudButton({
-            visualComponentSpec: swatchVisualSpec,
-            message: color,
-            defaultBackground: color,
-            pressedBackground: color,
-            buttonClassName: ["hud-btn", "hud-colour-swatch-btn"]
-          })
-        )
+      swatchSpecs.push(
+        createHudButton({
+          visualComponentSpec: swatchVisualSpec,
+          message: color,
+          defaultBackground: color,
+          pressedBackground: color,
+          buttonClassName: ["hud-btn", "hud-colour-swatch-btn"]
+        })
       );
     }
   }

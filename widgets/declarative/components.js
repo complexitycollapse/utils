@@ -3,8 +3,19 @@
 /** @typedef {import("./types.js").SizeValue} SizeValue */
 import { ComponentSpec } from "./widget.js";
 
+export const DIMMABLE_CAPABILITY = Symbol("dimmableCapability");
+
 /**
  * @typedef {Record<string, string | number | undefined>} StyleMap
+ */
+/**
+ * @typedef {{
+ *   setDimmed: (widget: Widget, dimmed: boolean) => void,
+ *   dim: (widget: Widget) => void,
+ *   undim: (widget: Widget) => void,
+ *   toggle: (widget: Widget) => void,
+ *   isDimmed: () => boolean
+ * }} DimmableCapability
  */
 
 /**
@@ -294,5 +305,130 @@ export function maxSizeComponent(width, height) {
   return styleComponent({
     maxWidth: toCssSize(width),
     maxHeight: toCssSize(height)
+  });
+}
+
+/**
+ * @param {{
+ *   className?: string,
+ *   color?: string,
+ *   durationMs?: number,
+ *   enterDurationMs?: number,
+ *   exitDurationMs?: number,
+ *   easing?: string,
+ *   zIndex?: number
+ * }} [options]
+ * @returns {ComponentSpecType}
+ */
+export function dimmableComponent(options = {}) {
+  const {
+    className = "widget-dim-layer",
+    color = "rgba(0, 0, 0, 0.48)",
+    durationMs = 240,
+    enterDurationMs = durationMs,
+    exitDurationMs = durationMs,
+    easing = "ease",
+    zIndex = 10
+  } = options;
+
+  return ComponentSpec(() => {
+    /** @type {HTMLDivElement | undefined} */
+    let dimLayer = undefined;
+    let isDimmed = false;
+    let didSetPosition = false;
+
+    /**
+     * @param {Widget} widget
+     */
+    function ensureLayer(widget) {
+      if (!widget.element || dimLayer) {
+        return;
+      }
+
+      const host = widget.element;
+      const computedPosition = getComputedStyle(host).position;
+      if (computedPosition === "static") {
+        host.style.position = "relative";
+        didSetPosition = true;
+      }
+
+      dimLayer = document.createElement("div");
+      dimLayer.classList.add(className);
+      applyStyles(dimLayer, {
+        position: "absolute",
+        inset: "0",
+        background: color,
+        pointerEvents: "none",
+        opacity: isDimmed ? 1 : 0,
+        transition: `opacity ${isDimmed ? enterDurationMs : exitDurationMs}ms ${easing}`,
+        zIndex
+      });
+
+      host.appendChild(dimLayer);
+    }
+
+    /**
+     * @param {Widget} widget
+     */
+    function sync(widget) {
+      ensureLayer(widget);
+      if (!dimLayer) {
+        return;
+      }
+      dimLayer.style.transition = `opacity ${
+        isDimmed ? enterDurationMs : exitDurationMs
+      }ms ${easing}`;
+      dimLayer.style.opacity = isDimmed ? "1" : "0";
+    }
+
+    /**
+     * @param {Widget} widget
+     * @param {boolean} dimmed
+     */
+    function setDimmed(widget, dimmed) {
+      isDimmed = dimmed;
+      sync(widget);
+    }
+
+    /** @type {DimmableCapability} */
+    const capability = {
+      setDimmed(widget, dimmed) {
+        setDimmed(widget, dimmed);
+      },
+      dim(widget) {
+        setDimmed(widget, true);
+      },
+      undim(widget) {
+        setDimmed(widget, false);
+      },
+      toggle(widget) {
+        setDimmed(widget, !isDimmed);
+      },
+      isDimmed() {
+        return isDimmed;
+      }
+    };
+
+    return {
+      create(widget) {
+        widget.provideCapability(DIMMABLE_CAPABILITY, capability);
+      },
+      mount(widget) {
+        sync(widget);
+      },
+      unmount(widget) {
+        if (widget.element && dimLayer && dimLayer.parentElement === widget.element) {
+          widget.element.removeChild(dimLayer);
+        }
+        dimLayer = undefined;
+        if (didSetPosition && widget.element) {
+          widget.element.style.removeProperty("position");
+        }
+        didSetPosition = false;
+      },
+      destroy(widget) {
+        widget.revokeCapability(DIMMABLE_CAPABILITY);
+      }
+    };
   });
 }

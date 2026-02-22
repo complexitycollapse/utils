@@ -84,15 +84,46 @@ export function gridComponent(
 ) {
   const config = { width, widgetWidth, widgetHeight, spacingX, spacingY };
 
-  return ComponentSpec(() => ({
-    mount(widget) {
-      applyGridLayout(widget, config);
-    },
-    mountChild(widget) {
-      applyGridLayout(widget, config);
-    },
-    unmountChild(widget, child) {
-      applyGridLayout(widget, config, child);
+  return ComponentSpec(() => {
+    let rafId = 0;
+
+    /**
+     * @param {Widget} widget
+     * @param {Widget | undefined} [excludedChild]
+     */
+    function scheduleLayout(widget, excludedChild) {
+      if (rafId !== 0) {
+        cancelAnimationFrame(rafId);
+      }
+
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        applyGridLayout(widget, config, excludedChild);
+      });
     }
-  }));
+
+    return {
+      mount(widget) {
+        applyGridLayout(widget, config);
+      },
+      mountChild(widget) {
+        scheduleLayout(widget);
+      },
+      unmountChild(widget, child) {
+        scheduleLayout(widget, child);
+      },
+      unmount() {
+        if (rafId !== 0) {
+          cancelAnimationFrame(rafId);
+          rafId = 0;
+        }
+      },
+      destroy() {
+        if (rafId !== 0) {
+          cancelAnimationFrame(rafId);
+          rafId = 0;
+        }
+      }
+    };
+  });
 }

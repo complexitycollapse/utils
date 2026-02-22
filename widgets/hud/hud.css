@@ -56,6 +56,10 @@
   z-index: 1000;
 }
 
+.hud-widget-dim-layer {
+  backdrop-filter: blur(3px);
+}
+
 .hud-modal-panel {
   width: min(520px, calc(100vw - 48px));
   border: 1px solid var(--hud-border);
