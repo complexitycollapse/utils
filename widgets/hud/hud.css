@@ -60,6 +60,10 @@
   backdrop-filter: blur(3px);
 }
 
+.hud-modal-self-dim-layer {
+  backdrop-filter: blur(2px);
+}
+
 .hud-modal-panel {
   width: min(520px, calc(100vw - 48px));
   border: 1px solid var(--hud-border);
@@ -83,6 +87,10 @@
   width: min(1200px, calc(100vw - 48px));
   max-height: calc(100vh - 48px);
   overflow: auto;
+}
+
+.hud-modal-panel.hud-modal-panel-large {
+  width: min(760px, calc(100vw - 48px));
 }
 
 .hud-modal-title {

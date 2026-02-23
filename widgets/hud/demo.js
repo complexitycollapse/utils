@@ -7,12 +7,15 @@ import {
 import {
   DIMMABLE_CAPABILITY,
   dimmableComponent,
+  classComponent,
   divComponent,
-  styleComponent
+  styleComponent,
+  textComponent
 } from "../declarative/components.js";
 import {
   createHudColourPicker,
   createHudList,
+  createHudModalWindow,
   createHudModalDialog,
   createHudTextButton
 } from "./widgets.js";
@@ -27,6 +30,8 @@ const labels = ["Dialog", "Colour Picker", "Modal"];
 const DIALOG_BUTTON_CHANNEL = Symbol("dialogButton");
 const COLOUR_PICKER_BUTTON_CHANNEL = Symbol("colourPickerButton");
 const MODAL_BUTTON_CHANNEL = Symbol("modalButton");
+const NESTED_MODAL_EXIT_CHANNEL = Symbol("nestedModalExit");
+const NESTED_MODAL_OPEN_CHANNEL = Symbol("nestedModalOpen");
 const COLOUR_TARGET_CAPABILITY = Symbol("colourTarget");
 
 /**
@@ -58,6 +63,81 @@ function isColourMessage(data) {
 /**
  * @typedef {import("../declarative/components.js").DimmableCapability} DimmableCapability
  */
+
+/**
+ * @param {{
+ *   title: string,
+ *   text: string,
+ *   includeOpenButton: boolean,
+ *   panelClassName?: string,
+ *   panelComponentSpec?: import("../declarative/types.js").ComponentSpec
+ * }} options
+ * @returns {import("../declarative/types.js").ComponentSpec}
+ */
+function createNestedModalWindow(options) {
+  const {
+    title,
+    text,
+    includeOpenButton,
+    panelClassName,
+    panelComponentSpec
+  } = options;
+
+  const textSpec = divComponent()
+    .with(classComponent("hud-modal-text"))
+    .with(textComponent(text, { fontSize: 14, lineHeight: "1.5", color: "#c6f9ff" }));
+
+  let actionsSpec = createHudList({
+    orientation: "horizontal",
+    gap: "10px",
+    padding: 0,
+    className: "hud-modal-actions"
+  })
+    .with(styleComponent({ justifyContent: "flex-end" }))
+    .with(
+      childComponentSpecWithOptions(createHudTextButton("Exit"), {
+        channel: NESTED_MODAL_EXIT_CHANNEL
+      })
+    );
+
+  if (includeOpenButton) {
+    actionsSpec = actionsSpec.with(
+      childComponentSpecWithOptions(createHudTextButton("Open"), {
+        channel: NESTED_MODAL_OPEN_CHANNEL
+      })
+    );
+  }
+
+  const contentSpec = createHudList({
+    orientation: "vertical",
+    gap: "12px",
+    padding: 0,
+    className: "hud-modal-dialog-content"
+  })
+    .with(childComponentSpec(textSpec))
+    .with(childComponentSpec(actionsSpec));
+
+  if (panelClassName !== undefined) {
+    if (panelComponentSpec !== undefined) {
+      return createHudModalWindow(title, contentSpec, {
+        panelClassName,
+        panelComponentSpec
+      });
+    }
+
+    return createHudModalWindow(title, contentSpec, {
+      panelClassName
+    });
+  }
+
+  if (panelComponentSpec !== undefined) {
+    return createHudModalWindow(title, contentSpec, {
+      panelComponentSpec
+    });
+  }
+
+  return createHudModalWindow(title, contentSpec);
+}
 
 /**
  * @returns {import("../declarative/types.js").ComponentSpec}
@@ -145,8 +225,82 @@ const rootSpec = divComponent()
     ComponentSpec(() => {
       /** @type {import("../declarative/types.js").Widget | undefined} */
       let dialogChild = undefined;
+      /** @type {import("../declarative/types.js").Widget[]} */
+      const nestedModalChildren = [];
       /** @type {import("../declarative/types.js").Widget | undefined} */
       let colourPickerButtonWidget = undefined;
+      const nestedPanelDimmableSpec = dimmableComponent({
+        className: "hud-modal-self-dim-layer",
+        color: "rgba(1, 6, 12, 0.38)",
+        enterDurationMs: 0,
+        exitDurationMs: 50,
+        easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+        zIndex: 20
+      });
+
+      /**
+       * @param {import("../declarative/types.js").Widget} widget
+       */
+      function syncDimming(widget) {
+        const dimmable = /** @type {DimmableCapability | undefined} */ (
+          widget.getCapability(DIMMABLE_CAPABILITY)
+        );
+        if (dialogChild || nestedModalChildren.length > 0) {
+          dimmable?.dim(widget);
+          return;
+        }
+        dimmable?.undim(widget);
+      }
+
+      /**
+       * @param {import("../declarative/types.js").Widget | undefined} modalWidget
+       * @returns {{ panelWidget: import("../declarative/types.js").Widget, dimmable: DimmableCapability } | undefined}
+       */
+      function getNestedPanelDimmable(modalWidget) {
+        const panelWidget = modalWidget?.children[0];
+        if (!panelWidget) {
+          return undefined;
+        }
+        const dimmable = /** @type {DimmableCapability | undefined} */ (
+          panelWidget.getCapability(DIMMABLE_CAPABILITY)
+        );
+        if (!dimmable) {
+          return undefined;
+        }
+        return { panelWidget, dimmable };
+      }
+
+      /**
+       * @param {import("../declarative/types.js").Widget} widget
+       * @param {import("../declarative/types.js").ComponentSpec} modalSpec
+       */
+      function pushNestedModal(widget, modalSpec) {
+        const previousTop = nestedModalChildren[nestedModalChildren.length - 1];
+        const previousTopPanel = getNestedPanelDimmable(previousTop);
+        previousTopPanel?.dimmable.dim(previousTopPanel.panelWidget);
+
+        const nestedChild = widget.addChild(modalSpec);
+        nestedModalChildren.push(nestedChild);
+        syncDimming(widget);
+      }
+
+      /**
+       * @param {import("../declarative/types.js").Widget} widget
+       * @returns {Promise<void>}
+       */
+      async function popNestedModal(widget) {
+        const nestedChild = nestedModalChildren.pop();
+        if (!nestedChild) {
+          return;
+        }
+        await widget.removeChild(nestedChild);
+
+        const nextTop = nestedModalChildren[nestedModalChildren.length - 1];
+        const nextTopPanel = getNestedPanelDimmable(nextTop);
+        nextTopPanel?.dimmable.undim(nextTopPanel.panelWidget);
+
+        syncDimming(widget);
+      }
 
       return {
         async receive(widget, data) {
@@ -164,18 +318,31 @@ const rootSpec = divComponent()
 
             const currentDialog = dialogChild;
             dialogChild = undefined;
-            const dimmable = /** @type {DimmableCapability | undefined} */ (
-              widget.getCapability(DIMMABLE_CAPABILITY)
-            );
-            dimmable?.undim(widget);
             await widget.removeChild(currentDialog);
+            syncDimming(widget);
+            return;
+          }
+
+          if (messageChannel === NESTED_MODAL_OPEN_CHANNEL) {
+            pushNestedModal(
+              widget,
+              createNestedModalWindow({
+                title: "Nested Modal",
+                text: "This is a second-level modal window.\nClick Exit to close only this window.",
+                includeOpenButton: false,
+                panelComponentSpec: nestedPanelDimmableSpec
+              })
+            );
+            return;
+          }
+
+          if (messageChannel === NESTED_MODAL_EXIT_CHANNEL) {
+            await popNestedModal(widget);
             return;
           }
 
           switch (messageChannel) {
             case DIALOG_BUTTON_CHANNEL:
-              /** @type {DimmableCapability | undefined} */
-              (widget.getCapability(DIMMABLE_CAPABILITY))?.dim(widget);
               dialogChild = widget.addChild(
                 createHudModalDialog(
                   "Open Dialog",
@@ -183,10 +350,9 @@ const rootSpec = divComponent()
                   ["Confirm", "Remind Me Later", "Cancel"]
                 )
               );
+              syncDimming(widget);
               return;
             case COLOUR_PICKER_BUTTON_CHANNEL:
-              /** @type {DimmableCapability | undefined} */
-              (widget.getCapability(DIMMABLE_CAPABILITY))?.dim(widget);
               colourPickerButtonWidget = message?.child;
               dialogChild = widget.addChild(
                 createHudColourPicker({
@@ -195,6 +361,19 @@ const rootSpec = divComponent()
                   rows: 16,
                   swatchSize: 28,
                   spacing: 8
+                })
+              );
+              syncDimming(widget);
+              return;
+            case MODAL_BUTTON_CHANNEL:
+              pushNestedModal(
+                widget,
+                createNestedModalWindow({
+                  title: "Parent Modal",
+                  text: "This modal tests nested dimming.\nClick Open to spawn another modal above this one.",
+                  includeOpenButton: true,
+                  panelClassName: "hud-modal-panel-large",
+                  panelComponentSpec: nestedPanelDimmableSpec
                 })
               );
               return;

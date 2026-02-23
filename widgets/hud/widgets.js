@@ -163,12 +163,13 @@ export function createHudList(options = {}) {
  * @param {string} title
  * @param {import("../declarative/types.js").ComponentSpec} contentComponentSpec
  * @param {{
- *   panelClassName?: string
+ *   panelClassName?: string,
+ *   panelComponentSpec?: import("../declarative/types.js").ComponentSpec
  * }} [options]
  * @returns {import("../declarative/types.js").ComponentSpec}
  */
 export function createHudModalWindow(title, contentComponentSpec, options = {}) {
-  const { panelClassName } = options;
+  const { panelClassName, panelComponentSpec } = options;
   const panelClassNames = panelClassName
     ? ["hud-modal-panel", panelClassName]
     : "hud-modal-panel";
@@ -224,7 +225,7 @@ export function createHudModalWindow(title, contentComponentSpec, options = {}) 
     .with(classComponent("hud-modal-title"))
     .with(textComponent(title, { fontSize: 18, fontWeight: 700, color: "#d8f7ff" }));
 
-  const panelSpec = createHudList({
+  let panelSpec = createHudList({
     orientation: "vertical",
     gap: "12px",
     padding: "16px",
@@ -232,6 +233,10 @@ export function createHudModalWindow(title, contentComponentSpec, options = {}) 
   })
     .with(childComponentSpec(titleSpec))
     .with(childComponentSpec(contentComponentSpec));
+
+  if (panelComponentSpec !== undefined) {
+    panelSpec = panelSpec.with(panelComponentSpec);
+  }
 
   return divComponent()
     .with(classComponent("hud-modal-window"))
