@@ -69,6 +69,31 @@ function fireAndForget(value) {
 }
 
 /**
+ * Builds the exact payload that would be sent if `child.sendUp(data)` were invoked.
+ * If the child has a channel in `parent`, returns a channel message envelope.
+ *
+ * @param {Widget} parent
+ * @param {Widget} child
+ * @param {unknown} data
+ * @returns {unknown}
+ */
+export function createChildSendUpMessage(parent, child, data) {
+  const parentInternal = getInternal(parent);
+  const channel = parentInternal.getChildChannel(child);
+  if (channel === undefined) {
+    return data;
+  }
+
+  /** @type {ChildChannelMessage} */
+  const channelMessage = {
+    channel,
+    payload: data,
+    child
+  };
+  return channelMessage;
+}
+
+/**
  * @param {ComponentSpecType} componentSpec
  * @returns {Widget}
  */
@@ -463,22 +488,9 @@ export function createWidget(componentSpec) {
         return;
       }
 
-      const parentInternal = getInternal(parent);
-      const channel = parentInternal.getChildChannel(widget);
-      if (channel === undefined) {
-        parent.send(data);
-        parent.sendUp(data);
-        return;
-      }
-
-      /** @type {ChildChannelMessage} */
-      const channelMessage = {
-        channel,
-        payload: data,
-        child: widget
-      };
-      parent.send(channelMessage);
-      parent.sendUp(channelMessage);
+      const message = createChildSendUpMessage(parent, widget, data);
+      parent.send(message);
+      parent.sendUp(message);
     },
 
     /** @param {unknown} data */
