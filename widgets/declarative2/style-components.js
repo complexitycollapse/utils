@@ -72,7 +72,6 @@ export function styleComponent(styles) {
 }
 
 /**
- * @param {string} text
  * @param {{
  *   fontStyle?: string,
  *   fontSize?: SizeValue,
@@ -83,7 +82,7 @@ export function styleComponent(styles) {
  * }} [fontOptions]
  * @returns {ComponentSpecType}
  */
-export function textComponent(text, fontOptions = {}) {
+export function textStyle(fontOptions = {}) {
   const {
     fontStyle,
     fontSize,
@@ -93,16 +92,13 @@ export function textComponent(text, fontOptions = {}) {
     color
   } = fontOptions;
 
-  return styleLifecycleComponent((element) => {
-    element.textContent = text;
-    applyStyles(element, {
-      fontStyle,
-      fontSize: toCssSize(fontSize),
-      fontFamily,
-      fontWeight,
-      lineHeight: toCssSize(lineHeight),
-      color
-    });
+  return styleComponent({
+    fontStyle,
+    fontSize: toCssSize(fontSize),
+    fontFamily,
+    fontWeight,
+    lineHeight: toCssSize(lineHeight),
+    color
   });
 }
 
