@@ -1,12 +1,8 @@
 /** @typedef {import("../types.js").ComponentSpec} ComponentSpecType */
-/** @typedef {import("../types.js").ChildChannelMessage} ChildChannelMessage */
-import {
-  ComponentSpec,
-  childComponentSpec,
-  childComponentSpecWithOptions
-} from "../component-specs.js";
+import { ComponentSpec, childComponentSpec } from "../component-specs.js";
 import { buttonBehaviorComponent } from "../button-component.js";
 import { divComponent } from "../dom-components.js";
+import { listComponent } from "../layout/list-component.js";
 import { styleComponent } from "../style-components.js";
 import { textComponent } from "../text-component.js";
 import { WINDOW_MANAGER_CAPABILITY } from "./window-manager.js";
@@ -51,20 +47,6 @@ function buttonJustify(alignment) {
 }
 
 /**
- * @param {unknown} value
- * @param {unknown} channel
- * @returns {value is ChildChannelMessage}
- */
-function isChannelMessage(value, channel) {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const candidate = /** @type {{ channel?: unknown, payload?: unknown }} */ (value);
-  return candidate.channel === channel && typeof candidate.payload === "string";
-}
-
-/**
  * @param {string} buttonText
  * @param {boolean} stretch
  * @returns {ComponentSpecType}
@@ -102,31 +84,23 @@ function dialogButtonSpec(buttonText, stretch) {
 /**
  * @param {string[]} buttons
  * @param {ButtonAlignment | undefined} alignment
- * @param {unknown} buttonChannel
  * @returns {ComponentSpecType}
  */
-function dialogButtonsRowSpec(buttons, alignment, buttonChannel) {
+function dialogButtonsRowSpec(buttons, alignment) {
   const stretch = alignment === "spread";
-  let rowSpec = divComponent().with(
+  const buttonSpecs = buttons.map((buttonText) => dialogButtonSpec(buttonText, stretch));
+
+  return listComponent(buttonSpecs, {
+    orientation: "horizontal",
+    gap: "8px",
+    justifyContent: buttonJustify(alignment)
+  }).with(
     styleComponent({
-      display: "flex",
-      justifyContent: buttonJustify(alignment),
-      gap: "8px",
       marginTop: "auto",
       padding: "12px 16px 16px",
       borderTop: "1px solid #e5e7eb"
     })
   );
-
-  for (const buttonText of buttons) {
-    rowSpec = rowSpec.with(
-      childComponentSpecWithOptions(dialogButtonSpec(buttonText, stretch), {
-        channel: buttonChannel
-      })
-    );
-  }
-
-  return rowSpec;
 }
 
 /**
@@ -142,7 +116,6 @@ export function dialogBoxComponent(name, options) {
     buttonAlignment = "right",
     windowOptions = {}
   } = options;
-  const buttonChannel = Symbol("dialogButtons");
   const buttonSet = new Set(buttons);
 
   const titleSpec = divComponent()
@@ -177,11 +150,14 @@ export function dialogBoxComponent(name, options) {
       })
     );
 
+  const contentSpec = listComponent(
+    [titleSpec, bodySpec, dialogButtonsRowSpec(buttons, buttonAlignment)],
+    { orientation: "vertical" }
+  );
+
   return windowComponent(name, windowOptions)
     .with(
       styleComponent({
-        display: "flex",
-        flexDirection: "column",
         backgroundColor: "#ffffff",
         border: "1px solid #d1d5db",
         borderRadius: "10px",
@@ -189,24 +165,18 @@ export function dialogBoxComponent(name, options) {
         overflow: "hidden"
       })
     )
-    .with(childComponentSpec(titleSpec))
-    .with(childComponentSpec(bodySpec))
-    .with(childComponentSpec(dialogButtonsRowSpec(buttons, buttonAlignment, buttonChannel)))
+    .with(childComponentSpec(contentSpec))
     .with(
       ComponentSpec(() => {
         let isClosing = false;
 
         return {
           receive(widget, data) {
-            if (isClosing || !isChannelMessage(data, buttonChannel)) {
+            if (isClosing || typeof data !== "string") {
               return;
             }
 
-            const buttonText = data.payload;
-            if (typeof buttonText !== "string") {
-              return;
-            }
-            if (!buttonSet.has(buttonText)) {
+            if (!buttonSet.has(data)) {
               return;
             }
 
@@ -223,7 +193,7 @@ export function dialogBoxComponent(name, options) {
             }
 
             isClosing = true;
-            return windowManager.closeWindow(name, buttonText);
+            return windowManager.closeWindow(name, data);
           }
         };
       })
