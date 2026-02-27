@@ -39,6 +39,18 @@
  */
 
 /**
+ * @typedef {Record<string, string | number | undefined>} StyleMap
+ */
+
+/**
+ * @typedef {{extends?: ContextPath, values?: StyleMap}} ThemeExtension
+ */
+
+/**
+ * @typedef {StyleMap | ThemeExtension} ThemeDescriptor
+ */
+
+/**
  * @typedef {{
  *   create?: (widget: Widget) => LifecycleResult,
  *   createChildren?: (widget: Widget) => LifecycleResult,
