@@ -79,6 +79,40 @@ the map are objects representing APIs. A component or other widget may use the m
 capability and call its methods. A component adds a capability to the widget by calling
 provideCapability, and removes it using revokeCapability.
 
+Capability lookup (`getCapability`) resolves to the nearest ancestor (including the widget itself)
+that provides the capability.
+
+### Contexts
+
+Widgets also support hierarchical context values. Context is ambient data made available by a widget
+for consumption by other widgets, in particular those below them in the subtree (hence providing a
+"context" for that tree that all nodes share in common). Context is keyed by a path of string/symbol
+segments:
+
+```js
+const path = ["theme", Symbol.for("dialog"), "title"];
+```
+
+Each widget has its own context store. Context lookup (`getContext`) resolves to the nearest
+ancestor (including self) that has a value at the given path.
+
+Widget context methods:
+
+- `provideContext(path, value)` - materialize the path in this widget and assign a value
+- `revokeContext(path)` - clear this widget's value at the path
+- `getOwnContext(path)` - get only this widget's value at the path
+- `getContext(path)` - get nearest ancestor value at the path
+
+To populate a widget's context, use `contextComponent(path, value)`. This writes context on
+`create` and revokes it on `destroy`.
+
+Becuase context is hierarchical there may be many different values for the context as you ascend the
+widget tree. In some cases you'll want a "closet context wins" rule. In others you may want to merge
+values in some way. The intention is that the consumer of the context decides what to do, so
+consumer components will implement their own logic for climbing the tree and merging contexts.
+
+### Messaging
+
 Widgets communicate to each other by sending messages. Messages are of unknown type. A message is
 sent to a widget by calling its send function. The widget handles the message by calling receive on
 all the components that implement it, passing the message. Widgets also have sendUp, which sends the
@@ -131,6 +165,10 @@ Below are descriptions of the interfaces that these objects support.
 - `provideCapability(token, capability)`
 - `revokeCapability(token)`
 - `getCapability(token)`
+- `provideContext(path, value)`
+- `revokeContext(path)`
+- `getOwnContext(path)`
+- `getContext(path)`
 
 ### Components
 

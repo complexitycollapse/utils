@@ -15,6 +15,14 @@
  */
 
 /**
+ * @typedef {string | symbol} ContextPathSegment
+ */
+
+/**
+ * @typedef {readonly ContextPathSegment[]} ContextPath
+ */
+
+/**
  * @typedef {{
  *   channel: ChildChannel,
  *   payload: unknown,
@@ -94,7 +102,11 @@
  *   sendSiblings: (data: unknown) => void,
  *   provideCapability: (token: CapabilityToken, capability: unknown) => void,
  *   revokeCapability: (token: CapabilityToken) => void,
- *   getCapability: (token: CapabilityToken) => unknown
+ *   getCapability: (token: CapabilityToken) => unknown,
+ *   provideContext: (path: ContextPath, value: unknown) => void,
+ *   revokeContext: (path: ContextPath) => void,
+ *   getOwnContext: (path: ContextPath) => unknown,
+ *   getContext: (path: ContextPath) => unknown
  * }} Widget
  */
 

@@ -4,6 +4,8 @@
 /** @typedef {import("./types.js").ChildChannel} ChildChannel */
 /** @typedef {import("./types.js").ChildChannelMessage} ChildChannelMessage */
 /** @typedef {import("./types.js").CapabilityToken} CapabilityToken */
+/** @typedef {import("./types.js").ContextPath} ContextPath */
+/** @typedef {import("./types.js").ContextPathSegment} ContextPathSegment */
 /** @typedef {import("./types.js").WidgetEventHandler} WidgetEventHandler */
 /** @typedef {import("./types.js").WidgetCatchAllEventHandler} WidgetCatchAllEventHandler */
 
@@ -39,8 +41,17 @@ const INTERNAL = Symbol("widgetInternal");
  *   deactivateTree: () => Promise<void>,
  *   unmountTree: (detachedByAncestor: boolean) => Promise<void>,
  *   destroyTree: (detachedByAncestor: boolean) => Promise<void>,
- *   getChildChannel: (child: Widget) => ChildChannel | undefined
+ *   getChildChannel: (child: Widget) => ChildChannel | undefined,
+ *   getOwnCapability: (token: CapabilityToken) => unknown,
+ *   getOwnContext: (path: ContextPath) => unknown
  * }} WidgetInternal
+ */
+
+/**
+ * @typedef {{
+ *   value: unknown,
+ *   children: Map<ContextPathSegment, ContextNode>
+ * }} ContextNode
  */
 
 /**
@@ -66,6 +77,16 @@ function fireAndForget(value) {
   if (isPromise(value)) {
     void value;
   }
+}
+
+/**
+ * @returns {ContextNode}
+ */
+function createContextNode() {
+  return {
+    value: undefined,
+    children: new Map()
+  };
 }
 
 /**
@@ -105,6 +126,8 @@ export function createWidget(componentSpec) {
   const childChannels = new Map();
   /** @type {Map<CapabilityToken, unknown>} */
   const capabilities = new Map();
+  /** @type {ContextNode} */
+  const context = createContextNode();
 
   /** @type {Widget | undefined} */
   let parent = undefined;
@@ -149,6 +172,49 @@ export function createWidget(componentSpec) {
     }
     registeredHandlers.clear();
     eventElement = undefined;
+  }
+
+  /**
+   * @param {ContextPath} path
+   * @returns {ContextNode | undefined}
+   */
+  function getContextNode(path) {
+    let node = context;
+    for (const segment of path) {
+      const child = node.children.get(segment);
+      if (!child) {
+        return undefined;
+      }
+      node = child;
+    }
+    return node;
+  }
+
+  /**
+   * @param {ContextPath} path
+   * @returns {ContextNode}
+   */
+  function materializeContextPath(path) {
+    let node = context;
+    for (const segment of path) {
+      const child = node.children.get(segment);
+      if (child) {
+        node = child;
+        continue;
+      }
+      const next = createContextNode();
+      node.children.set(segment, next);
+      node = next;
+    }
+    return node;
+  }
+
+  /**
+   * @param {ContextPath} path
+   * @returns {unknown}
+   */
+  function getOwnContext(path) {
+    return getContextNode(path)?.value;
   }
 
   function registerEventHandlers() {
@@ -341,6 +407,8 @@ export function createWidget(componentSpec) {
     isCreated = false;
     isDestroyed = true;
     capabilities.clear();
+    context.children.clear();
+    context.value = undefined;
     element = undefined;
   }
 
@@ -516,7 +584,45 @@ export function createWidget(componentSpec) {
     },
 
     getCapability(token) {
-      return capabilities.get(token);
+      /** @type {Widget | undefined} */
+      let current = widget;
+      while (current) {
+        const capability = getInternal(current).getOwnCapability(token);
+        if (capability !== undefined) {
+          return capability;
+        }
+        current = current.parent;
+      }
+      return undefined;
+    },
+
+    provideContext(path, value) {
+      materializeContextPath(path).value = value;
+    },
+
+    revokeContext(path) {
+      const node = getContextNode(path);
+      if (!node) {
+        return;
+      }
+      node.value = undefined;
+    },
+
+    getOwnContext(path) {
+      return getOwnContext(path);
+    },
+
+    getContext(path) {
+      /** @type {Widget | undefined} */
+      let current = widget;
+      while (current) {
+        const value = getInternal(current).getOwnContext(path);
+        if (value !== undefined) {
+          return value;
+        }
+        current = current.parent;
+      }
+      return undefined;
     }
   };
 
@@ -531,6 +637,12 @@ export function createWidget(componentSpec) {
     destroyTree,
     getChildChannel(child) {
       return childChannels.get(child);
+    },
+    getOwnCapability(token) {
+      return capabilities.get(token);
+    },
+    getOwnContext(path) {
+      return getOwnContext(path);
     }
   };
 
